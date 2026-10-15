@@ -119,7 +119,7 @@ func TestNewWithConfigRetainsDefaultValues(t *testing.T) {
 			}
 
 			if *basicFormatter.Config != tc.expectedConfig {
-				t.Fatalf("configs differed:\nexpected: %v\ngot: %v", *basicFormatter.Config, tc.expectedConfig)
+				t.Fatalf("configs differed:\nexpected: %v\ngot: %v", tc.expectedConfig, *basicFormatter.Config)
 			}
 		})
 	}
