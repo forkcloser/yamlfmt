@@ -583,6 +583,163 @@ b: 1
 b: 1
 `,
 		},
+		// A blank line inside a multi-line quoted or plain scalar is the
+		// value's: a placeholder comment folds into a quoted scalar and
+		// ends a plain one. The encoder writes the value its own way, on
+		// one line or as a literal block; the value is what must hold.
+		{
+			name: "double-quoted scalar with a blank line",
+			input: `key: "foo
+
+  bar"
+next: 1
+`,
+			expect: `key: "foo\nbar"
+next: 1
+`,
+		},
+		{
+			name:   "single-quoted scalar with blank lines, single",
+			single: true,
+			input: `key: 'it''s
+
+  here'
+
+next: 1
+`,
+			expect: `key: 'it''s
+
+  here'
+
+next: 1
+`,
+		},
+		{
+			name: "plain scalar with a blank line",
+			input: `key: foo
+
+  bar
+next: 1
+`,
+			expect: `key: |-
+  foo
+  bar
+next: 1
+`,
+		},
+		{
+			name: "plain scalar in a sequence, then a break",
+			input: `- one
+  two
+
+  three
+
+- four
+`,
+			expect: `- |-
+  one two
+  three
+
+- four
+`,
+		},
+		{
+			name: "a value then a nested mapping after a break",
+			input: `a: 1
+
+b:
+
+  c: 2
+`,
+			expect: `a: 1
+
+b:
+
+  c: 2
+`,
+		},
+		{
+			name: "a dash alone has no value",
+			input: `-
+  a: 1
+
+  b: 2
+`,
+			expect: `- a: 1
+
+  b: 2
+`,
+		},
+		{
+			name: "a plain scalar on the line after its key",
+			input: `key:
+  value continues
+
+  here
+next: 1
+`,
+			expect: `key: |-
+  value continues
+  here
+next: 1
+`,
+		},
+		{
+			name: "a list of plain items under a key, with a break",
+			input: `tags:
+  - alpha
+
+  - beta
+`,
+			expect: `tags:
+  - alpha
+
+  - beta
+`,
+		},
+		{
+			name: "a continued item then a break then the next",
+			input: `key:
+  - one
+    two
+
+  - three
+`,
+			expect: `key:
+  - one two
+
+  - three
+`,
+		},
+		{
+			name: "an indentless list under a key, with a break",
+			input: `key:
+- alpha
+
+- beta
+`,
+			expect: `key:
+  - alpha
+
+  - beta
+`,
+		},
+		{
+			name: "a comment between a key and its plain value",
+			input: `key:
+  # c
+  value
+
+  more
+next: 1
+`,
+			expect: `key: |-
+  value
+  more
+# c
+next: 1
+`,
+		},
 		{
 			name: "indentation indicator",
 			input: `a: |2
