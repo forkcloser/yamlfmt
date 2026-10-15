@@ -18,8 +18,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/google/yamlfmt"
-	"github.com/google/yamlfmt/internal/linescan"
+	"github.com/forkcloser/yamlfmt"
+	"github.com/forkcloser/yamlfmt/internal/linescan"
 )
 
 func MakeFeatureTrimTrailingWhitespace(linebreakStr string) yamlfmt.Feature {

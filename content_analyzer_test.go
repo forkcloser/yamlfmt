@@ -18,9 +18,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/google/yamlfmt"
-	"github.com/google/yamlfmt/internal/collections"
-	"github.com/google/yamlfmt/internal/tempfile"
+	"github.com/forkcloser/yamlfmt"
+	"github.com/forkcloser/yamlfmt/internal/collections"
+	"github.com/forkcloser/yamlfmt/internal/tempfile"
 )
 
 const testdataBase = "testdata/content_analyzer"

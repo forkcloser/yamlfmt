@@ -15,10 +15,10 @@
 package basic
 
 import (
-	"github.com/google/yamlfmt"
-	yamlFeatures "github.com/google/yamlfmt/formatters/basic/features"
-	"github.com/google/yamlfmt/internal/features"
-	"github.com/google/yamlfmt/internal/hotfix"
+	"github.com/forkcloser/yamlfmt"
+	yamlFeatures "github.com/forkcloser/yamlfmt/formatters/basic/features"
+	"github.com/forkcloser/yamlfmt/internal/features"
+	"github.com/forkcloser/yamlfmt/internal/hotfix"
 )
 
 func ConfigureFeaturesFromConfig(config *Config) yamlfmt.FeatureList {

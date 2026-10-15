@@ -18,7 +18,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/google/yamlfmt/pkg/yaml"
+	"github.com/forkcloser/yamlfmt/pkg/yaml"
 )
 
 type SequenceStyle string

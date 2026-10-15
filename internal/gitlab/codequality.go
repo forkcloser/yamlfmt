@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/google/yamlfmt"
+	"github.com/forkcloser/yamlfmt"
 )
 
 // CodeQuality represents a single code quality finding.

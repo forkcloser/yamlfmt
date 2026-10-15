@@ -17,9 +17,9 @@ package command
 import (
 	"testing"
 
-	"github.com/google/yamlfmt"
-	"github.com/google/yamlfmt/formatters/basic"
-	"github.com/google/yamlfmt/internal/assert"
+	"github.com/forkcloser/yamlfmt"
+	"github.com/forkcloser/yamlfmt/formatters/basic"
+	"github.com/forkcloser/yamlfmt/internal/assert"
 )
 
 // This test asserts the proper behaviour for `line_ending` settings specified

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/google/yamlfmt/pkg/yaml"
+	"github.com/forkcloser/yamlfmt/pkg/yaml"
 	. "gopkg.in/check.v1"
 )
 

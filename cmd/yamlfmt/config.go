@@ -24,13 +24,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/google/yamlfmt"
-	"github.com/google/yamlfmt/command"
-	"github.com/google/yamlfmt/engine"
-	"github.com/google/yamlfmt/formatters/kyaml"
-	"github.com/google/yamlfmt/internal/collections"
-	"github.com/google/yamlfmt/internal/logger"
-	"github.com/google/yamlfmt/pkg/yaml"
+	"github.com/forkcloser/yamlfmt"
+	"github.com/forkcloser/yamlfmt/command"
+	"github.com/forkcloser/yamlfmt/engine"
+	"github.com/forkcloser/yamlfmt/formatters/kyaml"
+	"github.com/forkcloser/yamlfmt/internal/collections"
+	"github.com/forkcloser/yamlfmt/internal/logger"
+	"github.com/forkcloser/yamlfmt/pkg/yaml"
 	"github.com/mitchellh/mapstructure"
 )
 

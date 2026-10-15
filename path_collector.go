@@ -26,8 +26,8 @@ import (
 	"strings"
 
 	"github.com/bmatcuk/doublestar/v4"
-	"github.com/google/yamlfmt/internal/collections"
-	"github.com/google/yamlfmt/internal/logger"
+	"github.com/forkcloser/yamlfmt/internal/collections"
+	"github.com/forkcloser/yamlfmt/internal/logger"
 	ignore "github.com/sabhiram/go-gitignore"
 )
 

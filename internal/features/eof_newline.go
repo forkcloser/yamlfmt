@@ -17,7 +17,7 @@ package features
 import (
 	"context"
 
-	"github.com/google/yamlfmt"
+	"github.com/forkcloser/yamlfmt"
 )
 
 func MakeFeatureEOFNewline(linebreakStr string) yamlfmt.Feature {

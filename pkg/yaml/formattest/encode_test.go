@@ -17,7 +17,7 @@ package formattest
 import (
 	"testing"
 
-	"github.com/google/yamlfmt/pkg/yaml"
+	"github.com/forkcloser/yamlfmt/pkg/yaml"
 )
 
 func TestExplicitDocumentStart(t *testing.T) {

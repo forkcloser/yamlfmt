@@ -20,8 +20,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/google/yamlfmt"
-	"github.com/google/yamlfmt/internal/gitlab"
+	"github.com/forkcloser/yamlfmt"
+	"github.com/forkcloser/yamlfmt/internal/gitlab"
 )
 
 type EngineOutputFormat string

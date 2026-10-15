@@ -15,7 +15,7 @@
 package basic
 
 import (
-	"github.com/google/yamlfmt"
+	"github.com/forkcloser/yamlfmt"
 	"github.com/mitchellh/mapstructure"
 )
 

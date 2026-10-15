@@ -20,7 +20,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/google/yamlfmt/internal/collections"
+	"github.com/forkcloser/yamlfmt/internal/collections"
 )
 
 type Path struct {

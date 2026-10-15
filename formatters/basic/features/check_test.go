@@ -18,8 +18,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/google/yamlfmt/formatters/basic/features"
-	"github.com/google/yamlfmt/pkg/yaml"
+	"github.com/forkcloser/yamlfmt/formatters/basic/features"
+	"github.com/forkcloser/yamlfmt/pkg/yaml"
 )
 
 func TestCheck(t *testing.T) {

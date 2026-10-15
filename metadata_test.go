@@ -18,8 +18,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/google/yamlfmt"
-	"github.com/google/yamlfmt/internal/collections"
+	"github.com/forkcloser/yamlfmt"
+	"github.com/forkcloser/yamlfmt/internal/collections"
 )
 
 type errorChecker func(t *testing.T, errs collections.Errors)

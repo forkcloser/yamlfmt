@@ -20,10 +20,10 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/forkcloser/yamlfmt"
+	"github.com/forkcloser/yamlfmt/internal/assert"
+	"github.com/forkcloser/yamlfmt/internal/gitlab"
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/yamlfmt"
-	"github.com/google/yamlfmt/internal/assert"
-	"github.com/google/yamlfmt/internal/gitlab"
 )
 
 func TestCodeQuality(t *testing.T) {

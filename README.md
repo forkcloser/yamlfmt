@@ -22,7 +22,7 @@ I'm going to use these links to GitHub Discussions as a blog of sorts, until I c
 
 To download the `yamlfmt` command, you can download the desired binary from releases or install the module directly:
 ```
-go install github.com/google/yamlfmt/cmd/yamlfmt@latest
+go install github.com/forkcloser/yamlfmt/cmd/yamlfmt@latest
 ```
 This currently requires Go version 1.21 or greater.
 

@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/google/yamlfmt/internal/assert"
+	"github.com/forkcloser/yamlfmt/internal/assert"
 )
 
 type tMock struct {

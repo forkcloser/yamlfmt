@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/google/yamlfmt"
-	"github.com/google/yamlfmt/internal/logger"
+	"github.com/forkcloser/yamlfmt"
+	"github.com/forkcloser/yamlfmt/internal/logger"
 )
 
 // Engine that will process each file one by one consecutively.

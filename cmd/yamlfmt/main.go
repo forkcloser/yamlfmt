@@ -21,11 +21,11 @@ import (
 	"os"
 	"runtime/debug"
 
-	"github.com/google/yamlfmt"
-	"github.com/google/yamlfmt/command"
-	"github.com/google/yamlfmt/formatters/basic"
-	"github.com/google/yamlfmt/formatters/kyaml"
-	"github.com/google/yamlfmt/internal/logger"
+	"github.com/forkcloser/yamlfmt"
+	"github.com/forkcloser/yamlfmt/command"
+	"github.com/forkcloser/yamlfmt/formatters/basic"
+	"github.com/forkcloser/yamlfmt/formatters/kyaml"
+	"github.com/forkcloser/yamlfmt/internal/logger"
 )
 
 var (

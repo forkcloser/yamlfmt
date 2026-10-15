@@ -14,7 +14,7 @@
 
 package features
 
-import "github.com/google/yamlfmt/pkg/yaml"
+import "github.com/forkcloser/yamlfmt/pkg/yaml"
 
 // These features will directly use the `yaml.Node` type and
 // as such are specific to this formatter.

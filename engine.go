@@ -20,8 +20,8 @@ import (
 	"os"
 	"slices"
 
-	"github.com/google/yamlfmt/internal/collections"
-	"github.com/google/yamlfmt/internal/multilinediff"
+	"github.com/forkcloser/yamlfmt/internal/collections"
+	"github.com/forkcloser/yamlfmt/internal/multilinediff"
 )
 
 type Operation int

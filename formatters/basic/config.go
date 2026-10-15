@@ -17,8 +17,8 @@ package basic
 import (
 	"runtime"
 
-	"github.com/google/yamlfmt"
-	yamlFeatures "github.com/google/yamlfmt/formatters/basic/features"
+	"github.com/forkcloser/yamlfmt"
+	yamlFeatures "github.com/forkcloser/yamlfmt/formatters/basic/features"
 )
 
 type Config struct {

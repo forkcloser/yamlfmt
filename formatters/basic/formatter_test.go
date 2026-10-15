@@ -19,8 +19,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/google/yamlfmt/formatters/basic"
-	"github.com/google/yamlfmt/formatters/basic/features"
+	"github.com/forkcloser/yamlfmt/formatters/basic"
+	"github.com/forkcloser/yamlfmt/formatters/basic/features"
 	"github.com/stretchr/testify/require"
 )
 

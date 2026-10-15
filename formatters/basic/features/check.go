@@ -18,7 +18,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/google/yamlfmt/pkg/yaml"
+	"github.com/forkcloser/yamlfmt/pkg/yaml"
 )
 
 func Check(n yaml.Node) error {

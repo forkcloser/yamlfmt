@@ -21,8 +21,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/forkcloser/yamlfmt/internal/collections"
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/yamlfmt/internal/collections"
 )
 
 type GoldenCtx struct {

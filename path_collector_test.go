@@ -23,11 +23,11 @@ import (
 	"testing"
 	"testing/fstest"
 
+	"github.com/forkcloser/yamlfmt"
+	"github.com/forkcloser/yamlfmt/internal/collections"
+	"github.com/forkcloser/yamlfmt/internal/tempfile"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/google/yamlfmt"
-	"github.com/google/yamlfmt/internal/collections"
-	"github.com/google/yamlfmt/internal/tempfile"
 )
 
 func TestFilepathCollector(t *testing.T) {

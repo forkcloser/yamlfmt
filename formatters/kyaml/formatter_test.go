@@ -19,7 +19,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/google/yamlfmt/internal/assert"
+	"github.com/forkcloser/yamlfmt/internal/assert"
 )
 
 func TestKYAMLFormatter(t *testing.T) {

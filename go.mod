@@ -1,4 +1,4 @@
-module github.com/google/yamlfmt
+module github.com/forkcloser/yamlfmt
 
 go 1.22
 

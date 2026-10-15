@@ -19,7 +19,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/google/yamlfmt/internal/linescan"
+	"github.com/forkcloser/yamlfmt/internal/linescan"
 )
 
 // A line longer than bufio's default token limit must scan without error,

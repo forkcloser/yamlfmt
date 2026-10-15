@@ -23,8 +23,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/forkcloser/yamlfmt/pkg/yaml"
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/yamlfmt/pkg/yaml"
 )
 
 type decoderConfigureFunc func(*yaml.Decoder)

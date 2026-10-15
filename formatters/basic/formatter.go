@@ -20,9 +20,9 @@ import (
 	"errors"
 	"io"
 
-	"github.com/google/yamlfmt"
-	yamlFeature "github.com/google/yamlfmt/formatters/basic/features"
-	"github.com/google/yamlfmt/pkg/yaml"
+	"github.com/forkcloser/yamlfmt"
+	yamlFeature "github.com/forkcloser/yamlfmt/formatters/basic/features"
+	"github.com/forkcloser/yamlfmt/pkg/yaml"
 	"github.com/mitchellh/mapstructure"
 )
 

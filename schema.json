@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://raw.githubusercontent.com/google/yamlfmt/main/schema.json",
+  "$id": "https://raw.githubusercontent.com/forkcloser/yamlfmt/main/schema.json",
   "title": "yamlfmt config file",
-  "description": "The yamlfmt config file. For details, see https://github.com/google/yamlfmt/blob/main/docs/config-file.md.",
+  "description": "The yamlfmt config file. For details, see https://github.com/forkcloser/yamlfmt/blob/main/docs/config-file.md.",
   "type": "object",
   "properties": {
     "line_ending": {
