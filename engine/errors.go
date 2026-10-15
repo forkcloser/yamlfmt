@@ -14,17 +14,23 @@
 
 package engine
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type FormatErrors []*FormatError
 
 func (e FormatErrors) Error() string {
-	errStr := "encountered the following formatting errors:\n"
+	var errStr strings.Builder
+
+	errStr.WriteString("encountered the following formatting errors:\n")
+
 	for _, err := range e {
-		errStr += fmt.Sprintf("%s\n", err.Error())
+		errStr.WriteString(err.Error() + "\n")
 	}
 
-	return errStr
+	return errStr.String()
 }
 
 type FormatError struct {

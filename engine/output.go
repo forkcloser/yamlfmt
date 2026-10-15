@@ -89,13 +89,13 @@ func (eo engineOutput) String() string {
 
 	var result string
 	if msg != "" {
-		result += fmt.Sprintf("%s\n\n", msg)
+		result += msg + "\n\n"
 	}
 
 	if eo.Quiet {
 		result += eo.Files.StrOutputQuiet()
 	} else {
-		result += fmt.Sprintf("%s\n", eo.Files.StrOutput())
+		result += eo.Files.StrOutput() + "\n"
 	}
 
 	return result
@@ -108,12 +108,12 @@ type engineOutputSingleLine struct {
 }
 
 func (eosl engineOutputSingleLine) String() string {
-	var msg string
+	var msg strings.Builder
 	for _, fileDiff := range eosl.Files {
-		msg += fmt.Sprintf("%s: formatting difference found\n", fileDiff.Path)
+		msg.WriteString(fileDiff.Path + ": formatting difference found\n")
 	}
 
-	return msg
+	return msg.String()
 }
 
 type engineOutputGitlab struct {

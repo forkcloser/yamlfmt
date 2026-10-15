@@ -64,7 +64,7 @@ func (e *configPathError) Error() string {
 	}
 
 	if errors.Is(e.err, errConfPathNotExist) {
-		return fmt.Sprintf("no config file found in directory %s", filepath.Dir(e.path))
+		return "no config file found in directory " + filepath.Dir(e.path)
 	}
 
 	if errors.Is(e.err, errConfPathIsDir) {

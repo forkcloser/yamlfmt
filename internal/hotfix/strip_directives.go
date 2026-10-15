@@ -51,7 +51,9 @@ func stripDirectivesFeature(lineSepChar string) yamlfmt.FeatureFunc {
 	return func(ctx context.Context, content []byte) (context.Context, []byte, error) {
 		directives := []Directive{}
 		scanner := linescan.NewScanner(content)
-		result := ""
+
+		var result strings.Builder
+
 		currLine := 1
 
 		for scanner.Scan() {
@@ -62,13 +64,13 @@ func stripDirectivesFeature(lineSepChar string) yamlfmt.FeatureFunc {
 					content: line,
 				})
 			} else {
-				result += line + lineSepChar
+				result.WriteString(line + lineSepChar)
 			}
 
 			currLine++
 		}
 
-		return ContextWithDirectives(ctx, directives), []byte(result), nil
+		return ContextWithDirectives(ctx, directives), []byte(result.String()), nil
 	}
 }
 
@@ -78,27 +80,30 @@ func restoreDirectivesFeature(lineSepChar string) yamlfmt.FeatureFunc {
 		directiveIdx := 0
 		doneDirectives := directiveIdx == len(directives)
 		scanner := linescan.NewScanner(content)
-		result := ""
+
+		var result strings.Builder
 
 		currLine := 1
 		for scanner.Scan() {
 			if !doneDirectives && currLine == directives[directiveIdx].line {
-				result += directives[directiveIdx].content + lineSepChar
+				result.WriteString(directives[directiveIdx].content + lineSepChar)
+
 				currLine++
 				directiveIdx++
 				doneDirectives = directiveIdx == len(directives)
 			}
 
-			result += scanner.Text() + lineSepChar
+			result.WriteString(scanner.Text() + lineSepChar)
+
 			currLine++
 		}
 		// Edge case: There technically can be a directive as the final line. This would be
 		// useless as far as I can tell so maybe yamlfmt should just remove it anyway LOL but
 		// no we'll keep it.
 		if !doneDirectives && currLine == directives[directiveIdx].line {
-			result += directives[directiveIdx].content + lineSepChar
+			result.WriteString(directives[directiveIdx].content + lineSepChar)
 		}
 
-		return ctx, []byte(result), nil
+		return ctx, []byte(result.String()), nil
 	}
 }

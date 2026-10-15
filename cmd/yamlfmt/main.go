@@ -48,7 +48,7 @@ func run() error {
 	if *flagVersion {
 		currentVersion, currentCommit := getVersion()
 
-		versionMessage := fmt.Sprintf("yamlfmt %s", currentVersion)
+		versionMessage := "yamlfmt " + currentVersion
 		if currentCommit != "" {
 			versionMessage += fmt.Sprintf(" (%s)", currentCommit)
 		}

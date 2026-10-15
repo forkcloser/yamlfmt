@@ -81,7 +81,7 @@ golangci:
         # Counts are the measurement at enrolment, per file and linter: 2364 in 72 files.
         # ---------------------------------------------------------------------------
         - path: ^cmd/yamlfmt/config\.go$
-          linters: # 20 findings
+          linters: # 19 findings
             - wrapcheck # 6
             - revive # 3
             - depguard # 1
@@ -91,25 +91,22 @@ golangci:
             - goconst # 1
             - gosec # 1
             - modernize # 1
-            - perfsprint # 1
             - staticcheck # 1
             - unparam # 1
             - varnamelen # 1
         - path: ^cmd/yamlfmt/flags\.go$
-          linters: # 47 findings
+          linters: # 45 findings
             - gochecknoglobals # 23
             - revive # 19
-            - perfsprint # 2
             - forbidigo # 1
             - goconst # 1
             - reassign # 1
         - path: ^cmd/yamlfmt/main\.go$
-          linters: # 8 findings
+          linters: # 7 findings
             - revive # 2
             - depguard # 1
             - forbidigo # 1
             - gochecknoglobals # 1
-            - perfsprint # 1
             - varnamelen # 1
             - wrapcheck # 1
         - path: ^command/command\.go$
@@ -141,31 +138,27 @@ golangci:
             - modernize # 1
             - revive # 1
         - path: ^engine\.go$
-          linters: # 29 findings
+          linters: # 27 findings
             - revive # 20
             - modernize # 2
-            - perfsprint # 2
             - wrapcheck # 2
             - err113 # 1
             - gosec # 1
             - mnd # 1
         - path: ^engine/consecutive_engine\.go$
-          linters: # 17 findings
+          linters: # 16 findings
             - revive # 7
             - wrapcheck # 3
             - forbidigo # 2
             - nilnil # 2
             - gosec # 1
             - govet # 1
-            - perfsprint # 1
         - path: ^engine/errors\.go$
-          linters: # 5 findings
-            - perfsprint # 2
+          linters: # 3 findings
             - revive # 2
             - modernize # 1
         - path: ^engine/output\.go$
-          linters: # 13 findings
-            - perfsprint # 4
+          linters: # 9 findings
             - revive # 4
             - varnamelen # 2
             - err113 # 1
@@ -254,12 +247,11 @@ golangci:
             - revive # 3
             - err113 # 2
         - path: ^internal/collections/errors\.go$
-          linters: # 7 findings
+          linters: # 6 findings
             - revive # 3
             - err113 # 1
             - gocritic # 1
             - modernize # 1
-            - perfsprint # 1
         - path: ^internal/collections/errors_test\.go$
           linters: # 5 findings
             - paralleltest # 3
@@ -290,10 +282,9 @@ golangci:
           linters: # 2 findings
             - revive # 2
         - path: ^internal/hotfix/strip_directives\.go$
-          linters: # 10 findings
+          linters: # 8 findings
             - revive # 5
             - modernize # 2
-            - perfsprint # 2
             - gochecknoglobals # 1
         - path: ^internal/jsonschema/schema_test\.go$
           linters: # 1 findings
@@ -377,7 +368,7 @@ golangci:
             - gocritic # 2
             - intrange # 2
         - path: ^pkg/yaml/decode_test\.go$
-          linters: # 240 findings
+          linters: # 239 findings
             - modernize # 138
             - revive # 59
             - gochecknoglobals # 11
@@ -389,7 +380,6 @@ golangci:
             - staticcheck # 2
             - err113 # 1
             - errname # 1
-            - perfsprint # 1
             - unused # 1
         - path: ^pkg/yaml/emitterc\.go$
           linters: # 212 findings
@@ -416,7 +406,7 @@ golangci:
             - gocritic # 1
             - intrange # 1
         - path: ^pkg/yaml/encode_test\.go$
-          linters: # 131 findings
+          linters: # 130 findings
             - revive # 50
             - modernize # 40
             - govet # 24
@@ -426,7 +416,6 @@ golangci:
             - dupword # 1
             - embeddedstructfieldcheck # 1
             - err113 # 1
-            - perfsprint # 1
         - path: ^pkg/yaml/example_embedded_test\.go$
           linters: # 3 findings
             - depguard # 1
@@ -523,7 +512,7 @@ golangci:
           linters: # 2 findings
             - revive # 2
         - path: ^pkg/yaml/yaml\.go$
-          linters: # 75 findings
+          linters: # 74 findings
             - revive # 18
             - modernize # 12
             - govet # 10
@@ -536,7 +525,6 @@ golangci:
             - funcorder # 1
             - gochecknoinits # 1
             - gocognit # 1
-            - perfsprint # 1
             - unparam # 1
         - path: ^pkg/yaml/yamlh\.go$
           linters: # 292 findings
