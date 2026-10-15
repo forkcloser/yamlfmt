@@ -17,6 +17,7 @@ package yaml_test
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"math"
 	"net"
@@ -606,7 +607,7 @@ func (s *S) TestEncoderWriteError(c *C) {
 type errorWriter struct{}
 
 func (errorWriter) Write([]byte) (int, error) {
-	return 0, fmt.Errorf("some write error")
+	return 0, errors.New("some write error")
 }
 
 var marshalErrorTests = []struct {

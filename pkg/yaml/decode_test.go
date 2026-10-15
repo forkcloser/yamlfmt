@@ -18,7 +18,6 @@ package yaml_test
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"io"
 	"math"
 	"reflect"
@@ -1547,7 +1546,7 @@ func (s *S) TestMerge(c *C) {
 
 	wantStringMap := make(map[string]interface{})
 	for k, v := range want {
-		wantStringMap[fmt.Sprintf("%v", k)] = v
+		wantStringMap[k] = v
 	}
 
 	var m map[interface{}]interface{}

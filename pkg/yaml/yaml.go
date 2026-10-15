@@ -427,7 +427,7 @@ type TypeError struct {
 }
 
 func (e *TypeError) Error() string {
-	return fmt.Sprintf("yaml: unmarshal errors:\n  %s", strings.Join(e.Errors, "\n  "))
+	return "yaml: unmarshal errors:\n  " + strings.Join(e.Errors, "\n  ")
 }
 
 type Kind uint32

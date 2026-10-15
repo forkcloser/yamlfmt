@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"os"
 	"slices"
+	"strings"
 
 	"github.com/forkcloser/yamlfmt/internal/collections"
 	"github.com/forkcloser/yamlfmt/internal/multilinediff"
@@ -116,31 +117,31 @@ func (fds FileDiffs) Add(diff *FileDiff) error {
 }
 
 func (fds FileDiffs) StrOutput() string {
-	result := ""
+	var result strings.Builder
 
 	sortedPaths := fds.sortedPaths()
 	for _, path := range sortedPaths {
 		fd := fds[path]
 		if fd.Diff.Changed() {
-			result += fd.StrOutput()
+			result.WriteString(fd.StrOutput())
 		}
 	}
 
-	return result
+	return result.String()
 }
 
 func (fds FileDiffs) StrOutputQuiet() string {
-	result := ""
+	var result strings.Builder
 
 	sortedPaths := fds.sortedPaths()
 	for _, path := range sortedPaths {
 		fd := fds[path]
 		if fd.Diff.Changed() {
-			result += fd.StrOutputQuiet()
+			result.WriteString(fd.StrOutputQuiet())
 		}
 	}
 
-	return result
+	return result.String()
 }
 
 func (fds FileDiffs) ApplyAll() error {

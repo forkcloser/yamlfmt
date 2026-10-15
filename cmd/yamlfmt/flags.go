@@ -35,12 +35,12 @@ operation without performing it.`)
 	flagGlobalConf *bool   = flag.Bool(
 		"global_conf",
 		false,
-		fmt.Sprintf("Use global yamlfmt config from %s", globalConfFlagVar()),
+		"Use global yamlfmt config from "+globalConfFlagVar(),
 	)
 	flagDisableGlobalConf *bool = flag.Bool(
 		"no_global_conf",
 		false,
-		fmt.Sprintf("Disabled usage of global yamlfmt config from %s", globalConfFlagVar()),
+		"Disabled usage of global yamlfmt config from "+globalConfFlagVar(),
 	)
 	flagPrintConf       *bool = flag.Bool("print_conf", false, "Print config")
 	flagDoublestar      *bool = flag.Bool("dstar", false, "Use doublestar globs for include and exclude")

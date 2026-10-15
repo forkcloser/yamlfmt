@@ -14,22 +14,25 @@
 
 package collections
 
-import "errors"
+import (
+	"errors"
+	"strings"
+)
 
 type Errors []error
 
 func (errs Errors) Combine() error {
-	errMessage := ""
+	var errMessage strings.Builder
 
 	for _, err := range errs {
 		if err != nil {
-			errMessage += err.Error() + "\n"
+			errMessage.WriteString(err.Error() + "\n")
 		}
 	}
 
-	if len(errMessage) == 0 {
+	if errMessage.Len() == 0 {
 		return nil
 	}
 
-	return errors.New(errMessage)
+	return errors.New(errMessage.String())
 }
