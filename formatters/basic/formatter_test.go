@@ -15,15 +15,18 @@
 package basic_test
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/forkcloser/yamlfmt/formatters/basic"
 	"github.com/forkcloser/yamlfmt/formatters/basic/features"
+	"github.com/forkcloser/yamlfmt/internal/assert"
 )
+
+// Quoted, so a stray \r or trailing space shows in the failure.
+const outputMismatch = "formatted output differs.\nexpected: %q\n     got: %q"
 
 var factory = basic.BasicFormatterFactory{}
 
@@ -312,19 +315,19 @@ map:
 		t.Run(tc.name, func(t *testing.T) {
 			f, err := factory.NewFormatter(tc.config)
 			if tc.badConfigErr != nil {
-				require.ErrorIs(t, err, tc.badConfigErr)
+				assert.Assert(t, errors.Is(err, tc.badConfigErr), "expected %v, got %v", tc.badConfigErr, err)
 				return
 			}
 
-			require.NoError(t, err)
+			assert.NilErr(t, err)
 
 			result, err := f.Format([]byte(tc.input))
 			if tc.formatErr {
-				require.Error(t, err)
+				assert.NotNilErr(t, err)
 				return
 			}
 
-			require.NoError(t, err)
+			assert.NilErr(t, err)
 
 			expected := tc.expect
 			actual := string(result)
@@ -341,7 +344,7 @@ map:
 				actual = stripTrailingNewline(actual)
 			}
 
-			require.Equal(t, expected, actual)
+			assert.EqualMsg(t, expected, actual, outputMismatch)
 		})
 	}
 }
@@ -379,14 +382,19 @@ func TestPreserveCommentIndentsIdempotent(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			f, err := factory.NewFormatter(tc.config)
-			require.NoError(t, err)
+			assert.NilErr(t, err)
 
 			once, err := f.Format([]byte(tc.input))
-			require.NoError(t, err)
+			assert.NilErr(t, err)
 			twice, err := f.Format(once)
-			require.NoError(t, err)
+			assert.NilErr(t, err)
 
-			require.Equal(t, string(once), string(twice), "second format pass changed the output")
+			assert.EqualMsg(
+				t,
+				string(once),
+				string(twice),
+				"second format pass changed the output.\nfirst:  %q\nsecond: %q",
+			)
 		})
 	}
 }
@@ -486,10 +494,10 @@ c: 3
 				"retain_line_breaks":        true,
 				"retain_line_breaks_single": tc.single,
 			})
-			require.NoError(t, err)
+			assert.NilErr(t, err)
 			got, err := f.Format([]byte(tc.input))
-			require.NoError(t, err)
-			require.Equal(t, tc.expect, string(got))
+			assert.NilErr(t, err)
+			assert.EqualMsg(t, tc.expect, string(got), outputMismatch)
 		})
 	}
 }
@@ -509,10 +517,15 @@ func TestRetainLineBreaksLongLine(t *testing.T) {
 				"retain_line_breaks":        true,
 				"retain_line_breaks_single": single,
 			})
-			require.NoError(t, err)
+			assert.NilErr(t, err)
 			got, err := f.Format([]byte(input))
-			require.NoError(t, err)
-			require.Contains(t, string(got), longValue, "the long single-line value must survive formatting")
+			assert.NilErr(t, err)
+			assert.Assert(
+				t,
+				strings.Contains(string(got), longValue),
+				"the long single-line value must survive formatting, got:\n%s",
+				got,
+			)
 		})
 	}
 }
