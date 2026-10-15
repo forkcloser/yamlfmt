@@ -17,7 +17,6 @@ package yamlfmt_test
 import (
 	"bytes"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -375,11 +374,6 @@ type testCase struct {
 }
 
 func (tc testCase) run(t *testing.T, makeCollector makeCollectorFunc) {
-	testStartDir, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("could not get working directory: %v", err)
-	}
-
 	t.Run(tc.name, func(t *testing.T) {
 		if tc.skip {
 			t.Skip()
@@ -388,7 +382,7 @@ func (tc testCase) run(t *testing.T, makeCollector makeCollectorFunc) {
 		tempPath := t.TempDir()
 
 		if tc.changeToTempDir {
-			os.Chdir(tempPath)
+			t.Chdir(tempPath)
 		}
 
 		for _, file := range tc.files {
@@ -423,11 +417,6 @@ func (tc testCase) run(t *testing.T, makeCollector makeCollectorFunc) {
 			t.Fatalf("Expected to receive paths %v\nbut got %v", tc.expectedFiles, filesToFormat)
 		}
 	})
-
-	// Restore the starting directory if we changed in the test.
-	if tc.changeToTempDir {
-		os.Chdir(testStartDir)
-	}
 }
 
 type testCaseTable []testCase

@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"math"
 	"net"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -560,9 +559,7 @@ var marshalTests = []struct {
 }
 
 func (s *S) TestMarshal(c *C) {
-	defer os.Setenv("TZ", os.Getenv("TZ"))
-
-	os.Setenv("TZ", "UTC")
+	defer setenv(c, "TZ", "UTC")()
 
 	for i, item := range marshalTests {
 		c.Logf("test %d: %q", i, item.data)
@@ -633,7 +630,7 @@ var marshalErrorTests = []struct {
 func (s *S) TestMarshalErrors(c *C) {
 	for _, item := range marshalErrorTests {
 		if item.panic != "" {
-			c.Assert(func() { yaml.Marshal(item.value) }, PanicMatches, item.panic)
+			c.Assert(func() { _, _ = yaml.Marshal(item.value) }, PanicMatches, item.panic)
 		} else {
 			_, err := yaml.Marshal(item.value)
 			c.Assert(err, ErrorMatches, item.error)

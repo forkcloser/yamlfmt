@@ -342,17 +342,12 @@ func cat(files ...string) (io.Reader, error) {
 	var b bytes.Buffer
 
 	for _, f := range files {
-		fh, err := os.Open(f)
+		data, err := os.ReadFile(f)
 		if err != nil {
 			return nil, err
 		}
-		defer fh.Close()
 
-		if _, err := io.Copy(&b, fh); err != nil {
-			return nil, fmt.Errorf("copying %q: %w", f, err)
-		}
-
-		fh.Close()
+		b.Write(data)
 
 		// Append a newline to avoid issues with files lacking a newline at end-of-file.
 		fmt.Fprintln(&b)

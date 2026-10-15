@@ -105,7 +105,9 @@ func (e *ConsecutiveEngine) formatAll(paths []string) (yamlfmt.FileDiffs, Format
 			continue
 		}
 
-		formatDiffs.Add(fileDiff)
+		if err := formatDiffs.Add(fileDiff); err != nil {
+			formatErrs = append(formatErrs, wrapFormatError(path, err))
+		}
 	}
 
 	return formatDiffs, formatErrs
