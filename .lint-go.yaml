@@ -370,7 +370,7 @@ golangci:
             - wrapcheck # 2
             - gocritic # 1
         - path: ^pkg/yaml/decode\.go$
-          linters: # 93 findings
+          linters: # 91 findings
             - varnamelen # 31
             - modernize # 15
             - exhaustive # 8
@@ -383,9 +383,8 @@ golangci:
             - errorlint # 2
             - gocritic # 2
             - intrange # 2
-            - unconvert # 2
         - path: ^pkg/yaml/decode_test\.go$
-          linters: # 243 findings
+          linters: # 240 findings
             - modernize # 138
             - revive # 59
             - gochecknoglobals # 11
@@ -395,15 +394,12 @@ golangci:
             - errorlint # 3
             - dupl # 2
             - staticcheck # 2
-            - asasalint # 1
             - err113 # 1
             - errname # 1
-            - mirror # 1
-            - misspell # 1
             - perfsprint # 1
             - unused # 1
         - path: ^pkg/yaml/emitterc\.go$
-          linters: # 217 findings
+          linters: # 212 findings
             - revive # 109
             - mnd # 32
             - gocritic # 22
@@ -413,8 +409,6 @@ golangci:
             - intrange # 7
             - modernize # 5
             - staticcheck # 3
-            - wastedassign # 3
-            - ineffassign # 2
             - gosec # 1
             - unparam # 1
             - unused # 1
@@ -429,7 +423,7 @@ golangci:
             - gocritic # 1
             - intrange # 1
         - path: ^pkg/yaml/encode_test\.go$
-          linters: # 132 findings
+          linters: # 131 findings
             - revive # 50
             - modernize # 40
             - govet # 24
@@ -440,7 +434,6 @@ golangci:
             - embeddedstructfieldcheck # 1
             - err113 # 1
             - perfsprint # 1
-            - unconvert # 1
         - path: ^pkg/yaml/example_embedded_test\.go$
           linters: # 3 findings
             - depguard # 1
@@ -477,7 +470,7 @@ golangci:
             - govet # 1
             - unused # 1
         - path: ^pkg/yaml/parserc\.go$
-          linters: # 87 findings
+          linters: # 85 findings
             - revive # 69
             - gocognit # 6
             - gocritic # 3
@@ -485,11 +478,9 @@ golangci:
             - exhaustive # 1
             - gochecknoglobals # 1
             - govet # 1
-            - ineffassign # 1
             - unparam # 1
-            - wastedassign # 1
         - path: ^pkg/yaml/readerc\.go$
-          linters: # 70 findings
+          linters: # 69 findings
             - mnd # 43
             - revive # 19
             - gocritic # 2
@@ -498,7 +489,6 @@ golangci:
             - gocognit # 1
             - staticcheck # 1
             - varnamelen # 1
-            - wastedassign # 1
         - path: ^pkg/yaml/resolve\.go$
           linters: # 32 findings
             - revive # 9
@@ -542,7 +532,7 @@ golangci:
           linters: # 2 findings
             - revive # 2
         - path: ^pkg/yaml/yaml\.go$
-          linters: # 77 findings
+          linters: # 75 findings
             - revive # 18
             - modernize # 12
             - govet # 10
@@ -552,7 +542,6 @@ golangci:
             - exhaustive # 3
             - gochecknoglobals # 3
             - staticcheck # 3
-            - misspell # 2
             - funcorder # 1
             - gochecknoinits # 1
             - gocognit # 1
