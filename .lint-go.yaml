@@ -240,9 +240,8 @@ golangci:
             - depguard # 1
             - wrapcheck # 1
         - path: ^formatters/kyaml/formatter_test\.go$
-          linters: # 3 findings
+          linters: # 2 findings
             - paralleltest # 2
-            - testpackage # 1
         - path: ^internal/assert/assert\.go$
           linters: # 28 findings
             - revive # 20
