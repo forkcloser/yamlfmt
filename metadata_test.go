@@ -25,6 +25,8 @@ import (
 type errorChecker func(t *testing.T, errs collections.Errors)
 
 func checkErrNil(t *testing.T, errs collections.Errors) {
+	t.Helper()
+
 	combinedErr := errs.Combine()
 	if combinedErr != nil {
 		t.Fatalf("expected error to be nil, got: %v", combinedErr)
@@ -57,6 +59,8 @@ func TestReadMetadata(t *testing.T) {
 			content:  "# !yamlfmt!fjghgh",
 			expected: collections.Set[yamlfmt.Metadata]{},
 			errCheck: func(t *testing.T, errs collections.Errors) {
+				t.Helper()
+
 				if len(errs) != 1 {
 					t.Fatalf("expected 1 error, got %d:\n%v", len(errs), errs.Combine())
 				}
@@ -71,6 +75,8 @@ func TestReadMetadata(t *testing.T) {
 			content:  "# !yamlfmt!:lulsorandom",
 			expected: collections.Set[yamlfmt.Metadata]{},
 			errCheck: func(t *testing.T, errs collections.Errors) {
+				t.Helper()
+
 				if len(errs) != 1 {
 					t.Fatalf("expected 1 error, got %d:\n%v", len(errs), errs.Combine())
 				}

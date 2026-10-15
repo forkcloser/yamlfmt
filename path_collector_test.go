@@ -429,6 +429,8 @@ type testCase struct {
 }
 
 func (tc testCase) run(t *testing.T, makeCollector makeCollectorFunc) {
+	t.Helper()
+
 	t.Run(tc.name, func(t *testing.T) {
 		if tc.skip {
 			t.Skip()
@@ -477,6 +479,8 @@ func (tc testCase) run(t *testing.T, makeCollector makeCollectorFunc) {
 type testCaseTable []testCase
 
 func (tcs testCaseTable) runAll(t *testing.T, makeCollector makeCollectorFunc) {
+	t.Helper()
+
 	for _, tc := range tcs {
 		tc.run(t, makeCollector)
 	}

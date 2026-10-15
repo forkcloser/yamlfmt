@@ -137,6 +137,8 @@ func Benchmark1000KBMaxDepthNested(b *testing.B) {
 }
 
 func benchmark(b *testing.B, name string) {
+	b.Helper()
+
 	for _, t := range limitTests {
 		if t.name != name {
 			continue

@@ -336,8 +336,7 @@ golangci:
           linters: # 8 findings
             - revive # 8
         - path: ^metadata_test\.go$
-          linters: # 9 findings
-            - thelper # 3
+          linters: # 6 findings
             - err113 # 2
             - errorlint # 2
             - paralleltest # 2
@@ -354,11 +353,10 @@ golangci:
             - gocritic # 1
             - gosec # 1
         - path: ^path_collector_test\.go$
-          linters: # 13 findings
+          linters: # 11 findings
             - modernize # 3
             - paralleltest # 3
             - intrange # 2
-            - thelper # 2
             - usetesting # 2
             - revive # 1
         - path: ^pkg/yaml/apic\.go$
@@ -444,20 +442,18 @@ golangci:
             - revive # 1
             - testpackage # 1
         - path: ^pkg/yaml/formattest/testcase\.go$
-          linters: # 5 findings
+          linters: # 4 findings
             - depguard # 1
             - err113 # 1
             - gosec # 1
-            - thelper # 1
             - varnamelen # 1
         - path: ^pkg/yaml/limit_test\.go$
-          linters: # 10 findings
+          linters: # 9 findings
             - revive # 3
             - gocritic # 2
             - modernize # 2
             - gochecknoglobals # 1
             - intrange # 1
-            - thelper # 1
         - path: ^pkg/yaml/node_test\.go$
           linters: # 39 findings
             - revive # 13

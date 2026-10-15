@@ -44,6 +44,8 @@ type formatTestCase struct {
 }
 
 func (tc formatTestCase) Run(t *testing.T) {
+	t.Helper()
+
 	t.Run(tc.name, func(t *testing.T) {
 		// Read test input
 		input, err := tc.readTestdataFile("input.yaml")
