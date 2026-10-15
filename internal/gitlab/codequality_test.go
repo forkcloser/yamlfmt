@@ -63,9 +63,6 @@ func TestCodeQuality(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		// copy tc to avoid capturing an aliased loop variable in a Goroutine.
-		tc := tc
-
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -187,8 +184,6 @@ func TestCodeQuality_DetectChangedLines_FromTestdata(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
-
 		t.Run(c.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -302,8 +297,6 @@ key: value`,
 	}
 
 	for _, tc := range cases {
-		tc := tc
-
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
