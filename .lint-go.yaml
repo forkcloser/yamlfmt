@@ -136,11 +136,10 @@ golangci:
             - varnamelen # 1
             - wrapcheck # 1
         - path: ^content_analyzer_test\.go$
-          linters: # 5 findings
+          linters: # 4 findings
             - paralleltest # 2
             - modernize # 1
             - revive # 1
-            - tparallel # 1
         - path: ^engine\.go$
           linters: # 29 findings
             - revive # 20
@@ -173,10 +172,9 @@ golangci:
             - exhaustive # 1
             - modernize # 1
         - path: ^feature\.go$
-          linters: # 10 findings
+          linters: # 9 findings
             - revive # 7
             - gochecknoglobals # 2
-            - fatcontext # 1
         - path: ^formatter\.go$
           linters: # 15 findings
             - revive # 12
