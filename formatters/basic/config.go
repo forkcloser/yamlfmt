@@ -15,8 +15,6 @@
 package basic
 
 import (
-	"runtime"
-
 	"github.com/forkcloser/yamlfmt"
 	yamlFeatures "github.com/forkcloser/yamlfmt/formatters/basic/features"
 )
@@ -45,14 +43,9 @@ type Config struct {
 }
 
 func DefaultConfig() *Config {
-	lineBreakStyle := yamlfmt.LineBreakStyleLF
-	if runtime.GOOS == "windows" {
-		lineBreakStyle = yamlfmt.LineBreakStyleCRLF
-	}
-
 	return &Config{
 		Indent:          2,
-		LineEnding:      lineBreakStyle,
+		LineEnding:      yamlfmt.LineBreakStyleLF,
 		PadLineComments: 1,
 	}
 }

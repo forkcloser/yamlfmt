@@ -298,12 +298,8 @@ func makeCommandConfigFromData(configData map[string]any) (*command.Config, erro
 		}
 	}
 
-	// Default to OS line endings
 	if config.LineEnding == "" {
 		config.LineEnding = yamlfmt.LineBreakStyleLF
-		if runtime.GOOS == "windows" {
-			config.LineEnding = yamlfmt.LineBreakStyleCRLF
-		}
 	}
 
 	// Default to yaml and yml extensions
