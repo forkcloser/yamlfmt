@@ -18,7 +18,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/forkcloser/yamlfmt/internal/collections"
 )
@@ -71,6 +70,11 @@ func ReplicateDirectory(dir, newBase string) (Paths, error) {
 			return nil
 		}
 
+		relPath, err := filepath.Rel(dir, path)
+		if err != nil {
+			return err
+		}
+
 		content := []byte{}
 
 		if !info.IsDir() {
@@ -84,7 +88,7 @@ func ReplicateDirectory(dir, newBase string) (Paths, error) {
 
 		paths = append(paths, Path{
 			BasePath: newBase,
-			FilePath: strings.TrimPrefix(path, dir),
+			FilePath: relPath,
 			IsDir:    info.IsDir(),
 			Content:  content,
 		})

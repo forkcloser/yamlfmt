@@ -20,7 +20,6 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
-	"strings"
 	"testing"
 	"testing/fstest"
 
@@ -459,14 +458,14 @@ func (tc testCase) run(t *testing.T, makeCollector makeCollectorFunc) {
 
 		for _, path := range paths {
 			formatPath := path
-			if strings.HasPrefix(formatPath, "/") {
+			if filepath.IsAbs(formatPath) {
 				formatPath, err = filepath.Rel(tempPath, path)
 				if err != nil {
 					t.Fatalf("Path %s could not match to path %s", tempPath, path)
 				}
 			}
 
-			filesToFormat.Add(formatPath)
+			filesToFormat.Add(filepath.ToSlash(formatPath))
 		}
 
 		if !filesToFormat.Equals(tc.expectedFiles) {

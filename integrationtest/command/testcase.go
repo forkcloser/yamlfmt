@@ -78,7 +78,7 @@ func (tc TestCase) run(t *testing.T) {
 }
 
 func (tc TestCase) testFolderBeforePath() string {
-	return tc.testdataDirPath() + "/before"
+	return filepath.Join(tc.testdataDirPath(), "before")
 }
 
 func (tc TestCase) command(stdoutBuf, stderrBuf *bytes.Buffer) *exec.Cmd {

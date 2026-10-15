@@ -518,14 +518,9 @@ func TestRetainLineBreaksLongLine(t *testing.T) {
 }
 
 func stripTrailingNewline(s string) string {
-	// strip trailing \n or \r\n characters
-	if len(s) > 0 {
-		if s[len(s)-1] == '\n' {
-			s = s[:len(s)-1]
-		} else if len(s) > 1 && s[len(s)-2] == '\r' {
-			s = s[:len(s)-2]
-		}
+	if trimmed, ok := strings.CutSuffix(s, "\r\n"); ok {
+		return trimmed
 	}
 
-	return s
+	return strings.TrimSuffix(s, "\n")
 }
