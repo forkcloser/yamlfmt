@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package kyaml
+package kyaml_test
 
 import (
 	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/forkcloser/yamlfmt/formatters/kyaml"
 	"github.com/forkcloser/yamlfmt/internal/assert"
 )
 
@@ -31,7 +32,7 @@ func TestKYAMLFormatter(t *testing.T) {
 	}
 	for _, testName := range testCases {
 		t.Run(testName, func(t *testing.T) {
-			f := &KYAMLFormatter{}
+			f := &kyaml.KYAMLFormatter{}
 			testdataPath := filepath.Join("testdata", testName)
 			before, err := os.ReadFile(filepath.Join(testdataPath, "before.yaml"))
 			assert.NilErr(t, err)
