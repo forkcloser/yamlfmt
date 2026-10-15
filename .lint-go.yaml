@@ -280,12 +280,10 @@ golangci:
           linters: # 1 findings
             - revive # 1
         - path: ^internal/gitlab/codequality\.go$
-          linters: # 6 findings
+          linters: # 4 findings
             - modernize # 2
             - intrange # 1
-            - nolintlint # 1
             - revive # 1
-            - tagliatelle # 1
         - path: ^internal/gitlab/codequality_test\.go$
           linters: # 5 findings
             - modernize # 3
