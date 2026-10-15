@@ -16,6 +16,7 @@
 package yaml_test
 
 import (
+	"os"
 	"testing"
 
 	. "gopkg.in/check.v1"
@@ -26,3 +27,18 @@ func Test(t *testing.T) { TestingT(t) }
 type S struct{}
 
 var _ = Suite(&S{})
+
+// setenv sets key for the rest of a test; the returned func puts back what
+// was there, unsetting a variable that was unset rather than leaving it empty.
+func setenv(c *C, key, value string) func() {
+	old, had := os.LookupEnv(key)
+	c.Assert(os.Setenv(key, value), IsNil)
+
+	return func() {
+		if had {
+			c.Check(os.Setenv(key, old), IsNil)
+		} else {
+			c.Check(os.Unsetenv(key), IsNil)
+		}
+	}
+}

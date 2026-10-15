@@ -19,7 +19,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"os"
 	"strings"
 
 	. "gopkg.in/check.v1"
@@ -2637,9 +2636,7 @@ func (s *S) TestNodeRoundtrip(c *C) {
 	// don't have time right now to make all these cases work again.
 	c.Skip("see comment in test")
 
-	defer os.Setenv("TZ", os.Getenv("TZ"))
-
-	os.Setenv("TZ", "UTC")
+	defer setenv(c, "TZ", "UTC")()
 
 	for i, item := range nodeTests {
 		c.Logf("test %d: %q", i, item.yaml)
@@ -2797,9 +2794,7 @@ var setStringTests = []struct {
 }
 
 func (s *S) TestSetString(c *C) {
-	defer os.Setenv("TZ", os.Getenv("TZ"))
-
-	os.Setenv("TZ", "UTC")
+	defer setenv(c, "TZ", "UTC")()
 
 	for i, item := range setStringTests {
 		c.Logf("test %d: %q", i, item.str)
