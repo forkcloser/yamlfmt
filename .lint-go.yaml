@@ -329,18 +329,16 @@ golangci:
           linters: # 8 findings
             - revive # 8
         - path: ^metadata_test\.go$
-          linters: # 6 findings
+          linters: # 4 findings
             - err113 # 2
-            - errorlint # 2
             - paralleltest # 2
         - path: ^path_collector\.go$
-          linters: # 39 findings
+          linters: # 37 findings
             - revive # 12
             - wrapcheck # 8
             - err113 # 5
             - varnamelen # 5
             - depguard # 2
-            - errorlint # 2
             - gocognit # 2
             - forbidigo # 1
             - gocritic # 1
@@ -359,7 +357,7 @@ golangci:
             - wrapcheck # 2
             - gocritic # 1
         - path: ^pkg/yaml/decode\.go$
-          linters: # 91 findings
+          linters: # 89 findings
             - varnamelen # 31
             - modernize # 15
             - exhaustive # 8
@@ -369,18 +367,16 @@ golangci:
             - govet # 4
             - mnd # 4
             - unused # 4
-            - errorlint # 2
             - gocritic # 2
             - intrange # 2
         - path: ^pkg/yaml/decode_test\.go$
-          linters: # 239 findings
+          linters: # 236 findings
             - modernize # 138
             - revive # 59
             - gochecknoglobals # 11
             - usestdlibvars # 11
             - govet # 7
             - embeddedstructfieldcheck # 3
-            - errorlint # 3
             - dupl # 2
             - staticcheck # 2
             - err113 # 1
@@ -464,11 +460,10 @@ golangci:
             - govet # 1
             - unparam # 1
         - path: ^pkg/yaml/readerc\.go$
-          linters: # 69 findings
+          linters: # 68 findings
             - mnd # 43
             - revive # 19
             - gocritic # 2
-            - errorlint # 1
             - exhaustive # 1
             - gocognit # 1
             - staticcheck # 1

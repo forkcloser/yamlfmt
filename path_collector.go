@@ -153,7 +153,7 @@ func (c *FilepathCollector) walkDirectoryForYaml(dir string) ([]string, error) {
 		if err != nil {
 			walkErrs = append(
 				walkErrs,
-				fmt.Errorf("error for path %s: %v", path, err),
+				fmt.Errorf("error for path %s: %w", path, err),
 			)
 
 			return nil
@@ -164,7 +164,7 @@ func (c *FilepathCollector) walkDirectoryForYaml(dir string) ([]string, error) {
 			walkErrs = append(
 				walkErrs,
 				fmt.Errorf(
-					"error for path %s: %v",
+					"error for path %s: %w",
 					path,
 					errors.New("error for pathnil file info, please report a GitHub issue if you see this failure"),
 				),

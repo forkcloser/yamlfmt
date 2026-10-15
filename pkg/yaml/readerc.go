@@ -23,6 +23,7 @@
 package yaml
 
 import (
+	"errors"
 	"io"
 )
 
@@ -101,7 +102,7 @@ func yaml_parser_update_raw_buffer(parser *yaml_parser_t) bool {
 	size_read, err := parser.read_handler(parser, parser.raw_buffer[len(parser.raw_buffer):cap(parser.raw_buffer)])
 
 	parser.raw_buffer = parser.raw_buffer[:len(parser.raw_buffer)+size_read]
-	if err == io.EOF {
+	if errors.Is(err, io.EOF) {
 		parser.eof = true
 	} else if err != nil {
 		return yaml_parser_set_reader_error(parser, "input error: "+err.Error(), parser.offset, -1)

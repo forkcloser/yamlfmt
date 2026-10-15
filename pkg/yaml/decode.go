@@ -18,6 +18,7 @@ package yaml
 import (
 	"encoding"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -423,7 +424,9 @@ func (d *decoder) terror(n *Node, tag string, out reflect.Value) {
 
 func (d *decoder) callUnmarshaler(n *Node, u Unmarshaler) (good bool) {
 	err := u.UnmarshalYAML(n)
-	if e, ok := err.(*TypeError); ok {
+
+	var e *TypeError
+	if errors.As(err, &e) {
 		d.terrors = append(d.terrors, e.Errors...)
 		return false
 	}
@@ -452,7 +455,9 @@ func (d *decoder) callObsoleteUnmarshaler(n *Node, u obsoleteUnmarshaler) (good 
 
 		return nil
 	})
-	if e, ok := err.(*TypeError); ok {
+
+	var e *TypeError
+	if errors.As(err, &e) {
 		d.terrors = append(d.terrors, e.Errors...)
 		return false
 	}
