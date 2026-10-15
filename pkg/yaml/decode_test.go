@@ -1004,6 +1004,7 @@ func (s *S) TestDecoder(c *C) {
 			values = append(values, value)
 		}
 
+		//nolint:asasalint // the expected value is the slice itself, not arguments to spread
 		c.Assert(values, DeepEquals, item.values)
 	}
 }
@@ -1638,7 +1639,7 @@ func (s *S) TestMergeNestedStruct(c *C) {
 	//
 	// Quick summary of the fields:
 	//
-	// - A must come from outer and not overriden
+	// - A must come from outer and not overridden
 	// - B must not be set as its in the ignored merge
 	// - C should still be set as it's preset in the value
 	// - D should be set from the recursive merge
@@ -1854,7 +1855,7 @@ func (s *S) TestUnmarshalKnownFields(c *C) {
 		// Then test that it fails on the same thing with KnownFields on.
 		t := reflect.ValueOf(item.value).Type()
 		value := reflect.New(t)
-		dec := yaml.NewDecoder(bytes.NewBuffer([]byte(item.data)))
+		dec := yaml.NewDecoder(bytes.NewBufferString(item.data))
 		dec.KnownFields(item.known)
 		err := dec.Decode(value.Interface())
 		c.Assert(err, ErrorMatches, item.error)

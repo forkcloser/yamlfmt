@@ -693,7 +693,7 @@ func (s *S) TestMarshaler(c *C) {
 		obj.Field.value = item.value
 		data, err := yaml.Marshal(obj)
 		c.Assert(err, IsNil)
-		c.Assert(string(data), Equals, string(item.data))
+		c.Assert(string(data), Equals, item.data)
 	}
 }
 
