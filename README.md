@@ -70,40 +70,29 @@ For in-depth configuration documentation see [Config](docs/config-file.md).
 
 ## Verifying release artifacts
 
-NOTE: Support for verifying with cosign is present from v0.14.0 onward.
+Every release ships `checksums.txt`, listing each archive's SHA-256, and `checksums.txt.sigstore.json`, its cosign signature. The release workflow signs keyless: the signer is the workflow itself at the release's tag, so no key exists to leak. Steps to verify (replace `X.Y.Z` with the version you want):
 
-In case you get the `yamlfmt` binary directly from a release, you may want to verify its authenticity. Checksums are applied to all released artifacts, and the resulting checksum file is signed using [cosign](https://docs.sigstore.dev/cosign/system_config/installation/).
-
-Steps to verify (replace `A.B.C` in the commands listed below with the version you want):
-
-1. Download the following files from the release:
-
-   ```text
-   curl -sfLO https://github.com/google/yamlfmt/releases/download/vA.B.C/checksums.txt
-   curl -sfLO https://github.com/google/yamlfmt/releases/download/vA.B.C/checksums.txt.pem
-   curl -sfLO https://github.com/google/yamlfmt/releases/download/vA.B.C/checksums.txt.sig
-   ```
-
-2. Verify the signature:
+1. Download the checksums, their signature and the archive you want:
 
    ```shell
-    cosign verify-blob checksums.txt \
-       --certificate checksums.txt.pem \
-       --signature checksums.txt.sig \
-       --certificate-identity-regexp 'https://github\.com/google/yamlfmt/\.github/workflows/.+' \
-       --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
+   curl -sfLO https://github.com/forkcloser/yamlfmt/releases/download/vX.Y.Z/checksums.txt
+   curl -sfLO https://github.com/forkcloser/yamlfmt/releases/download/vX.Y.Z/checksums.txt.sigstore.json
+   curl -sfLO https://github.com/forkcloser/yamlfmt/releases/download/vX.Y.Z/yamlfmt_X.Y.Z_linux_amd64.tar.gz
    ```
 
-3. Download the compressed archive you want, and validate its checksum:
+2. Verify the signature against the release workflow's identity:
 
    ```shell
-   curl -sfLO https://github.com/google/yamlfmt/releases/download/vA.B.C/yamlfmt_A.B.C_Linux_x86_64.tar.gz
+   cosign verify-blob checksums.txt \
+     --bundle checksums.txt.sigstore.json \
+     --certificate-identity https://github.com/forkcloser/yamlfmt/.github/workflows/release.yaml@refs/tags/vX.Y.Z \
+     --certificate-oidc-issuer https://token.actions.githubusercontent.com
+   ```
+
+3. Validate the archive's checksum, then unpack it:
+
+   ```shell
    sha256sum --ignore-missing -c checksums.txt
-   ```
-
-3. If checksum validation goes through, uncompress the archive:
-
-   ```shell
-   tar -xzf yamlfmt_A.B.C_Linux_x86_64.tar.gz
-   ./yamlfmt
+   tar -xzf yamlfmt_X.Y.Z_linux_amd64.tar.gz
+   ./yamlfmt -version
    ```
