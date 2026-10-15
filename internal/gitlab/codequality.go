@@ -17,6 +17,7 @@ package gitlab
 
 import (
 	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"strings"
 
@@ -28,7 +29,7 @@ import (
 // Documentation: https://docs.gitlab.com/ee/ci/testing/code_quality.html#code-quality-report-format
 type CodeQuality struct {
 	Description string   `json:"description,omitempty"`
-	Name        string   `json:"check_name,omitempty"`
+	Name        string   `json:"check_name,omitempty"` //nolint:tagliatelle // GitLab's report format names the field check_name
 	Fingerprint string   `json:"fingerprint,omitempty"`
 	Severity    Severity `json:"severity,omitempty"`
 	Location    Location `json:"location,omitempty"`
@@ -117,7 +118,7 @@ func fingerprint(diff yamlfmt.FileDiff) string {
 
 	fmt.Fprint(hash, diff.Diff.GetOriginal())
 
-	return fmt.Sprintf("%x", hash.Sum(nil)) //nolint:perfsprint
+	return hex.EncodeToString(hash.Sum(nil))
 }
 
 // Severity is the severity of a code quality finding.
