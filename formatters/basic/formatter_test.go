@@ -17,12 +17,14 @@ package basic_test
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/forkcloser/yamlfmt/formatters/basic"
 	"github.com/forkcloser/yamlfmt/formatters/basic/features"
 	"github.com/forkcloser/yamlfmt/internal/assert"
+	"github.com/forkcloser/yamlfmt/pkg/yaml"
 )
 
 // Quoted, so a stray \r or trailing space shows in the failure.
@@ -487,6 +489,115 @@ b: 2
 c: 3
 `,
 		},
+		// A blank line inside a block scalar is its content, not a line
+		// break to retain: a placeholder there folds into a folded scalar's
+		// value, and a literal scalar's blank lines are preserved by the
+		// encoder on their own.
+		{
+			name: "folded scalar with a blank line",
+			input: `a: >
+  one
+
+  two
+b: 1
+`,
+			expect: `a: >
+  one
+
+  two
+b: 1
+`,
+		},
+		{
+			name:   "folded scalar with blank lines, single",
+			single: true,
+			input: `a: >-
+  one
+
+
+  two
+
+b: 1
+`,
+			expect: `a: >-
+  one
+
+
+  two
+
+b: 1
+`,
+		},
+		{
+			name: "sequence entry literal scalar",
+			input: `- |
+  one
+
+  two
+- key: >
+    three
+
+    four
+  next: 1
+
+- 2
+`,
+			expect: `- |
+  one
+
+  two
+- key: >
+    three
+
+    four
+  next: 1
+
+- 2
+`,
+		},
+		{
+			name: "literal scalar followed by a blank line",
+			input: `a: |
+  one
+
+b: 1
+`,
+			expect: `a: |
+  one
+
+b: 1
+`,
+		},
+		{
+			name: "keep chomping keeps trailing blank lines",
+			input: `a: |+
+  one
+
+
+b: 1
+`,
+			expect: `a: |+
+  one
+
+
+b: 1
+`,
+		},
+		{
+			name: "indentation indicator",
+			input: `a: |2
+    one
+
+  two
+b: 1
+`,
+			expect: `a: |2
+    one
+
+  two
+b: 1
+`,
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -498,6 +609,20 @@ c: 3
 			got, err := f.Format([]byte(tc.input))
 			assert.NilErr(t, err)
 			assert.EqualMsg(t, tc.expect, string(got), outputMismatch)
+
+			// The formatter ends the file with a newline, which a block
+			// scalar at the end of an input without one gains as content.
+			var before, after any
+
+			assert.NilErr(t, yaml.Unmarshal([]byte(strings.TrimRight(tc.input, "\n")+"\n"), &before))
+			assert.NilErr(t, yaml.Unmarshal(got, &after))
+			assert.Assert(
+				t,
+				reflect.DeepEqual(before, after),
+				"formatting changed the document's value:\nbefore: %#v\nafter:  %#v",
+				before,
+				after,
+			)
 		})
 	}
 }
