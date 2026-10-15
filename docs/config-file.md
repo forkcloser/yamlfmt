@@ -36,7 +36,7 @@ The command package defines the main command engine that `cmd/yamlfmt` uses. It 
 
 | Key                      | Type           | Default      | Description |
 |:-------------------------|:---------------|:-------------|:------------|
-| `line_ending`            | `lf` or `crlf` | `crlf` on Windows, `lf` otherwise | Parse and write the file with "lf" or "crlf" line endings. This global setting will override any formatter `line_ending` options. |
+| `line_ending`            | `lf` or `crlf` | `lf` | Parse and write the file with "lf" or "crlf" line endings. This global setting will override any formatter `line_ending` options. |
 | `doublestar`             | bool                | false         | Use [doublestar](https://github.com/bmatcuk/doublestar) for include and exclude paths. (This was the default before 0.7.0) |
 | `continue_on_error`      | bool                | false         | Continue formatting and don't exit with code 1 when there is an invalid YAML file found. |
 | `match_type`             | string              | `standard`    | Controls how `include` and `exclude` are interpreted. See [Specifying Paths][] for more details. |
@@ -79,7 +79,7 @@ The `basic` formatter is the default formatter that takes the data provided, ser
 |:----------------------------|:---------------|:--------|:------------|
 | `indent`                    | int            | 2       | The indentation level in spaces to use for the formatted YAML. |
 | `include_document_start`    | bool           | false   | Include `---` at document start. |
-| `line_ending`               | `lf` or `crlf` | `crlf` on Windows, `lf` otherwise | Parse and write the file with "lf" or "crlf" line endings. This setting will be overwritten by the global `line_ending`. |
+| `line_ending`               | `lf` or `crlf` | `lf` | Parse and write the file with "lf" or "crlf" line endings. This setting will be overwritten by the global `line_ending`. |
 | `retain_line_breaks`        | bool           | false   | Retain line breaks in formatted YAML. |
 | `retain_line_breaks_single` | bool           | false   | (NOTE: Takes precedence over `retain_line_breaks`) Retain line breaks in formatted YAML, but only keep a single line in groups of many blank lines. |
 | `disallow_anchors`          | bool           | false   | If true, reject any YAML anchors or aliases found in the document. |
