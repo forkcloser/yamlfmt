@@ -71,6 +71,13 @@ golangci:
         - path: ^pkg/yaml/.*_test\.go$
           linters:
             - tagalign
+        # pkg/yaml's comments quote libyaml's C (`{ NULL, NULL, NULL }`) and
+        # draw token streams where a token repeats (BLOCK-END, BLOCK-END), and
+        # a test expects Go's own "struct struct {" panic text: repeated words
+        # there are content, not typos.
+        - path: ^pkg/yaml/
+          linters:
+            - dupword
         # ---------------------------------------------------------------------------
         # ONBOARDING BACKLOG. Not a judgment: these are the findings the baseline
         # raised on code that predates it, exempted so the enrolment lands green
@@ -356,9 +363,8 @@ golangci:
             - usetesting # 2
             - revive # 1
         - path: ^pkg/yaml/apic\.go$
-          linters: # 119 findings
+          linters: # 115 findings
             - revive # 108
-            - dupword # 4
             - unused # 4
             - wrapcheck # 2
             - gocritic # 1
@@ -416,14 +422,13 @@ golangci:
             - gocritic # 1
             - intrange # 1
         - path: ^pkg/yaml/encode_test\.go$
-          linters: # 131 findings
+          linters: # 130 findings
             - revive # 50
             - modernize # 40
             - govet # 24
             - usestdlibvars # 5
             - gochecknoglobals # 4
             - gosmopolitan # 4
-            - dupword # 1
             - embeddedstructfieldcheck # 1
             - err113 # 1
             - perfsprint # 1
@@ -492,14 +497,13 @@ golangci:
             - mnd # 1
             - staticcheck # 1
         - path: ^pkg/yaml/scannerc\.go$
-          linters: # 228 findings
+          linters: # 223 findings
             - revive # 138
             - mnd # 23
             - gocritic # 18
             - varnamelen # 13
             - gocognit # 11
             - modernize # 6
-            - dupword # 5
             - intrange # 3
             - unused # 3
             - dupl # 2

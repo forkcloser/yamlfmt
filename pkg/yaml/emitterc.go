@@ -1545,8 +1545,7 @@ func yaml_emitter_analyze_scalar(emitter *yaml_emitter_t, value []byte) bool {
 
 	preceded_by_whitespace = true
 
-	//nolint:wastedassign // the header declares w for the i += w step; the body assigns it first.
-	for i, w := 0, 0; i < len(value); i += w {
+	for i, w := 0, 0; i < len(value); i += w { //nolint:wastedassign // w is declared here for the i += w step; the body assigns it first
 		w = width(value[i])
 		followed_by_whitespace = i+w >= len(value) || is_blank(value, i+w)
 
