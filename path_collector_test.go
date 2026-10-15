@@ -17,7 +17,9 @@ package yamlfmt_test
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -29,6 +31,60 @@ import (
 	"github.com/forkcloser/yamlfmt/internal/collections"
 	"github.com/forkcloser/yamlfmt/internal/tempfile"
 )
+
+func TestFilepathCollectorExcludeMatching(t *testing.T) {
+	root := t.TempDir()
+	for _, file := range []string{"a/b/x.yaml", "a/bc/y.yaml", "a/z.yaml"} {
+		path := filepath.Join(root, filepath.FromSlash(file))
+		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+			t.Fatal(err)
+		}
+
+		if err := os.WriteFile(path, []byte("a: 1\n"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	t.Chdir(root)
+
+	withoutB := []string{"a/bc/y.yaml", "a/z.yaml"}
+
+	for _, tc := range []struct {
+		name    string
+		exclude string
+		want    []string
+	}{
+		{name: "directory", exclude: "a/b", want: withoutB},
+		{name: "directory with a trailing separator", exclude: "a/b/", want: withoutB},
+		{name: "directory written with ./", exclude: "./a/b", want: withoutB},
+		{name: "absolute directory", exclude: filepath.Join(root, "a", "b"), want: withoutB},
+		{name: "file written with ./", exclude: "./a/z.yaml", want: []string{"a/b/x.yaml", "a/bc/y.yaml"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			collector := &yamlfmt.FilepathCollector{
+				Include:    []string{"."},
+				Exclude:    []string{tc.exclude},
+				Extensions: []string{"yaml"},
+			}
+
+			paths, err := collector.CollectPaths()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			got := make([]string, 0, len(paths))
+			for _, path := range paths {
+				got = append(got, filepath.ToSlash(path))
+			}
+
+			slices.Sort(got)
+
+			if !slices.Equal(got, tc.want) {
+				t.Fatalf("exclude %q: got %q, want %q", tc.exclude, got, tc.want)
+			}
+		})
+	}
+}
 
 func TestFilepathCollector(t *testing.T) {
 	testCaseTable{
