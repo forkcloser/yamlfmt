@@ -80,8 +80,20 @@ func (c *FilepathCollector) CollectPaths() ([]string, error) {
 
 	logger.Debug(logger.DebugCodePaths, "found paths: %s", pathsFound)
 
-	pathsFoundSet := collections.SliceToSet(pathsFound)
 	pathsToFormat := collections.SliceToSet(pathsFound)
+
+	// Excludes are compared as absolute, cleaned paths: as written they may be
+	// relative or absolute, carry "./", or use "/" where the walk returned "\".
+	absFound := make(map[string]string, len(pathsFound))
+
+	for _, foundPath := range pathsFound {
+		absPath, err := filepath.Abs(foundPath)
+		if err != nil {
+			return nil, fmt.Errorf("filepath.Abs: %w", err)
+		}
+
+		absFound[foundPath] = absPath
+	}
 
 	for _, exclPath := range c.Exclude {
 		info, err := os.Stat(exclPath)
@@ -93,11 +105,22 @@ func (c *FilepathCollector) CollectPaths() ([]string, error) {
 			continue
 		}
 
+		absExcl, err := filepath.Abs(exclPath)
+		if err != nil {
+			return nil, fmt.Errorf("filepath.Abs: %w", err)
+		}
+
 		if info.IsDir() {
 			logger.Debug(logger.DebugCodePaths, "for exclude dir: %s", exclPath)
 
-			for foundPath := range pathsFoundSet {
-				if strings.HasPrefix(foundPath, exclPath) {
+			// The separator bounds the match: excluding a/b keeps a/bc.
+			prefix := absExcl
+			if !strings.HasSuffix(prefix, string(filepath.Separator)) {
+				prefix += string(filepath.Separator)
+			}
+
+			for foundPath, absPath := range absFound {
+				if strings.HasPrefix(absPath, prefix) {
 					logger.Debug(logger.DebugCodePaths, "excluding %s", foundPath)
 					pathsToFormat.Remove(foundPath)
 				}
@@ -105,9 +128,11 @@ func (c *FilepathCollector) CollectPaths() ([]string, error) {
 		} else {
 			logger.Debug(logger.DebugCodePaths, "for exclude file: %s", exclPath)
 
-			removed := pathsToFormat.Remove(exclPath)
-			if removed {
-				logger.Debug(logger.DebugCodePaths, "found in paths, excluding")
+			for foundPath, absPath := range absFound {
+				if absPath == absExcl {
+					logger.Debug(logger.DebugCodePaths, "excluding %s", foundPath)
+					pathsToFormat.Remove(foundPath)
+				}
 			}
 		}
 	}
