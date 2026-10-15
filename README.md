@@ -2,21 +2,13 @@
 
 `yamlfmt` is an extensible command line tool or library to format yaml files. 
 
+This is forkcloser's fork of [google/yamlfmt](https://github.com/google/yamlfmt); [UPSTREAM.md](./UPSTREAM.md) records where it forked and what it has taken from upstream since.
+
 ## Goals
 
 * Create a command line yaml formatting tool that is easy to distribute (single binary)
 * Make it simple to extend with new custom formatters
 * Enable alternative use as a library, providing a foundation for users to create a tool that meets specific needs 
-
-## Maintainers
-
-This tool is not yet officially supported by Google. It is currently maintained solely by @braydonk, and unless something changes primarily in spare time.
-
-## Blog
-
-I'm going to use these links to GitHub Discussions as a blog of sorts, until I can set up something more proper:
-* yamlfmt's recent slow development [#149](https://github.com/google/yamlfmt/discussions/149)
-* Issues related to the yaml.v3 library [#148](https://github.com/google/yamlfmt/discussions/148)
 
 ## Installation
 
@@ -24,7 +16,6 @@ To download the `yamlfmt` command, you can download the desired binary from rele
 ```
 go install github.com/forkcloser/yamlfmt/cmd/yamlfmt@latest
 ```
-This currently requires Go version 1.21 or greater.
 
 NOTE: Recommended setup if this is your first time installing Go would be in [this DigitalOcean blog post](https://www.digitalocean.com/community/tutorials/how-to-build-and-install-go-programs).
 
@@ -50,18 +41,6 @@ You can also use an alternate mode that will search paths with doublestar globs 
 yamlfmt -dstar **/*.{yaml,yml}
 ```
 See the [doublestar](https://github.com/bmatcuk/doublestar) package for more information on this format.
-
-Yamlfmt can also be used in ci/cd pipelines which supports running containers. The following snippet shows an example job for GitLab CI:
-```yaml
-yamllint:
-  image: ghcr.io/google/yamlfmt:latest
-  script:
-    - yamlfmt -lint .
-```
-The Docker image can also be used to run yamlfmt without installing it on your system. Just mount the directory you want to format as a volume (`/project` is used by default):
-```bash
-docker run -v "$(pwd):/project" ghcr.io/google/yamlfmt:latest <yamlfmt args>
-```
 
 # Configuration File
 
