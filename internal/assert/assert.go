@@ -39,9 +39,9 @@ var (
 // requires. Passing in a `testing.T` satisfies this interface.
 type TestingT interface {
 	Helper()
-	Fatal(...any)
-	Fatalf(string, ...any)
-	Errorf(string, ...any)
+	Fatal(args ...any)
+	Fatalf(format string, args ...any)
+	Errorf(format string, args ...any)
 }
 
 // Assert that the passed condition is true. If not, fatally fail with
