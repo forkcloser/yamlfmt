@@ -61,3 +61,530 @@
 #     - github.com/example/project/internal/generated
 #   exclude-errors-in-files:         # appends file prefixes: NilAway has no per-line suppression
 #     - internal/legacy/
+golangci:
+  linters:
+    exclusions:
+      rules:
+        # ---------------------------------------------------------------------------
+        # ONBOARDING BACKLOG. Not a judgment: these are the findings the baseline
+        # raised on code that predates it, exempted so the enrolment lands green
+        # (book/mandatory-files.md, "Onboarding an existing repository"). Nobody has
+        # read them yet. Alignment empties this block one linter or one package per
+        # pull request, each finding fixed, silenced inline with its reason, or
+        # raised as a rule; the last alignment pull request deletes the block.
+        # Counts are the measurement at enrolment, per file and linter: 2364 in 72 files.
+        # ---------------------------------------------------------------------------
+        - path: ^cmd/yamlfmt/config\.go$
+          linters: # 20 findings
+            - wrapcheck # 6
+            - revive # 3
+            - depguard # 1
+            - err113 # 1
+            - gochecknoglobals # 1
+            - gocognit # 1
+            - goconst # 1
+            - gosec # 1
+            - modernize # 1
+            - perfsprint # 1
+            - staticcheck # 1
+            - unparam # 1
+            - varnamelen # 1
+        - path: ^cmd/yamlfmt/flags\.go$
+          linters: # 47 findings
+            - gochecknoglobals # 23
+            - revive # 19
+            - perfsprint # 2
+            - forbidigo # 1
+            - goconst # 1
+            - reassign # 1
+        - path: ^cmd/yamlfmt/main\.go$
+          linters: # 8 findings
+            - revive # 2
+            - depguard # 1
+            - forbidigo # 1
+            - gochecknoglobals # 1
+            - perfsprint # 1
+            - varnamelen # 1
+            - wrapcheck # 1
+        - path: ^command/command\.go$
+          linters: # 42 findings
+            - wrapcheck # 16
+            - forbidigo # 8
+            - revive # 7
+            - govet # 6
+            - depguard # 1
+            - err113 # 1
+            - exhaustive # 1
+            - gocognit # 1
+            - varnamelen # 1
+        - path: ^command/command_test\.go$
+          linters: # 3 findings
+            - paralleltest # 1
+            - revive # 1
+            - testpackage # 1
+        - path: ^content_analyzer\.go$
+          linters: # 11 findings
+            - revive # 7
+            - gocognit # 1
+            - gosec # 1
+            - varnamelen # 1
+            - wrapcheck # 1
+        - path: ^content_analyzer_test\.go$
+          linters: # 6 findings
+            - paralleltest # 2
+            - copyloopvar # 1
+            - modernize # 1
+            - revive # 1
+            - tparallel # 1
+        - path: ^engine\.go$
+          linters: # 29 findings
+            - revive # 20
+            - modernize # 2
+            - perfsprint # 2
+            - wrapcheck # 2
+            - err113 # 1
+            - gosec # 1
+            - mnd # 1
+        - path: ^engine/consecutive_engine\.go$
+          linters: # 18 findings
+            - revive # 7
+            - wrapcheck # 3
+            - forbidigo # 2
+            - nilnil # 2
+            - errcheck # 1
+            - gosec # 1
+            - govet # 1
+            - perfsprint # 1
+        - path: ^engine/errors\.go$
+          linters: # 5 findings
+            - perfsprint # 2
+            - revive # 2
+            - modernize # 1
+        - path: ^engine/output\.go$
+          linters: # 13 findings
+            - perfsprint # 4
+            - revive # 4
+            - varnamelen # 2
+            - err113 # 1
+            - exhaustive # 1
+            - modernize # 1
+        - path: ^feature\.go$
+          linters: # 10 findings
+            - revive # 7
+            - gochecknoglobals # 2
+            - fatcontext # 1
+        - path: ^formatter\.go$
+          linters: # 15 findings
+            - revive # 12
+            - err113 # 2
+            - modernize # 1
+        - path: ^formatters/basic/config\.go$
+          linters: # 4 findings
+            - revive # 4
+        - path: ^formatters/basic/errors\.go$
+          linters: # 2 findings
+            - revive # 2
+        - path: ^formatters/basic/factory\.go$
+          linters: # 8 findings
+            - revive # 6
+            - depguard # 1
+            - wrapcheck # 1
+        - path: ^formatters/basic/factory_test\.go$
+          linters: # 9 findings
+            - modernize # 7
+            - paralleltest # 2
+        - path: ^formatters/basic/features\.go$
+          linters: # 5 findings
+            - revive # 3
+            - wrapcheck # 2
+        - path: ^formatters/basic/features/check\.go$
+          linters: # 5 findings
+            - err113 # 2
+            - revive # 2
+            - varnamelen # 1
+        - path: ^formatters/basic/features/check_test\.go$
+          linters: # 2 findings
+            - paralleltest # 2
+        - path: ^formatters/basic/features/force_quote_style\.go$
+          linters: # 4 findings
+            - revive # 4
+        - path: ^formatters/basic/features/force_sequence\.go$
+          linters: # 4 findings
+            - revive # 4
+        - path: ^formatters/basic/features/yaml_feature\.go$
+          linters: # 4 findings
+            - revive # 3
+            - varnamelen # 1
+        - path: ^formatters/basic/formatter\.go$
+          linters: # 23 findings
+            - revive # 8
+            - wrapcheck # 7
+            - govet # 3
+            - funcorder # 2
+            - varnamelen # 2
+            - depguard # 1
+        - path: ^formatters/basic/formatter_test\.go$
+          linters: # 8 findings
+            - paralleltest # 6
+            - gochecknoglobals # 1
+            - gocritic # 1
+        - path: ^formatters/kyaml/factory\.go$
+          linters: # 9 findings
+            - revive # 8
+            - modernize # 1
+        - path: ^formatters/kyaml/formatter\.go$
+          linters: # 11 findings
+            - revive # 9
+            - depguard # 1
+            - wrapcheck # 1
+        - path: ^formatters/kyaml/formatter_test\.go$
+          linters: # 3 findings
+            - paralleltest # 2
+            - testpackage # 1
+        - path: ^internal/assert/assert\.go$
+          linters: # 33 findings
+            - revive # 20
+            - gochecknoglobals # 6
+            - inamedparam # 5
+            - varnamelen # 2
+        - path: ^internal/assert/assert_test\.go$
+          linters: # 12 findings
+            - paralleltest # 7
+            - revive # 3
+            - err113 # 2
+        - path: ^internal/collections/errors\.go$
+          linters: # 7 findings
+            - revive # 3
+            - err113 # 1
+            - gocritic # 1
+            - modernize # 1
+            - perfsprint # 1
+        - path: ^internal/collections/errors_test\.go$
+          linters: # 5 findings
+            - paralleltest # 3
+            - err113 # 2
+        - path: ^internal/collections/set\.go$
+          linters: # 8 findings
+            - revive # 8
+        - path: ^internal/collections/slice\.go$
+          linters: # 2 findings
+            - modernize # 1
+            - revive # 1
+        - path: ^internal/features/eof_newline\.go$
+          linters: # 2 findings
+            - revive # 2
+        - path: ^internal/features/trim_whitespace\.go$
+          linters: # 1 findings
+            - revive # 1
+        - path: ^internal/gitlab/codequality\.go$
+          linters: # 6 findings
+            - modernize # 2
+            - intrange # 1
+            - nolintlint # 1
+            - revive # 1
+            - tagliatelle # 1
+        - path: ^internal/gitlab/codequality_test\.go$
+          linters: # 8 findings
+            - copyloopvar # 3
+            - modernize # 3
+            - gocritic # 2
+        - path: ^internal/hotfix/retain_line_break\.go$
+          linters: # 2 findings
+            - revive # 2
+        - path: ^internal/hotfix/strip_directives\.go$
+          linters: # 10 findings
+            - revive # 5
+            - modernize # 2
+            - perfsprint # 2
+            - gochecknoglobals # 1
+        - path: ^internal/jsonschema/schema_test\.go$
+          linters: # 1 findings
+            - paralleltest # 1
+        - path: ^internal/linescan/linescan_test\.go$
+          linters: # 2 findings
+            - paralleltest # 2
+        - path: ^internal/logger/debug\.go$
+          linters: # 8 findings
+            - revive # 5
+            - gochecknoglobals # 2
+            - forbidigo # 1
+        - path: ^internal/multilinediff/multilinediff\.go$
+          linters: # 9 findings
+            - revive # 6
+            - depguard # 2
+            - exhaustive # 1
+        - path: ^internal/tempfile/golden\.go$
+          linters: # 19 findings
+            - revive # 6
+            - gosec # 5
+            - wrapcheck # 3
+            - funcorder # 2
+            - depguard # 1
+            - err113 # 1
+            - forbidigo # 1
+        - path: ^internal/tempfile/path\.go$
+          linters: # 13 findings
+            - revive # 5
+            - gosec # 4
+            - wrapcheck # 4
+        - path: ^linebreak\.go$
+          linters: # 4 findings
+            - revive # 4
+        - path: ^metadata\.go$
+          linters: # 8 findings
+            - revive # 8
+        - path: ^metadata_test\.go$
+          linters: # 9 findings
+            - thelper # 3
+            - err113 # 2
+            - errorlint # 2
+            - paralleltest # 2
+        - path: ^path_collector\.go$
+          linters: # 41 findings
+            - revive # 12
+            - wrapcheck # 8
+            - err113 # 5
+            - varnamelen # 5
+            - depguard # 2
+            - errcheck # 2
+            - errorlint # 2
+            - gocognit # 2
+            - forbidigo # 1
+            - gocritic # 1
+            - gosec # 1
+        - path: ^path_collector_test\.go$
+          linters: # 16 findings
+            - modernize # 3
+            - paralleltest # 3
+            - errcheck # 2
+            - intrange # 2
+            - thelper # 2
+            - usetesting # 2
+            - copyloopvar # 1
+            - revive # 1
+        - path: ^pkg/yaml/apic\.go$
+          linters: # 119 findings
+            - revive # 108
+            - dupword # 4
+            - unused # 4
+            - wrapcheck # 2
+            - gocritic # 1
+        - path: ^pkg/yaml/decode\.go$
+          linters: # 93 findings
+            - varnamelen # 31
+            - modernize # 15
+            - exhaustive # 8
+            - gochecknoglobals # 8
+            - revive # 6
+            - gocognit # 5
+            - govet # 4
+            - mnd # 4
+            - unused # 4
+            - errorlint # 2
+            - gocritic # 2
+            - intrange # 2
+            - unconvert # 2
+        - path: ^pkg/yaml/decode_test\.go$
+          linters: # 251 findings
+            - modernize # 138
+            - revive # 59
+            - gochecknoglobals # 11
+            - usestdlibvars # 11
+            - govet # 7
+            - tagalign # 7
+            - embeddedstructfieldcheck # 3
+            - errorlint # 3
+            - dupl # 2
+            - staticcheck # 2
+            - asasalint # 1
+            - err113 # 1
+            - errcheck # 1
+            - errname # 1
+            - mirror # 1
+            - misspell # 1
+            - perfsprint # 1
+            - unused # 1
+        - path: ^pkg/yaml/emitterc\.go$
+          linters: # 217 findings
+            - revive # 109
+            - mnd # 32
+            - gocritic # 22
+            - gocognit # 15
+            - varnamelen # 9
+            - exhaustive # 7
+            - intrange # 7
+            - modernize # 5
+            - staticcheck # 3
+            - wastedassign # 3
+            - ineffassign # 2
+            - gosec # 1
+            - unparam # 1
+            - unused # 1
+        - path: ^pkg/yaml/encode\.go$
+          linters: # 36 findings
+            - varnamelen # 18
+            - revive # 6
+            - govet # 4
+            - exhaustive # 2
+            - gocognit # 2
+            - modernize # 2
+            - gocritic # 1
+            - intrange # 1
+        - path: ^pkg/yaml/encode_test\.go$
+          linters: # 159 findings
+            - revive # 50
+            - modernize # 40
+            - govet # 24
+            - tagalign # 24
+            - usestdlibvars # 5
+            - gochecknoglobals # 4
+            - gosmopolitan # 4
+            - errcheck # 3
+            - dupword # 1
+            - embeddedstructfieldcheck # 1
+            - err113 # 1
+            - perfsprint # 1
+            - unconvert # 1
+        - path: ^pkg/yaml/example_embedded_test\.go$
+          linters: # 3 findings
+            - depguard # 1
+            - embeddedstructfieldcheck # 1
+            - gochecknoglobals # 1
+        - path: ^pkg/yaml/formattest/encode_test\.go$
+          linters: # 13 findings
+            - paralleltest # 11
+            - revive # 1
+            - testpackage # 1
+        - path: ^pkg/yaml/formattest/testcase\.go$
+          linters: # 5 findings
+            - depguard # 1
+            - err113 # 1
+            - gosec # 1
+            - thelper # 1
+            - varnamelen # 1
+        - path: ^pkg/yaml/limit_test\.go$
+          linters: # 10 findings
+            - revive # 3
+            - gocritic # 2
+            - modernize # 2
+            - gochecknoglobals # 1
+            - intrange # 1
+            - thelper # 1
+        - path: ^pkg/yaml/node_test\.go$
+          linters: # 44 findings
+            - revive # 13
+            - dupl # 11
+            - modernize # 6
+            - errcheck # 4
+            - gochecknoglobals # 4
+            - intrange # 2
+            - exhaustive # 1
+            - govet # 1
+            - tagalign # 1
+            - unused # 1
+        - path: ^pkg/yaml/parserc\.go$
+          linters: # 87 findings
+            - revive # 69
+            - gocognit # 6
+            - gocritic # 3
+            - staticcheck # 3
+            - exhaustive # 1
+            - gochecknoglobals # 1
+            - govet # 1
+            - ineffassign # 1
+            - unparam # 1
+            - wastedassign # 1
+        - path: ^pkg/yaml/readerc\.go$
+          linters: # 70 findings
+            - mnd # 43
+            - revive # 19
+            - gocritic # 2
+            - errorlint # 1
+            - exhaustive # 1
+            - gocognit # 1
+            - staticcheck # 1
+            - varnamelen # 1
+            - wastedassign # 1
+        - path: ^pkg/yaml/resolve\.go$
+          linters: # 32 findings
+            - revive # 9
+            - varnamelen # 7
+            - gochecknoglobals # 5
+            - modernize # 4
+            - gochecknoinits # 2
+            - gocritic # 2
+            - gocognit # 1
+            - mnd # 1
+            - staticcheck # 1
+        - path: ^pkg/yaml/scannerc\.go$
+          linters: # 228 findings
+            - revive # 138
+            - mnd # 23
+            - gocritic # 18
+            - varnamelen # 13
+            - gocognit # 11
+            - modernize # 6
+            - dupword # 5
+            - intrange # 3
+            - unused # 3
+            - dupl # 2
+            - forbidigo # 2
+            - gosec # 2
+            - staticcheck # 1
+            - unparam # 1
+        - path: ^pkg/yaml/sorter\.go$
+          linters: # 23 findings
+            - varnamelen # 15
+            - exhaustive # 2
+            - govet # 2
+            - mnd # 2
+            - gocognit # 1
+            - revive # 1
+        - path: ^pkg/yaml/suite_test\.go$
+          linters: # 2 findings
+            - paralleltest # 1
+            - revive # 1
+        - path: ^pkg/yaml/writerc\.go$
+          linters: # 2 findings
+            - revive # 2
+        - path: ^pkg/yaml/yaml\.go$
+          linters: # 77 findings
+            - revive # 18
+            - modernize # 12
+            - govet # 10
+            - varnamelen # 9
+            - err113 # 8
+            - gocritic # 4
+            - exhaustive # 3
+            - gochecknoglobals # 3
+            - staticcheck # 3
+            - misspell # 2
+            - funcorder # 1
+            - gochecknoinits # 1
+            - gocognit # 1
+            - perfsprint # 1
+            - unparam # 1
+        - path: ^pkg/yaml/yamlh\.go$
+          linters: # 292 findings
+            - revive # 258
+            - unused # 33
+            - gochecknoglobals # 1
+        - path: ^pkg/yaml/yamlprivateh\.go$
+          linters: # 47 findings
+            - revive # 29
+            - mnd # 10
+            - gocritic # 4
+            - varnamelen # 2
+            - unparam # 1
+            - unused # 1
+licenses:
+  ignore:
+    # ONBOARDING BACKLOG, not a judgment: davecgh/go-spew is ISC, which the
+    # baseline does not carry, and a project cannot admit a licence through a
+    # carve-out. Only tests reach it, through stretchr/testify; alignment
+    # moves those tests onto internal/assert and this line goes with it.
+    - github.com/davecgh/go-spew
+nilaway:
+  # ONBOARDING BACKLOG, not a judgment: NilAway's 80 findings at enrolment
+  # print without failing the lane until alignment reaches them.
+  blocking: false
