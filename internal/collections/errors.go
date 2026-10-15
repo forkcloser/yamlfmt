@@ -30,5 +30,6 @@ func (errs Errors) Combine() error {
 	if len(errMessage) == 0 {
 		return nil
 	}
+
 	return errors.New(errMessage)
 }

@@ -121,19 +121,25 @@ func (dec *Decoder) SetScanBlockScalarAsLiteral(scanLiteral bool) {
 func (dec *Decoder) Decode(v interface{}) (err error) {
 	d := newDecoder()
 	d.knownFields = dec.knownFields
+
 	defer handleErr(&err)
+
 	node := dec.parser.parse()
 	if node == nil {
 		return io.EOF
 	}
+
 	out := reflect.ValueOf(v)
 	if out.Kind() == reflect.Ptr && !out.IsNil() {
 		out = out.Elem()
 	}
+
 	d.unmarshal(node, out)
+
 	if len(d.terrors) > 0 {
 		return &TypeError{d.terrors}
 	}
+
 	return nil
 }
 
@@ -143,34 +149,45 @@ func (dec *Decoder) Decode(v interface{}) (err error) {
 // conversion of YAML into a Go value.
 func (n *Node) Decode(v interface{}) (err error) {
 	d := newDecoder()
+
 	defer handleErr(&err)
+
 	out := reflect.ValueOf(v)
 	if out.Kind() == reflect.Ptr && !out.IsNil() {
 		out = out.Elem()
 	}
+
 	d.unmarshal(n, out)
+
 	if len(d.terrors) > 0 {
 		return &TypeError{d.terrors}
 	}
+
 	return nil
 }
 
 func unmarshal(in []byte, out interface{}, strict bool) (err error) {
 	defer handleErr(&err)
+
 	d := newDecoder()
+
 	p := newParser(in)
 	defer p.destroy()
+
 	node := p.parse()
 	if node != nil {
 		v := reflect.ValueOf(out)
 		if v.Kind() == reflect.Ptr && !v.IsNil() {
 			v = v.Elem()
 		}
+
 		d.unmarshal(node, v)
 	}
+
 	if len(d.terrors) > 0 {
 		return &TypeError{d.terrors}
 	}
+
 	return nil
 }
 
@@ -218,12 +235,15 @@ func unmarshal(in []byte, out interface{}, strict bool) (err error) {
 //	yaml.Marshal(&T{F: 1}} // Returns "a: 1\nb: 0\n"
 func Marshal(in interface{}) (out []byte, err error) {
 	defer handleErr(&err)
+
 	e := newEncoder()
 	defer e.destroy()
+
 	e.marshalDoc("", reflect.ValueOf(in))
 	e.finish()
 	out = e.out
-	return
+
+	return out, err
 }
 
 // An Encoder writes YAML values to an output stream.
@@ -249,7 +269,9 @@ func NewEncoder(w io.Writer) *Encoder {
 // values to YAML.
 func (e *Encoder) Encode(v interface{}) (err error) {
 	defer handleErr(&err)
+
 	e.encoder.marshalDoc("", reflect.ValueOf(v))
+
 	return nil
 }
 
@@ -259,15 +281,20 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 // conversion of Go values into YAML.
 func (n *Node) Encode(v interface{}) (err error) {
 	defer handleErr(&err)
+
 	e := newEncoder()
 	defer e.destroy()
+
 	e.marshalDoc("", reflect.ValueOf(v))
 	e.finish()
 	p := newParser(e.out)
+
 	p.textless = true
 	defer p.destroy()
+
 	doc := p.parse()
 	*n = *doc.Content[0]
+
 	return nil
 }
 
@@ -276,6 +303,7 @@ func (e *Encoder) SetIndent(spaces int) {
 	if spaces < 0 {
 		panic("yaml: cannot indent to a negative number of spaces")
 	}
+
 	e.encoder.indent = spaces
 }
 
@@ -285,6 +313,7 @@ func (e *Encoder) SetArrayIndent(spaces int) {
 	if spaces < 0 {
 		panic("yaml: cannot indent to a negative number of spaces")
 	}
+
 	e.encoder.array_indent = spaces
 }
 
@@ -352,7 +381,9 @@ func (e *Encoder) SetCorrectAliasKeys(correctAliasKeys bool) {
 // It does not write a stream terminating string "...".
 func (e *Encoder) Close() (err error) {
 	defer handleErr(&err)
+
 	e.encoder.finish()
+
 	return nil
 }
 
@@ -486,8 +517,13 @@ type Node struct {
 
 // IsZero returns whether the node has all of its fields unset.
 func (n *Node) IsZero() bool {
-	return n.Kind == 0 && n.Style == 0 && n.Tag == "" && n.Value == "" && n.Anchor == "" && n.Alias == nil && n.Content == nil &&
-		n.HeadComment == "" && n.LineComment == "" && n.FootComment == "" && n.Line == 0 && n.Column == 0
+	return n.Kind == 0 && n.Style == 0 && n.Tag == "" && n.Value == "" && n.Anchor == "" && n.Alias == nil &&
+		n.Content == nil &&
+		n.HeadComment == "" &&
+		n.LineComment == "" &&
+		n.FootComment == "" &&
+		n.Line == 0 &&
+		n.Column == 0
 }
 
 // LongTag returns the long form of the tag that indicates the data type for
@@ -504,6 +540,7 @@ func (n *Node) ShortTag() string {
 	if n.indicatedString() {
 		return strTag
 	}
+
 	if n.Tag == "" || n.Tag == "!" {
 		switch n.Kind {
 		case MappingNode:
@@ -523,8 +560,10 @@ func (n *Node) ShortTag() string {
 				return nullTag
 			}
 		}
+
 		return ""
 	}
+
 	return shortTag(n.Tag)
 }
 
@@ -545,6 +584,7 @@ func (n *Node) SetString(s string) {
 		n.Value = encodeBase64(s)
 		n.Tag = binaryTag
 	}
+
 	if strings.Contains(n.Value, "\n") {
 		n.Style = LiteralStyle
 	}
@@ -583,19 +623,25 @@ type fieldInfo struct {
 	Inline []int
 }
 
-var structMap = make(map[reflect.Type]*structInfo)
-var fieldMapMutex sync.RWMutex
-var unmarshalerType reflect.Type
+var (
+	structMap       = make(map[reflect.Type]*structInfo)
+	fieldMapMutex   sync.RWMutex
+	unmarshalerType reflect.Type
+)
 
 func init() {
 	var v Unmarshaler
+
 	unmarshalerType = reflect.ValueOf(&v).Elem().Type()
 }
 
 func getStructInfo(st reflect.Type) (*structInfo, error) {
 	fieldMapMutex.RLock()
+
 	sinfo, found := structMap[st]
+
 	fieldMapMutex.RUnlock()
+
 	if found {
 		return sinfo, nil
 	}
@@ -605,6 +651,7 @@ func getStructInfo(st reflect.Type) (*structInfo, error) {
 	fieldsList := make([]fieldInfo, 0, n)
 	inlineMap := -1
 	inlineUnmarshalers := [][]int(nil)
+
 	for i := 0; i != n; i++ {
 		field := st.Field(i)
 		if field.PkgPath != "" && !field.Anonymous {
@@ -617,11 +664,13 @@ func getStructInfo(st reflect.Type) (*structInfo, error) {
 		if tag == "" && strings.Index(string(field.Tag), ":") < 0 {
 			tag = string(field.Tag)
 		}
+
 		if tag == "-" {
 			continue
 		}
 
 		inline := false
+
 		fields := strings.Split(tag, ",")
 		if len(fields) > 1 {
 			for _, flag := range fields[1:] {
@@ -636,6 +685,7 @@ func getStructInfo(st reflect.Type) (*structInfo, error) {
 					return nil, errors.New(fmt.Sprintf("unsupported flag %q in tag %q of type %s", flag, tag, st))
 				}
 			}
+
 			tag = fields[0]
 		}
 
@@ -645,18 +695,22 @@ func getStructInfo(st reflect.Type) (*structInfo, error) {
 				if inlineMap >= 0 {
 					return nil, errors.New("multiple ,inline maps in struct " + st.String())
 				}
+
 				if field.Type.Key() != reflect.TypeOf("") {
 					return nil, errors.New("option ,inline needs a map with string keys in struct " + st.String())
 				}
+
 				inlineMap = info.Num
 			case reflect.Struct, reflect.Ptr:
 				ftype := field.Type
 				for ftype.Kind() == reflect.Ptr {
 					ftype = ftype.Elem()
 				}
+
 				if ftype.Kind() != reflect.Struct {
 					return nil, errors.New("option ,inline may only be used on a struct or map field")
 				}
+
 				if reflect.PtrTo(ftype).Implements(unmarshalerType) {
 					inlineUnmarshalers = append(inlineUnmarshalers, []int{i})
 				} else {
@@ -664,19 +718,23 @@ func getStructInfo(st reflect.Type) (*structInfo, error) {
 					if err != nil {
 						return nil, err
 					}
+
 					for _, index := range sinfo.InlineUnmarshalers {
 						inlineUnmarshalers = append(inlineUnmarshalers, append([]int{i}, index...))
 					}
+
 					for _, finfo := range sinfo.FieldsList {
 						if _, found := fieldsMap[finfo.Key]; found {
 							msg := "duplicated key '" + finfo.Key + "' in struct " + st.String()
 							return nil, errors.New(msg)
 						}
+
 						if finfo.Inline == nil {
 							finfo.Inline = []int{i, finfo.Num}
 						} else {
 							finfo.Inline = append([]int{i}, finfo.Inline...)
 						}
+
 						finfo.Id = len(fieldsList)
 						fieldsMap[finfo.Key] = finfo
 						fieldsList = append(fieldsList, finfo)
@@ -685,6 +743,7 @@ func getStructInfo(st reflect.Type) (*structInfo, error) {
 			default:
 				return nil, errors.New("option ,inline may only be used on a struct or map field")
 			}
+
 			continue
 		}
 
@@ -714,6 +773,7 @@ func getStructInfo(st reflect.Type) (*structInfo, error) {
 	fieldMapMutex.Lock()
 	structMap[st] = sinfo
 	fieldMapMutex.Unlock()
+
 	return sinfo, nil
 }
 
@@ -731,8 +791,10 @@ func isZero(v reflect.Value) bool {
 		if (kind == reflect.Ptr || kind == reflect.Interface) && v.IsNil() {
 			return true
 		}
+
 		return z.IsZero()
 	}
+
 	switch kind {
 	case reflect.String:
 		return len(v.String()) == 0
@@ -756,11 +818,14 @@ func isZero(v reflect.Value) bool {
 			if vt.Field(i).PkgPath != "" {
 				continue // Private field
 			}
+
 			if !isZero(v.Field(i)) {
 				return false
 			}
 		}
+
 		return true
 	}
+
 	return false
 }

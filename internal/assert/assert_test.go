@@ -55,12 +55,15 @@ func TestAssertFail(t *testing.T) {
 	a := 1
 	b := 2
 	assert.Assert(testInstance, a == b, failMsg, a, b)
+
 	if !testInstance.failed {
 		t.Fatalf("Assert failed. %v", *testInstance)
 	}
+
 	if len(testInstance.logs) != 1 {
 		t.Fatalf("Found %d logs. %v", len(testInstance.logs), testInstance.logs)
 	}
+
 	expectedFailLog := fmt.Sprintf(failMsg, a, b)
 	if testInstance.logs[0] != expectedFailLog {
 		t.Fatalf(
@@ -77,9 +80,11 @@ func TestEqualFail(t *testing.T) {
 	expected := 1
 	got := 2
 	assert.EqualMsg(testInstance, expected, got, failMsg)
+
 	if len(testInstance.logs) != 1 {
 		t.Fatalf("Found %d logs. %v", len(testInstance.logs), testInstance.logs)
 	}
+
 	expectedFailLog := fmt.Sprintf(failMsg, expected, got)
 	if testInstance.logs[0] != expectedFailLog {
 		t.Fatalf(
@@ -95,9 +100,11 @@ func TestDereferenceEqualErr(t *testing.T) {
 	expected := &struct{}{}
 	errMsg := "nil pointer %v %v"
 	assert.DereferenceEqualMsg(testInstance, expected, nil, errMsg, "does not matter")
+
 	if testInstance.err == nil {
 		t.Fatalf("DereferenceEqual should have failed")
 	}
+
 	expectedErr := fmt.Errorf(errMsg, expected, nil)
 	if testInstance.err.Error() != expectedErr.Error() {
 		t.Fatalf(
@@ -110,16 +117,20 @@ func TestDereferenceEqualErr(t *testing.T) {
 
 func TestDereferenceEqualFail(t *testing.T) {
 	testInstance := newTMock()
+
 	type x struct {
 		num int
 	}
+
 	failMsg := "%v not equal %v"
 	expected := &x{num: 1}
 	got := &x{num: 2}
 	assert.DereferenceEqualMsg(testInstance, expected, got, "does not matter", failMsg)
+
 	if len(testInstance.logs) != 1 {
 		t.Fatalf("Found %d logs. %v", len(testInstance.logs), testInstance.logs)
 	}
+
 	expectedFailLog := fmt.Sprintf(failMsg, *expected, *got)
 	if testInstance.logs[0] != expectedFailLog {
 		t.Fatalf(
@@ -132,15 +143,19 @@ func TestDereferenceEqualFail(t *testing.T) {
 
 func TestDereferenceEqualPass(t *testing.T) {
 	testInstance := newTMock()
+
 	type x struct {
 		num int
 	}
+
 	expected := &x{num: 1}
 	got := &x{num: 1}
 	assert.DereferenceEqualMsg(testInstance, expected, got, "doesn't matter", "doesn't matter")
+
 	if testInstance.failed {
 		t.Fatalf("test failed when it should have passed")
 	}
+
 	if len(testInstance.logs) != 0 {
 		t.Fatalf("test instance had logs when it shouldn't: %v", testInstance.logs)
 	}
@@ -152,9 +167,11 @@ func TestSliceEqualFailDiffSize(t *testing.T) {
 	expected := []int{1, 2, 3, 4}
 	got := []int{1, 2, 3}
 	assert.SliceEqualMsg(testInstance, expected, got, failSizeMsg, "something else")
+
 	if len(testInstance.logs) != 1 {
 		t.Fatalf("Found %d logs. %v", len(testInstance.logs), testInstance.logs)
 	}
+
 	expectedFailLog := fmt.Sprintf(failSizeMsg, len(expected), len(got))
 	if testInstance.logs[0] != expectedFailLog {
 		t.Fatalf(
@@ -171,9 +188,11 @@ func TestSliceEqualMismatch(t *testing.T) {
 	expected := []int{1, 2, 4}
 	got := []int{1, 2, 3}
 	assert.SliceEqualMsg(testInstance, expected, got, "something else", failMismatchMsg)
+
 	if len(testInstance.logs) != 1 {
 		t.Fatalf("Found %d logs. %v", len(testInstance.logs), testInstance.logs)
 	}
+
 	expectedFailLog := fmt.Sprintf(failMismatchMsg, 2, expected[2], got[2])
 	if testInstance.logs[0] != expectedFailLog {
 		t.Fatalf(

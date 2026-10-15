@@ -25,13 +25,16 @@ func Check(n yaml.Node) error {
 	if n.Kind == yaml.AliasNode {
 		return errors.New("alias node found")
 	}
+
 	if n.Anchor != "" {
 		return fmt.Errorf("node references anchor %q", n.Anchor)
 	}
+
 	for _, c := range n.Content {
 		if err := Check(*c); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }

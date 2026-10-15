@@ -47,11 +47,14 @@ func run() error {
 
 	if *flagVersion {
 		currentVersion, currentCommit := getVersion()
+
 		versionMessage := fmt.Sprintf("yamlfmt %s", currentVersion)
 		if currentCommit != "" {
 			versionMessage += fmt.Sprintf(" (%s)", currentCommit)
 		}
+
 		fmt.Println(versionMessage)
+
 		return nil
 	}
 
@@ -67,10 +70,12 @@ func run() error {
 	}
 
 	configData := map[string]any{}
+
 	configPath, err := getConfigPath()
 	if err != nil {
 		return err
 	}
+
 	if configPath != "" {
 		configData, err = readConfig(configPath)
 		if err != nil {
@@ -88,6 +93,7 @@ func run() error {
 	if err != nil {
 		return err
 	}
+
 	c.Config = commandConfig
 
 	return c.Run()
@@ -96,6 +102,7 @@ func run() error {
 func getFullRegistry() *yamlfmt.Registry {
 	registry := yamlfmt.NewFormatterRegistry(&basic.BasicFormatterFactory{})
 	registry.Add(&kyaml.KYAMLFormatterFactory{})
+
 	return registry
 }
 

@@ -22,6 +22,7 @@ import (
 
 func TestJSONSchemaIsValid(t *testing.T) {
 	c := jsonschema.NewCompiler()
+
 	_, err := c.Compile("../../schema.json")
 	if err != nil {
 		t.Fatalf("JSON schema failed to compile: %v", err)

@@ -26,9 +26,10 @@ import (
 	"strings"
 
 	"github.com/bmatcuk/doublestar/v4"
+	ignore "github.com/sabhiram/go-gitignore"
+
 	"github.com/forkcloser/yamlfmt/internal/collections"
 	"github.com/forkcloser/yamlfmt/internal/logger"
-	ignore "github.com/sabhiram/go-gitignore"
 )
 
 type MatchType string
@@ -51,40 +52,50 @@ type FilepathCollector struct {
 
 func (c *FilepathCollector) CollectPaths() ([]string, error) {
 	logger.Debug(logger.DebugCodePaths, "using file path matching. include patterns: %s", c.Include)
+
 	pathsFound := []string{}
+
 	for _, inclPath := range c.Include {
 		info, err := os.Stat(inclPath)
 		if err != nil {
 			if !os.IsNotExist(err) {
 				return nil, err
 			}
+
 			continue
 		}
+
 		if !info.IsDir() {
 			pathsFound = append(pathsFound, inclPath)
 			continue
 		}
+
 		paths, err := c.walkDirectoryForYaml(inclPath)
 		if err != nil {
 			fmt.Printf("received errors walking %s:\n%v\n", inclPath, err)
 		}
+
 		pathsFound = append(pathsFound, paths...)
 	}
+
 	logger.Debug(logger.DebugCodePaths, "found paths: %s", pathsFound)
 
 	pathsFoundSet := collections.SliceToSet(pathsFound)
 	pathsToFormat := collections.SliceToSet(pathsFound)
+
 	for _, exclPath := range c.Exclude {
 		info, err := os.Stat(exclPath)
 		if err != nil {
 			if !os.IsNotExist(err) {
 				return nil, err
 			}
+
 			continue
 		}
 
 		if info.IsDir() {
 			logger.Debug(logger.DebugCodePaths, "for exclude dir: %s", exclPath)
+
 			for foundPath := range pathsFoundSet {
 				if strings.HasPrefix(foundPath, exclPath) {
 					logger.Debug(logger.DebugCodePaths, "excluding %s", foundPath)
@@ -93,6 +104,7 @@ func (c *FilepathCollector) CollectPaths() ([]string, error) {
 			}
 		} else {
 			logger.Debug(logger.DebugCodePaths, "for exclude file: %s", exclPath)
+
 			removed := pathsToFormat.Remove(exclPath)
 			if removed {
 				logger.Debug(logger.DebugCodePaths, "found in paths, excluding")
@@ -102,26 +114,37 @@ func (c *FilepathCollector) CollectPaths() ([]string, error) {
 
 	pathsToFormatSlice := pathsToFormat.ToSlice()
 	logger.Debug(logger.DebugCodePaths, "paths to format: %s", pathsToFormat)
+
 	return pathsToFormatSlice, nil
 }
 
 func (c *FilepathCollector) walkDirectoryForYaml(dir string) ([]string, error) {
-	var paths []string
-	var walkErrs []error
+	var (
+		paths    []string
+		walkErrs []error
+	)
+
 	err := filepath.Walk(dir, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			walkErrs = append(
 				walkErrs,
 				fmt.Errorf("error for path %s: %v", path, err),
 			)
+
 			return nil
 		}
+
 		if info == nil {
 			// Defensive programming, but this case should never hit.
 			walkErrs = append(
 				walkErrs,
-				fmt.Errorf("error for path %s: %v", path, errors.New("error for pathnil file info, please report a GitHub issue if you see this failure")),
+				fmt.Errorf(
+					"error for path %s: %v",
+					path,
+					errors.New("error for pathnil file info, please report a GitHub issue if you see this failure"),
+				),
 			)
+
 			return nil
 		}
 
@@ -141,6 +164,7 @@ func (c *FilepathCollector) walkDirectoryForYaml(dir string) ([]string, error) {
 	if err != nil {
 		return []string{}, err
 	}
+
 	return paths, errors.Join(walkErrs...)
 }
 
@@ -155,6 +179,7 @@ func (c *FilepathCollector) extensionMatches(name string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -165,37 +190,50 @@ type DoublestarCollector struct {
 
 func (c *DoublestarCollector) CollectPaths() ([]string, error) {
 	logger.Debug(logger.DebugCodePaths, "using doublestar path matching. include patterns: %s", c.Include)
+
 	includedPaths := []string{}
+
 	for _, pattern := range c.Include {
 		logger.Debug(logger.DebugCodePaths, "trying pattern: %s", pattern)
+
 		globMatches, err := doublestar.FilepathGlob(pattern)
 		if err != nil {
 			return nil, err
 		}
+
 		logger.Debug(logger.DebugCodePaths, "pattern %s matches: %s", pattern, globMatches)
 		includedPaths = append(includedPaths, globMatches...)
 	}
 
 	pathsToFormatSet := collections.Set[string]{}
+
 	for _, path := range includedPaths {
 		if len(c.Exclude) == 0 {
 			pathsToFormatSet.Add(path)
 			continue
 		}
+
 		excluded := false
+
 		logger.Debug(logger.DebugCodePaths, "calculating excludes for %s", path)
+
 		for _, pattern := range c.Exclude {
 			match, err := doublestar.PathMatch(filepath.Clean(pattern), path)
 			if err != nil {
 				return nil, err
 			}
+
 			if match {
 				logger.Debug(logger.DebugCodePaths, "pattern %s matched, excluding", pattern)
+
 				excluded = true
+
 				break
 			}
+
 			logger.Debug(logger.DebugCodePaths, "pattern %s did not match path", pattern)
 		}
+
 		if !excluded {
 			logger.Debug(logger.DebugCodePaths, "path %s included", path)
 			pathsToFormatSet.Add(path)
@@ -204,6 +242,7 @@ func (c *DoublestarCollector) CollectPaths() ([]string, error) {
 
 	pathsToFormat := pathsToFormatSet.ToSlice()
 	logger.Debug(logger.DebugCodePaths, "paths to format: %s", pathsToFormat)
+
 	return pathsToFormat, nil
 }
 
@@ -219,6 +258,7 @@ func findGitIgnorePath(gitignorePath string) (string, error) {
 	if err != nil {
 		return gitignorePath, fmt.Errorf("cannot get current working directory: %w", err)
 	}
+
 	for {
 		// check if gitignore is there
 		gitIgnore := filepath.Join(dir, gitignorePath)
@@ -248,12 +288,16 @@ func ExcludeWithGitignore(gitignorePath string, paths []string) ([]string, error
 	if err != nil {
 		return nil, err
 	}
+
 	logger.Debug(logger.DebugCodePaths, "excluding paths with gitignore: %s", gitignorePath)
+
 	ignorer, err := ignore.CompileIgnoreFile(gitignorePath)
 	if err != nil {
 		return nil, err
 	}
+
 	pathsToFormat := []string{}
+
 	for _, path := range paths {
 		if ok, pattern := ignorer.MatchesPathHow(path); !ok {
 			pathsToFormat = append(pathsToFormat, path)
@@ -261,13 +305,16 @@ func ExcludeWithGitignore(gitignorePath string, paths []string) ([]string, error
 			logger.Debug(logger.DebugCodePaths, "pattern %s matches %s, excluding", pattern.Line, path)
 		}
 	}
+
 	logger.Debug(logger.DebugCodePaths, "paths to format: %s", pathsToFormat)
+
 	return pathsToFormat, nil
 }
 
 const DefaultPatternFile = "yamlfmt.patterns"
 
-// PatternFileCollector determines which files to format and which to ignore based on a pattern file in gitignore(5) syntax.
+// PatternFileCollector determines which files to format and which to ignore based on a pattern file in gitignore(5)
+// syntax.
 type PatternFileCollector struct {
 	fs      fs.FS
 	matcher *ignore.GitIgnore
@@ -304,6 +351,7 @@ func cat(files ...string) (io.Reader, error) {
 		if _, err := io.Copy(&b, fh); err != nil {
 			return nil, fmt.Errorf("copying %q: %w", f, err)
 		}
+
 		fh.Close()
 
 		// Append a newline to avoid issues with files lacking a newline at end-of-file.
@@ -350,7 +398,6 @@ func (c *PatternFileCollector) CollectPaths() ([]string, error) {
 
 		return nil
 	})
-
 	if err != nil {
 		return nil, fmt.Errorf("WalkDir: %w", err)
 	}

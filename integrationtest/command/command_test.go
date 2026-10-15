@@ -116,6 +116,7 @@ func TestPrintConfFile(t *testing.T) {
 		Update:  *updateFlag,
 	}.Run(t)
 }
+
 func TestPrintConfFlagsAndFile(t *testing.T) {
 	TestCase{
 		Dir:     "print_conf_flags_and_file",

@@ -26,6 +26,7 @@ func ConfigureFeaturesFromConfig(config *Config) yamlfmt.FeatureList {
 	if err != nil {
 		lineSep = "\n"
 	}
+
 	configuredFeatures := []yamlfmt.Feature{}
 	if config.RetainLineBreaks || config.RetainLineBreaksSingle {
 		configuredFeatures = append(
@@ -33,24 +34,28 @@ func ConfigureFeaturesFromConfig(config *Config) yamlfmt.FeatureList {
 			hotfix.MakeFeatureRetainLineBreak(lineSep, config.RetainLineBreaksSingle),
 		)
 	}
+
 	if config.TrimTrailingWhitespace {
 		configuredFeatures = append(
 			configuredFeatures,
 			features.MakeFeatureTrimTrailingWhitespace(lineSep),
 		)
 	}
+
 	if config.EOFNewline {
 		configuredFeatures = append(
 			configuredFeatures,
 			features.MakeFeatureEOFNewline(lineSep),
 		)
 	}
+
 	if config.StripDirectives {
 		configuredFeatures = append(
 			configuredFeatures,
 			hotfix.MakeFeatureStripDirectives(lineSep),
 		)
 	}
+
 	return configuredFeatures
 }
 
@@ -66,6 +71,7 @@ func ConfigureYAMLFeaturesFromConfig(config *Config) (yamlFeatures.YAMLFeatureLi
 		if err != nil {
 			return featureList, err
 		}
+
 		featureList = append(featureList, sequenceStyleFeature)
 	}
 
@@ -74,6 +80,7 @@ func ConfigureYAMLFeaturesFromConfig(config *Config) (yamlFeatures.YAMLFeatureLi
 		if err != nil {
 			return featureList, err
 		}
+
 		featureList = append(featureList, quoteStyleFeature)
 	}
 

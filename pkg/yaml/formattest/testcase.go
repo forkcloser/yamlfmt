@@ -23,8 +23,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/forkcloser/yamlfmt/pkg/yaml"
 	"github.com/google/go-cmp/cmp"
+
+	"github.com/forkcloser/yamlfmt/pkg/yaml"
 )
 
 type decoderConfigureFunc func(*yaml.Decoder)
@@ -57,6 +58,7 @@ func (tc formatTestCase) Run(t *testing.T) {
 
 		// Decode input document
 		var n yaml.Node
+
 		err = decoder.Decode(&n)
 		if err != nil && !errors.Is(err, io.EOF) {
 			t.Fatalf("expect EOF, got:\n%v", err)
@@ -64,6 +66,7 @@ func (tc formatTestCase) Run(t *testing.T) {
 
 		// Configure Encoder
 		var buf bytes.Buffer
+
 		enc := yaml.NewEncoder(&buf)
 		tc.configureEncoder(enc)
 
@@ -87,9 +90,11 @@ func (tc formatTestCase) Run(t *testing.T) {
 
 func (tc formatTestCase) readTestdataFile(path string) ([]byte, error) {
 	fullPath := filepath.Join("testdata", tc.folder, path)
+
 	content, err := os.ReadFile(fullPath)
 	if err != nil {
 		return nil, fmt.Errorf("path %s not found", fullPath)
 	}
+
 	return content, nil
 }

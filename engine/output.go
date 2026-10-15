@@ -32,7 +32,12 @@ const (
 	EngineOutputGitlab    EngineOutputFormat = "gitlab"
 )
 
-func getEngineOutput(t EngineOutputFormat, operation yamlfmt.Operation, files yamlfmt.FileDiffs, quiet bool, verbose bool) (fmt.Stringer, error) {
+func getEngineOutput(
+	t EngineOutputFormat,
+	operation yamlfmt.Operation,
+	files yamlfmt.FileDiffs,
+	quiet, verbose bool,
+) (fmt.Stringer, error) {
 	switch t {
 	case EngineOutputDefault:
 		return engineOutput{Operation: operation, Files: files, Quiet: quiet, Verbose: verbose}, nil
@@ -42,6 +47,7 @@ func getEngineOutput(t EngineOutputFormat, operation yamlfmt.Operation, files ya
 		return engineOutputGitlab{Operation: operation, Files: files, Compact: quiet}, nil
 
 	}
+
 	return nil, fmt.Errorf("unknown output type: %s", t)
 }
 
@@ -54,6 +60,7 @@ type engineOutput struct {
 
 func (eo engineOutput) String() string {
 	var msg string
+
 	switch eo.Operation {
 	case yamlfmt.OperationFormat:
 		// Formatting only produces output in verbose mode.
@@ -63,6 +70,7 @@ func (eo engineOutput) String() string {
 
 		msg = "The following files were modified:\n"
 		msg += eo.Files.StrOutputQuiet()
+
 		return msg
 	case yamlfmt.OperationLint:
 		msg = "The following formatting differences were found:"
@@ -78,15 +86,18 @@ func (eo engineOutput) String() string {
 			return "No files will be formatted."
 		}
 	}
+
 	var result string
 	if msg != "" {
 		result += fmt.Sprintf("%s\n\n", msg)
 	}
+
 	if eo.Quiet {
 		result += eo.Files.StrOutputQuiet()
 	} else {
 		result += fmt.Sprintf("%s\n", eo.Files.StrOutput())
 	}
+
 	return result
 }
 
@@ -101,6 +112,7 @@ func (eosl engineOutputSingleLine) String() string {
 	for _, fileDiff := range eosl.Files {
 		msg += fmt.Sprintf("%s: formatting difference found\n", fileDiff.Path)
 	}
+
 	return msg
 }
 
@@ -126,6 +138,7 @@ func (eo engineOutputGitlab) String() string {
 	sort.Sort(byPath(findings))
 
 	var b strings.Builder
+
 	enc := json.NewEncoder(&b)
 
 	if !eo.Compact {
@@ -135,6 +148,7 @@ func (eo engineOutputGitlab) String() string {
 	if err := enc.Encode(findings); err != nil {
 		panic(err)
 	}
+
 	return b.String()
 }
 

@@ -81,7 +81,7 @@ func (tc TestCase) testFolderBeforePath() string {
 	return tc.testdataDirPath() + "/before"
 }
 
-func (tc TestCase) command(stdoutBuf *bytes.Buffer, stderrBuf *bytes.Buffer) *exec.Cmd {
+func (tc TestCase) command(stdoutBuf, stderrBuf *bytes.Buffer) *exec.Cmd {
 	cmdArgs := []string{}
 	for _, arg := range strings.Split(tc.Command, " ") {
 		// This is to handle potential typos in args with extra spaces.

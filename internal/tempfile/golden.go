@@ -21,8 +21,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/forkcloser/yamlfmt/internal/collections"
 	"github.com/google/go-cmp/cmp"
+
+	"github.com/forkcloser/yamlfmt/internal/collections"
 )
 
 type GoldenCtx struct {
@@ -37,9 +38,11 @@ func (g GoldenCtx) basePath(path string) string {
 	if basePath, ok := strings.CutPrefix(path, g.GoldenDir); ok {
 		return basePath
 	}
+
 	if basePath, ok := strings.CutPrefix(path, g.ResultDir); ok {
 		return basePath
 	}
+
 	return path
 }
 
@@ -56,6 +59,7 @@ func (g GoldenCtx) CompareGoldenFile(path string, gotContent []byte) error {
 
 	// If we are not updating, check that the content is the same.
 	goldenPath := g.goldenPath(path)
+
 	expectedContent, err := os.ReadFile(goldenPath)
 	if err != nil {
 		return fmt.Errorf("os.ReadFile(%q): %w", goldenPath, err)
@@ -64,11 +68,13 @@ func (g GoldenCtx) CompareGoldenFile(path string, gotContent []byte) error {
 	if gotContent == nil {
 		gotContent = []byte{}
 	}
+
 	diff := cmp.Diff(string(gotContent), string(expectedContent))
 	// If there is no diff between the content, nothing to do in either mode.
 	if diff == "" {
 		return nil
 	}
+
 	return &GoldenDiffError{path: g.basePath(path), diff: diff}
 }
 
@@ -84,6 +90,7 @@ func (g GoldenCtx) CompareDirectory(resultPath string) error {
 	if err != nil {
 		return err
 	}
+
 	goldenPaths, err := readAllPaths(g.GoldenDir)
 	if err != nil {
 		return err
@@ -96,11 +103,13 @@ func (g GoldenCtx) CompareDirectory(resultPath string) error {
 
 	// Compare each file and gather each error.
 	compareErrors := collections.Errors{}
+
 	for path := range resultPaths {
 		gotContent, err := os.ReadFile(path)
 		if err != nil {
 			return fmt.Errorf("os.ReadFile(%q): %w", path, err)
 		}
+
 		err = g.CompareGoldenFile(path, gotContent)
 		if err != nil {
 			return fmt.Errorf("CompareGoldenFile(%q): %w", g.basePath(path), err)
@@ -117,6 +126,7 @@ func (g GoldenCtx) updateGoldenDirectory(resultPath string) error {
 	if err != nil {
 		return fmt.Errorf("could not clear golden directory %s: %w", g.GoldenDir, err)
 	}
+
 	err = os.Mkdir(g.GoldenDir, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("could not recreate golden directory %s: %w", g.GoldenDir, err)
@@ -127,6 +137,7 @@ func (g GoldenCtx) updateGoldenDirectory(resultPath string) error {
 	if err != nil {
 		return err
 	}
+
 	return paths.CreateAll()
 }
 
@@ -136,15 +147,19 @@ func readAllPaths(dirPath string) (collections.Set[string], error) {
 		if d.IsDir() {
 			return nil
 		}
+
 		paths.Add(path)
+
 		return nil
 	}
 	err := filepath.WalkDir(dirPath, allNamesButCurrentDirectory)
+
 	return paths, err
 }
 
 func directoryFilesEqual(expectedPaths, actualPaths collections.Set[string]) error {
 	expectedFiles := filenamesFromSet(expectedPaths)
+
 	actualFiles := filenamesFromSet(actualPaths)
 	if !expectedFiles.Equals(actualFiles) {
 		return fmt.Errorf(
@@ -152,6 +167,7 @@ func directoryFilesEqual(expectedPaths, actualPaths collections.Set[string]) err
 			expectedFiles, actualFiles,
 		)
 	}
+
 	return nil
 }
 
@@ -160,6 +176,7 @@ func filenamesFromSet(paths collections.Set[string]) collections.Set[string] {
 	for path := range paths {
 		files.Add(filepath.Base(path))
 	}
+
 	return files
 }
 

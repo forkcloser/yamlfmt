@@ -34,6 +34,7 @@ const (
 func IsMetadataType(mdValueStr string) bool {
 	mdTypes := collections.Set[MetadataType]{}
 	mdTypes.Add(MetadataIgnore)
+
 	return mdTypes.Contains(MetadataType(mdValueStr))
 }
 
@@ -78,7 +79,9 @@ func ReadMetadata(content []byte, path string) (collections.Set[Metadata], colle
 		if mdidIndex == -1 {
 			continue
 		}
+
 		mdStr := scanMetadata(line, mdidIndex)
+
 		mdComponents := strings.Split(mdStr, ":")
 		if len(mdComponents) != 2 {
 			mdErrs = append(mdErrs, &MetadataError{
@@ -87,8 +90,10 @@ func ReadMetadata(content []byte, path string) (collections.Set[Metadata], colle
 				err:     ErrMalformedMetadata,
 				lineStr: line,
 			})
+
 			continue
 		}
+
 		if IsMetadataType(mdComponents[1]) {
 			metadata.Add(Metadata{LineNum: i + 1, Type: MetadataType(mdComponents[1])})
 		} else {
@@ -100,15 +105,18 @@ func ReadMetadata(content []byte, path string) (collections.Set[Metadata], colle
 			})
 		}
 	}
+
 	return metadata, mdErrs
 }
 
 func scanMetadata(line string, index int) string {
 	mdBytes := []byte{}
+
 	i := index
 	for i < len(line) && !unicode.IsSpace(rune(line[i])) {
 		mdBytes = append(mdBytes, line[i])
 		i++
 	}
+
 	return string(mdBytes)
 }

@@ -48,6 +48,7 @@ func DefaultConfig() *Config {
 	if runtime.GOOS == "windows" {
 		lineBreakStyle = yamlfmt.LineBreakStyleCRLF
 	}
+
 	return &Config{
 		Indent:          2,
 		LineEnding:      lineBreakStyle,

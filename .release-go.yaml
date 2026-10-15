@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 # Copyright 2022 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,24 +32,13 @@ builds:
       - '-s -w -X main.version={{.Version}} -X main.commit={{.ShortCommit}}'
 archives:
   - name_template: >-
-      {{ .ProjectName }}_
-      {{- .Version }}_
-      {{- title .Os }}_
-      {{- if eq .Arch "amd64" }}x86_64
-      {{- else if eq .Arch "386" }}i386
-      {{- else }}{{- .Arch }}{{- end }}
-      {{- if .Arm }}v{{- .Arm }}{{- end }}
+      {{ .ProjectName }}_ {{- .Version }}_ {{- title .Os }}_ {{- if eq .Arch "amd64" }}x86_64 {{- else if eq .Arch "386" }}i386 {{- else }}{{- .Arch }}{{- end }} {{- if .Arm }}v{{- .Arm }}{{- end }}
 checksum:
   name_template: 'checksums.txt'
 snapshot:
   version_template: "{{ incpatch .Version }}-next"
 changelog:
-  sort: asc
-  filters:
-    exclude:
-      - '^docs:'
-      - '^test:'
-      - '^ci:'
+  use: github-native
 signs:
   - cmd: cosign
     signature: "${artifact}.sig"

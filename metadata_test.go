@@ -60,6 +60,7 @@ func TestReadMetadata(t *testing.T) {
 				if len(errs) != 1 {
 					t.Fatalf("expected 1 error, got %d:\n%v", len(errs), errs.Combine())
 				}
+
 				if errors.Unwrap(errs[0]) != yamlfmt.ErrMalformedMetadata {
 					t.Fatalf("expected ErrMalformedMetadata, got: %v", errs[0])
 				}
@@ -73,6 +74,7 @@ func TestReadMetadata(t *testing.T) {
 				if len(errs) != 1 {
 					t.Fatalf("expected 1 error, got %d:\n%v", len(errs), errs.Combine())
 				}
+
 				if errors.Unwrap(errs[0]) != yamlfmt.ErrUnrecognizedMetadata {
 					t.Fatalf("expected ErrUnrecognizedMetadata, got: %v", errs[0])
 				}
@@ -86,6 +88,7 @@ func TestReadMetadata(t *testing.T) {
 			if !md.Equals(tc.expected) {
 				t.Fatalf("Mismatched metadata:\nexpected: %v\ngot: %v", tc.expected, md)
 			}
+
 			t.Logf("got error: %v", err)
 			tc.errCheck(t, err)
 		})

@@ -48,6 +48,7 @@ func ExampleUnmarshal_embedded() {
 	if err != nil {
 		log.Fatalf("cannot unmarshal data: %v", err)
 	}
+
 	fmt.Println(b.A)
 	fmt.Println(b.B)
 	// Output:

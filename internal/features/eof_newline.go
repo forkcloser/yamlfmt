@@ -34,6 +34,7 @@ func eofNewlineFeature(linebreakStr string) yamlfmt.FeatureFunc {
 			linebreakBytes := []byte(linebreakStr)
 			content = append(content, linebreakBytes...)
 		}
+
 		return nil, content, nil
 	}
 }

@@ -27,20 +27,25 @@ import (
 )
 
 func yaml_insert_token(parser *yaml_parser_t, pos int, token *yaml_token_t) {
-	//fmt.Println("yaml_insert_token", "pos:", pos, "typ:", token.typ, "head:", parser.tokens_head, "len:", len(parser.tokens))
+	// fmt.Println("yaml_insert_token", "pos:", pos, "typ:", token.typ, "head:", parser.tokens_head, "len:",
+	// len(parser.tokens))
 
 	// Check if we can move the queue at the beginning of the buffer.
 	if parser.tokens_head > 0 && len(parser.tokens) == cap(parser.tokens) {
 		if parser.tokens_head != len(parser.tokens) {
 			copy(parser.tokens, parser.tokens[parser.tokens_head:])
 		}
+
 		parser.tokens = parser.tokens[:len(parser.tokens)-parser.tokens_head]
 		parser.tokens_head = 0
 	}
+
 	parser.tokens = append(parser.tokens, *token)
+
 	if pos < 0 {
 		return
 	}
+
 	copy(parser.tokens[parser.tokens_head+pos+1:], parser.tokens[parser.tokens_head+pos:])
 	parser.tokens[parser.tokens_head+pos] = *token
 }
@@ -51,6 +56,7 @@ func yaml_parser_initialize(parser *yaml_parser_t) bool {
 		raw_buffer: make([]byte, 0, input_raw_buffer_size),
 		buffer:     make([]byte, 0, input_buffer_size),
 	}
+
 	return true
 }
 
@@ -64,8 +70,10 @@ func yaml_string_read_handler(parser *yaml_parser_t, buffer []byte) (n int, err 
 	if parser.input_pos == len(parser.input) {
 		return 0, io.EOF
 	}
+
 	n = copy(buffer, parser.input[parser.input_pos:])
 	parser.input_pos += n
+
 	return n, nil
 }
 
@@ -83,6 +91,7 @@ func yaml_parser_set_input_string(parser *yaml_parser_t, input []byte) {
 	if parser.read_handler != nil {
 		panic("must set the input source only once")
 	}
+
 	parser.read_handler = yaml_string_read_handler
 	parser.input = input
 	parser.input_pos = 0
@@ -93,6 +102,7 @@ func yaml_parser_set_input_reader(parser *yaml_parser_t, r io.Reader) {
 	if parser.read_handler != nil {
 		panic("must set the input source only once")
 	}
+
 	parser.read_handler = yaml_reader_read_handler
 	parser.input_reader = r
 }
@@ -102,6 +112,7 @@ func yaml_parser_set_encoding(parser *yaml_parser_t, encoding yaml_encoding_t) {
 	if parser.encoding != yaml_ANY_ENCODING {
 		panic("must set the encoding only once")
 	}
+
 	parser.encoding = encoding
 }
 
@@ -139,6 +150,7 @@ func yaml_emitter_set_output_string(emitter *yaml_emitter_t, output_buffer *[]by
 	if emitter.write_handler != nil {
 		panic("must set the output target only once")
 	}
+
 	emitter.write_handler = yaml_string_write_handler
 	emitter.output_buffer = output_buffer
 }
@@ -148,6 +160,7 @@ func yaml_emitter_set_output_writer(emitter *yaml_emitter_t, w io.Writer) {
 	if emitter.write_handler != nil {
 		panic("must set the output target only once")
 	}
+
 	emitter.write_handler = yaml_writer_write_handler
 	emitter.output_writer = w
 }
@@ -157,6 +170,7 @@ func yaml_emitter_set_encoding(emitter *yaml_emitter_t, encoding yaml_encoding_t
 	if emitter.encoding != yaml_ANY_ENCODING {
 		panic("must set the output encoding only once")
 	}
+
 	emitter.encoding = encoding
 }
 
@@ -170,6 +184,7 @@ func yaml_emitter_set_indent(emitter *yaml_emitter_t, indent int) {
 	if indent < 2 || indent > 9 {
 		indent = 2
 	}
+
 	emitter.best_indent = indent
 }
 
@@ -178,6 +193,7 @@ func yaml_emitter_set_width(emitter *yaml_emitter_t, width int) {
 	if width < 0 {
 		width = -1
 	}
+
 	emitter.best_width = width
 }
 
@@ -211,6 +227,7 @@ func yaml_emitter_set_pad_line_comments(emitter *yaml_emitter_t, pad_line_commen
 	if pad_line_comments < 0 {
 		pad_line_comments = 1
 	}
+
 	emitter.pad_line_comments = pad_line_comments
 }
 
@@ -349,11 +366,17 @@ func yaml_alias_event_initialize(event *yaml_event_t, anchor []byte) bool {
 		typ:    yaml_ALIAS_EVENT,
 		anchor: anchor,
 	}
+
 	return true
 }
 
 // Create SCALAR.
-func yaml_scalar_event_initialize(event *yaml_event_t, anchor, tag, value []byte, plain_implicit, quoted_implicit bool, style yaml_scalar_style_t) bool {
+func yaml_scalar_event_initialize(
+	event *yaml_event_t,
+	anchor, tag, value []byte,
+	plain_implicit, quoted_implicit bool,
+	style yaml_scalar_style_t,
+) bool {
 	*event = yaml_event_t{
 		typ:             yaml_SCALAR_EVENT,
 		anchor:          anchor,
@@ -363,11 +386,17 @@ func yaml_scalar_event_initialize(event *yaml_event_t, anchor, tag, value []byte
 		quoted_implicit: quoted_implicit,
 		style:           yaml_style_t(style),
 	}
+
 	return true
 }
 
 // Create SEQUENCE-START.
-func yaml_sequence_start_event_initialize(event *yaml_event_t, anchor, tag []byte, implicit bool, style yaml_sequence_style_t) bool {
+func yaml_sequence_start_event_initialize(
+	event *yaml_event_t,
+	anchor, tag []byte,
+	implicit bool,
+	style yaml_sequence_style_t,
+) bool {
 	*event = yaml_event_t{
 		typ:      yaml_SEQUENCE_START_EVENT,
 		anchor:   anchor,
@@ -375,6 +404,7 @@ func yaml_sequence_start_event_initialize(event *yaml_event_t, anchor, tag []byt
 		implicit: implicit,
 		style:    yaml_style_t(style),
 	}
+
 	return true
 }
 
@@ -383,11 +413,17 @@ func yaml_sequence_end_event_initialize(event *yaml_event_t) bool {
 	*event = yaml_event_t{
 		typ: yaml_SEQUENCE_END_EVENT,
 	}
+
 	return true
 }
 
 // Create MAPPING-START.
-func yaml_mapping_start_event_initialize(event *yaml_event_t, anchor, tag []byte, implicit bool, style yaml_mapping_style_t) {
+func yaml_mapping_start_event_initialize(
+	event *yaml_event_t,
+	anchor, tag []byte,
+	implicit bool,
+	style yaml_mapping_style_t,
+) {
 	*event = yaml_event_t{
 		typ:      yaml_MAPPING_START_EVENT,
 		anchor:   anchor,

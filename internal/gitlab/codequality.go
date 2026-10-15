@@ -88,6 +88,7 @@ func detectChangedLines(diff *yamlfmt.FileDiff) (begin, end int) {
 		if i < len(original) {
 			origLine = original[i]
 		}
+
 		if i < len(formatted) {
 			fmtLine = formatted[i]
 		}
@@ -96,6 +97,7 @@ func detectChangedLines(diff *yamlfmt.FileDiff) (begin, end int) {
 			if begin == -1 {
 				begin = i + 1
 			}
+
 			end = i + 1
 		}
 	}

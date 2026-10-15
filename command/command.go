@@ -21,10 +21,11 @@ import (
 	"io"
 	"os"
 
+	"github.com/mitchellh/mapstructure"
+
 	"github.com/forkcloser/yamlfmt"
 	"github.com/forkcloser/yamlfmt/engine"
 	"github.com/forkcloser/yamlfmt/pkg/yaml"
-	"github.com/mitchellh/mapstructure"
 )
 
 type FormatterConfig struct {
@@ -91,13 +92,16 @@ func (c *Command) Run() error {
 		if err != nil {
 			return err
 		}
+
 		if c.Config.GitignoreExcludes {
 			newPaths, err := yamlfmt.ExcludeWithGitignore(c.Config.GitignorePath, collectedPaths)
 			if err != nil {
 				return err
 			}
+
 			collectedPaths = newPaths
 		}
+
 		paths, err = c.analyzePaths(collectedPaths)
 		if err != nil {
 			fmt.Printf("path analysis found the following errors:\n%v", err)
@@ -111,6 +115,7 @@ func (c *Command) Run() error {
 		if out != nil {
 			fmt.Print(out)
 		}
+
 		if err != nil {
 			return err
 		}
@@ -119,6 +124,7 @@ func (c *Command) Run() error {
 		if err != nil {
 			return err
 		}
+
 		if out != nil {
 			// This will be picked up by log.Fatal in main() and
 			// cause an exit code of 1, which is a critical
@@ -130,6 +136,7 @@ func (c *Command) Run() error {
 		if err != nil {
 			return err
 		}
+
 		if out != nil {
 			fmt.Print(out)
 		} else if !c.Quiet {
@@ -140,34 +147,42 @@ func (c *Command) Run() error {
 		if err != nil {
 			return err
 		}
+
 		out, err := eng.FormatContent(stdinYaml)
 		if err != nil {
 			return err
 		}
+
 		fmt.Printf("%s", out)
 	case yamlfmt.OperationPrintConfig:
 		commandConfig := map[string]any{}
+
 		err = mapstructure.Decode(c.Config, &commandConfig)
 		if err != nil {
 			return err
 		}
+
 		delete(commandConfig, "formatter")
+
 		out, err := yaml.Marshal(commandConfig)
 		if err != nil {
 			return err
 		}
+
 		fmt.Printf("%s", out)
 
 		formatterConfigMap, err := formatter.ConfigMap()
 		if err != nil {
 			return err
 		}
+
 		out, err = yaml.Marshal(map[string]any{
 			"formatter": formatterConfigMap,
 		})
 		if err != nil {
 			return err
 		}
+
 		fmt.Printf("%s", out)
 	}
 
@@ -195,6 +210,7 @@ func (c *Command) getFormatter() (yamlfmt.Formatter, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return factory.NewFormatter(c.Config.FormatterConfig.FormatterSettings)
 }
 
@@ -212,7 +228,9 @@ func (c *Command) analyzePaths(paths []string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	includePaths, _, err := analyzer.ExcludePathsByContent(paths)
+
 	return includePaths, err
 }
 
@@ -251,6 +269,7 @@ func (c *Command) makeAnalyzer() (yamlfmt.ContentAnalyzer, error) {
 func readFromStdin() ([]byte, error) {
 	stdin := bufio.NewReader(os.Stdin)
 	data := []byte{}
+
 	for {
 		b, err := stdin.ReadByte()
 		if err != nil {
@@ -260,7 +279,9 @@ func readFromStdin() ([]byte, error) {
 				return nil, err
 			}
 		}
+
 		data = append(data, b)
 	}
+
 	return data, nil
 }

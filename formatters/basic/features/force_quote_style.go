@@ -32,6 +32,7 @@ var ErrUnrecognizedQuoteStyle = errors.New("unrecognized quote style")
 
 func FeatureForceQuoteStyle(style QuoteStyle) (YAMLFeatureFunc, error) {
 	var fromStyle, toStyle yaml.Style
+
 	switch style {
 	case SingleQuoteStyle:
 		fromStyle = yaml.DoubleQuotedStyle
@@ -42,16 +43,22 @@ func FeatureForceQuoteStyle(style QuoteStyle) (YAMLFeatureFunc, error) {
 	default:
 		return nil, fmt.Errorf("%w: %s", ErrUnrecognizedQuoteStyle, style)
 	}
+
 	var forceStyle YAMLFeatureFunc
+
 	forceStyle = func(n yaml.Node) error {
 		var err error
+
 		for _, c := range n.Content {
 			if c.Style == fromStyle {
 				c.Style = toStyle
 			}
+
 			err = forceStyle(*c)
 		}
+
 		return err
 	}
+
 	return forceStyle, nil
 }

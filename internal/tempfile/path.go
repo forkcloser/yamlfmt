@@ -34,12 +34,14 @@ type Path struct {
 
 func (p *Path) Create() error {
 	file := p.fullPath()
+
 	var err error
 	if p.IsDir {
 		err = os.Mkdir(file, os.ModePerm)
 	} else {
 		err = os.WriteFile(file, p.Content, os.ModePerm)
 	}
+
 	return err
 }
 
@@ -54,10 +56,11 @@ func (ps Paths) CreateAll() error {
 	for _, path := range ps {
 		errs = append(errs, path.Create())
 	}
+
 	return errs.Combine()
 }
 
-func ReplicateDirectory(dir string, newBase string) (Paths, error) {
+func ReplicateDirectory(dir, newBase string) (Paths, error) {
 	paths := Paths{}
 	walkAllButCurrentDirectory := func(path string, info fs.DirEntry, walkErr error) error {
 		if walkErr != nil {
@@ -67,6 +70,7 @@ func ReplicateDirectory(dir string, newBase string) (Paths, error) {
 		if path == dir {
 			return nil
 		}
+
 		content := []byte{}
 
 		if !info.IsDir() {
@@ -74,6 +78,7 @@ func ReplicateDirectory(dir string, newBase string) (Paths, error) {
 			if err != nil {
 				return err
 			}
+
 			content = readContent
 		}
 
@@ -83,8 +88,10 @@ func ReplicateDirectory(dir string, newBase string) (Paths, error) {
 			IsDir:    info.IsDir(),
 			Content:  content,
 		})
+
 		return nil
 	}
 	err := filepath.WalkDir(dir, walkAllButCurrentDirectory)
+
 	return paths, err
 }
