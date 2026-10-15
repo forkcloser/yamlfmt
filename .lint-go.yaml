@@ -136,9 +136,8 @@ golangci:
             - varnamelen # 1
             - wrapcheck # 1
         - path: ^content_analyzer_test\.go$
-          linters: # 6 findings
+          linters: # 5 findings
             - paralleltest # 2
-            - copyloopvar # 1
             - modernize # 1
             - revive # 1
             - tparallel # 1
@@ -289,8 +288,7 @@ golangci:
             - revive # 1
             - tagliatelle # 1
         - path: ^internal/gitlab/codequality_test\.go$
-          linters: # 8 findings
-            - copyloopvar # 3
+          linters: # 5 findings
             - modernize # 3
             - gocritic # 2
         - path: ^internal/hotfix/retain_line_break\.go$
@@ -357,13 +355,12 @@ golangci:
             - gocritic # 1
             - gosec # 1
         - path: ^path_collector_test\.go$
-          linters: # 14 findings
+          linters: # 13 findings
             - modernize # 3
             - paralleltest # 3
             - intrange # 2
             - thelper # 2
             - usetesting # 2
-            - copyloopvar # 1
             - revive # 1
         - path: ^pkg/yaml/apic\.go$
           linters: # 119 findings
