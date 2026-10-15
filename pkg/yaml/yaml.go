@@ -372,6 +372,15 @@ func (e *Encoder) SetPadLineComments(padLineComments int) {
 	yaml_emitter_set_pad_line_comments(&e.encoder.emitter, padLineComments)
 }
 
+// SetPreserveCommentIndents controls whether each line comment is kept at the
+// column it had in the source (Node.LineCommentColumn), padding to reach it so
+// manually aligned comments stay so. When the reformatted content reaches,
+// passes, or comes within SetPadLineComments of that column, the comment can't
+// sit there without colliding, so it falls back to the SetPadLineComments spacing.
+func (e *Encoder) SetPreserveCommentIndents(preserve bool) {
+	yaml_emitter_set_preserve_comment_indents(&e.encoder.emitter, preserve)
+}
+
 // SetCorrectAliasKeys enables alias key syntax correction.
 func (e *Encoder) SetCorrectAliasKeys(correctAliasKeys bool) {
 	yaml_emitter_set_correct_alias_keys(&e.encoder.emitter, correctAliasKeys)
@@ -506,6 +515,12 @@ type Node struct {
 	// LineComment holds any comments at the end of the line where the node is in.
 	LineComment string
 
+	// LineCommentColumn holds the source column (0-based) of the '#' of
+	// LineComment, letting an encoder restore manual comment alignment via
+	// Encoder.SetPreserveCommentIndents. Zero when unknown. Only meaningful
+	// together with LineComment.
+	LineCommentColumn int
+
 	// FootComment holds any comments following the node and before empty lines.
 	FootComment string
 
@@ -521,6 +536,7 @@ func (n *Node) IsZero() bool {
 		n.Content == nil &&
 		n.HeadComment == "" &&
 		n.LineComment == "" &&
+		n.LineCommentColumn == 0 &&
 		n.FootComment == "" &&
 		n.Line == 0 &&
 		n.Column == 0
