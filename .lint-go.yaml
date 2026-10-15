@@ -246,10 +246,9 @@ golangci:
             - paralleltest # 2
             - testpackage # 1
         - path: ^internal/assert/assert\.go$
-          linters: # 33 findings
+          linters: # 28 findings
             - revive # 20
             - gochecknoglobals # 6
-            - inamedparam # 5
             - varnamelen # 2
         - path: ^internal/assert/assert_test\.go$
           linters: # 12 findings
