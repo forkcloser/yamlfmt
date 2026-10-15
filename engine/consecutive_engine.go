@@ -46,7 +46,8 @@ func (e *ConsecutiveEngine) Format(paths []string) (fmt.Stringer, error) {
 	if logger.DebugCodeIsActive(logger.DebugCodeDiffs) {
 		logger.Debug(
 			logger.DebugCodeDiffs,
-			fmt.Sprintf("The following files were modified:\n%s", formatDiffs.StrOutput()),
+			"The following files were modified:\n%s",
+			formatDiffs.StrOutput(),
 		)
 	}
 
