@@ -64,6 +64,7 @@ func (fl FeatureList) ApplyFeatures(
 	for _, feature := range fl {
 		if mode == FeatureApplyBefore {
 			if feature.BeforeAction != nil {
+				//nolint:fatcontext // each feature passes its context to the next on purpose: one stores what the other restores
 				ctx, result, err = feature.BeforeAction(ctx, result)
 			}
 		} else {

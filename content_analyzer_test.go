@@ -26,6 +26,8 @@ import (
 const testdataBase = "testdata/content_analyzer"
 
 func TestBasicContentAnalyzer(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		name             string
 		testdataDir      string
