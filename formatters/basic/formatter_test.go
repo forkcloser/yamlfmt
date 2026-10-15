@@ -662,3 +662,40 @@ func stripTrailingNewline(s string) string {
 
 	return strings.TrimSuffix(s, "\n")
 }
+
+// TestFoldedScalarMoreIndentedLine: a folded scalar whose next line is more
+// indented keeps its break on that indentation alone; the emitter must not
+// add an empty line before it, which would add a newline to the value on
+// every pass.
+func TestFoldedScalarMoreIndentedLine(t *testing.T) {
+	t.Parallel()
+
+	inputs := []string{
+		"run: >-\n  echo \"a ${{\n    b }}\" >> out\n",
+		"a: >\n  one\n    two\n  three\nb: 1\n",
+		"a: >\n  one\n\n    two\n\n  three\nb: 1\n",
+	}
+
+	for _, config := range []map[string]any{{}, {"retain_line_breaks_single": true}} {
+		f, err := factory.NewFormatter(config)
+		assert.NilErr(t, err)
+
+		for _, input := range inputs {
+			got, err := f.Format([]byte(input))
+			assert.NilErr(t, err)
+			assert.EqualMsg(t, input, string(got), outputMismatch)
+
+			var before, after any
+
+			assert.NilErr(t, yaml.Unmarshal([]byte(input), &before))
+			assert.NilErr(t, yaml.Unmarshal(got, &after))
+			assert.Assert(
+				t,
+				reflect.DeepEqual(before, after),
+				"formatting changed the value:\nbefore: %#v\nafter:  %#v",
+				before,
+				after,
+			)
+		}
+	}
+}
