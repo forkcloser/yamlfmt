@@ -571,13 +571,6 @@ golangci:
             - varnamelen # 2
             - unparam # 1
             - unused # 1
-licenses:
-  ignore:
-    # ONBOARDING BACKLOG, not a judgment: davecgh/go-spew is ISC, which the
-    # baseline does not carry, and a project cannot admit a licence through a
-    # carve-out. Only tests reach it, through stretchr/testify; alignment
-    # moves those tests onto internal/assert and this line goes with it.
-    - github.com/davecgh/go-spew
 nilaway:
   # ONBOARDING BACKLOG, not a judgment: NilAway's 80 findings at enrolment
   # print without failing the lane until alignment reaches them.
