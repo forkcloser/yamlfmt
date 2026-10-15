@@ -18,9 +18,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/google/yamlfmt"
-	"github.com/google/yamlfmt/internal/collections"
-	"github.com/google/yamlfmt/internal/tempfile"
+	"github.com/forkcloser/yamlfmt"
+	"github.com/forkcloser/yamlfmt/internal/collections"
+	"github.com/forkcloser/yamlfmt/internal/tempfile"
 )
 
 const testdataBase = "testdata/content_analyzer"
@@ -65,42 +65,52 @@ func TestBasicContentAnalyzer(t *testing.T) {
 			t.Parallel()
 			tempPath := t.TempDir()
 			testdataDir := filepath.Join(testdataBase, tc.testdataDir)
+
 			paths, err := tempfile.ReplicateDirectory(testdataDir, tempPath)
 			if err != nil {
 				t.Fatalf("could not replicate testdata directory %s: %v", tc.testdataDir, err)
 			}
+
 			err = paths.CreateAll()
 			if err != nil {
 				t.Fatalf("could not create full test directory: %v", err)
 			}
+
 			contentAnalyzer, err := yamlfmt.NewBasicContentAnalyzer(tc.excludePatterns)
 			if err != nil {
 				t.Fatalf("could not create content analyzer: %v", err)
 			}
+
 			collector := &yamlfmt.FilepathCollector{
 				Include:    []string{tempPath},
 				Exclude:    []string{},
 				Extensions: []string{"yaml", "yml"},
 			}
+
 			collectedPaths, err := collector.CollectPaths()
 			if err != nil {
 				t.Fatalf("CollectPaths failed: %v", err)
 			}
+
 			resultPaths, excludedPaths, err := contentAnalyzer.ExcludePathsByContent(collectedPaths)
 			if err != nil {
 				t.Fatalf("expected content analyzer to work, got error: %v", err)
 			}
+
 			resultPathsTrimmed, err := pathsTempdirTrimmed(resultPaths, tempPath)
 			if err != nil {
 				t.Fatalf("expected trimming tempdir from result not to have error: %v", err)
 			}
+
 			if !tc.expectedPaths.Equals(collections.SliceToSet(resultPathsTrimmed)) {
 				t.Fatalf("expected files:\n%v\ngot:\n%v", tc.expectedPaths, resultPaths)
 			}
+
 			excludePathsTrimmed, err := pathsTempdirTrimmed(excludedPaths, tempPath)
 			if err != nil {
 				t.Fatalf("expected trimming tempdir from excluded not to have error: %v", err)
 			}
+
 			if !tc.expectedExcluded.Equals(collections.SliceToSet(excludePathsTrimmed)) {
 				t.Fatalf("expected exclusions:\n%v\ngot:\n%v", tc.expectedExcluded, excludedPaths)
 			}
@@ -111,6 +121,7 @@ func TestBasicContentAnalyzer(t *testing.T) {
 func TestBadNewContentAnalyzer(t *testing.T) {
 	// Illegal because no closing )
 	badPattern := "%^3412098(]fj"
+
 	_, err := yamlfmt.NewBasicContentAnalyzer([]string{badPattern})
 	if err == nil {
 		t.Fatalf("expected there to be an error")
@@ -119,12 +130,15 @@ func TestBadNewContentAnalyzer(t *testing.T) {
 
 func pathsTempdirTrimmed(paths []string, tempDir string) ([]string, error) {
 	trimmedPaths := []string{}
+
 	for _, path := range paths {
 		trimmedPath, err := filepath.Rel(tempDir, path)
 		if err != nil {
 			return nil, err
 		}
+
 		trimmedPaths = append(trimmedPaths, trimmedPath)
 	}
+
 	return trimmedPaths, nil
 }

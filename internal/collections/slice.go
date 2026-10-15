@@ -20,5 +20,6 @@ func SliceContains[T comparable](haystack []T, needle T) bool {
 			return true
 		}
 	}
+
 	return false
 }

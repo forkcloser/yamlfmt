@@ -18,8 +18,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/google/yamlfmt"
-	"github.com/google/yamlfmt/internal/linescan"
+	"github.com/forkcloser/yamlfmt"
+	"github.com/forkcloser/yamlfmt/internal/linescan"
 )
 
 type directiveKey string
@@ -53,6 +53,7 @@ func stripDirectivesFeature(lineSepChar string) yamlfmt.FeatureFunc {
 		scanner := linescan.NewScanner(content)
 		result := ""
 		currLine := 1
+
 		for scanner.Scan() {
 			line := scanner.Text()
 			if strings.HasPrefix(line, "%") {
@@ -63,8 +64,10 @@ func stripDirectivesFeature(lineSepChar string) yamlfmt.FeatureFunc {
 			} else {
 				result += line + lineSepChar
 			}
+
 			currLine++
 		}
+
 		return ContextWithDirectives(ctx, directives), []byte(result), nil
 	}
 }
@@ -76,6 +79,7 @@ func restoreDirectivesFeature(lineSepChar string) yamlfmt.FeatureFunc {
 		doneDirectives := directiveIdx == len(directives)
 		scanner := linescan.NewScanner(content)
 		result := ""
+
 		currLine := 1
 		for scanner.Scan() {
 			if !doneDirectives && currLine == directives[directiveIdx].line {
@@ -84,6 +88,7 @@ func restoreDirectivesFeature(lineSepChar string) yamlfmt.FeatureFunc {
 				directiveIdx++
 				doneDirectives = directiveIdx == len(directives)
 			}
+
 			result += scanner.Text() + lineSepChar
 			currLine++
 		}
@@ -93,6 +98,7 @@ func restoreDirectivesFeature(lineSepChar string) yamlfmt.FeatureFunc {
 		if !doneDirectives && currLine == directives[directiveIdx].line {
 			result += directives[directiveIdx].content + lineSepChar
 		}
+
 		return ctx, []byte(result), nil
 	}
 }

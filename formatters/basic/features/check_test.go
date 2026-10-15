@@ -18,8 +18,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/google/yamlfmt/formatters/basic/features"
-	"github.com/google/yamlfmt/pkg/yaml"
+	"github.com/forkcloser/yamlfmt/formatters/basic/features"
+	"github.com/forkcloser/yamlfmt/pkg/yaml"
 )
 
 func TestCheck(t *testing.T) {
@@ -58,6 +58,7 @@ pipelines:
 			if err := yaml.NewDecoder(strings.NewReader(c.in)).Decode(&docNode); err != nil {
 				t.Fatalf("parse error: %v", err)
 			}
+
 			if err := features.Check(docNode); (err != nil) != c.wantErr {
 				t.Errorf("Check() error = %v, wantErr %v", err, c.wantErr)
 			}

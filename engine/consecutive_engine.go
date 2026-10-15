@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/google/yamlfmt"
-	"github.com/google/yamlfmt/internal/logger"
+	"github.com/forkcloser/yamlfmt"
+	"github.com/forkcloser/yamlfmt/internal/logger"
 )
 
 // Engine that will process each file one by one consecutively.
@@ -46,7 +46,8 @@ func (e *ConsecutiveEngine) Format(paths []string) (fmt.Stringer, error) {
 	if logger.DebugCodeIsActive(logger.DebugCodeDiffs) {
 		logger.Debug(
 			logger.DebugCodeDiffs,
-			fmt.Sprintf("The following files were modified:\n%s", formatDiffs.StrOutput()),
+			"The following files were modified:\n%s",
+			formatDiffs.StrOutput(),
 		)
 	}
 
@@ -58,10 +59,12 @@ func (e *ConsecutiveEngine) Format(paths []string) (fmt.Stringer, error) {
 			return nil, formatErrs
 		}
 	}
+
 	applyErr := formatDiffs.ApplyAll()
 	if applyErr != nil {
 		return nil, applyErr
 	}
+
 	return getEngineOutput(e.OutputFormat, yamlfmt.OperationFormat, formatDiffs, e.Quiet, e.Verbose)
 }
 
@@ -70,9 +73,11 @@ func (e *ConsecutiveEngine) Lint(paths []string) (fmt.Stringer, error) {
 	if len(formatErrs) > 0 {
 		return nil, formatErrs
 	}
+
 	if formatDiffs.ChangedCount() == 0 {
 		return nil, nil
 	}
+
 	return getEngineOutput(e.OutputFormat, yamlfmt.OperationLint, formatDiffs, e.Quiet, e.Verbose)
 }
 
@@ -81,23 +86,28 @@ func (e *ConsecutiveEngine) DryRun(paths []string) (fmt.Stringer, error) {
 	if len(formatErrs) > 0 {
 		return nil, formatErrs
 	}
+
 	if formatDiffs.ChangedCount() == 0 {
 		return nil, nil
 	}
+
 	return getEngineOutput(e.OutputFormat, yamlfmt.OperationDry, formatDiffs, e.Quiet, e.Verbose)
 }
 
 func (e *ConsecutiveEngine) formatAll(paths []string) (yamlfmt.FileDiffs, FormatErrors) {
 	formatDiffs := yamlfmt.FileDiffs{}
 	formatErrs := FormatErrors{}
+
 	for _, path := range paths {
 		fileDiff, err := e.formatFileContent(path)
 		if err != nil {
 			formatErrs = append(formatErrs, wrapFormatError(path, err))
 			continue
 		}
+
 		formatDiffs.Add(fileDiff)
 	}
+
 	return formatDiffs, formatErrs
 }
 
@@ -106,10 +116,12 @@ func (e *ConsecutiveEngine) formatFileContent(path string) (*yamlfmt.FileDiff, e
 	if err != nil {
 		return nil, err
 	}
+
 	formatted, err := e.FormatContent(content)
 	if err != nil {
 		return nil, err
 	}
+
 	return &yamlfmt.FileDiff{
 		Path: path,
 		Diff: &yamlfmt.FormatDiff{

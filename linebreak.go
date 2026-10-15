@@ -38,5 +38,6 @@ func (s LineBreakStyle) Separator() (string, error) {
 	case LineBreakStyleCRLF:
 		return "\r\n", nil
 	}
+
 	return "", UnsupportedLineBreakError{style: s}
 }

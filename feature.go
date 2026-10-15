@@ -50,11 +50,17 @@ func (e *FeatureApplyError) Unwrap() error {
 	return e.err
 }
 
-func (fl FeatureList) ApplyFeatures(ctx context.Context, input []byte, mode FeatureApplyMode) (context.Context, []byte, error) {
+func (fl FeatureList) ApplyFeatures(
+	ctx context.Context,
+	input []byte,
+	mode FeatureApplyMode,
+) (context.Context, []byte, error) {
 	// Declare err here so the result variable doesn't get shadowed in the loop
 	var err error
+
 	result := make([]byte, len(input))
 	copy(result, input)
+
 	for _, feature := range fl {
 		if mode == FeatureApplyBefore {
 			if feature.BeforeAction != nil {
@@ -74,5 +80,6 @@ func (fl FeatureList) ApplyFeatures(ctx context.Context, input []byte, mode Feat
 			}
 		}
 	}
+
 	return ctx, result, nil
 }

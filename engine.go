@@ -20,8 +20,8 @@ import (
 	"os"
 	"slices"
 
-	"github.com/google/yamlfmt/internal/collections"
-	"github.com/google/yamlfmt/internal/multilinediff"
+	"github.com/forkcloser/yamlfmt/internal/collections"
+	"github.com/forkcloser/yamlfmt/internal/multilinediff"
 )
 
 type Operation int
@@ -57,6 +57,7 @@ func (d *FormatDiff) GetOriginal() string {
 	if d.originalStr == "" {
 		d.originalStr = string(d.Original)
 	}
+
 	return d.originalStr
 }
 
@@ -67,6 +68,7 @@ func (d *FormatDiff) GetFormatted() string {
 	if d.formattedStr == "" {
 		d.formattedStr = string(d.Formatted)
 	}
+
 	return d.formattedStr
 }
 
@@ -97,7 +99,8 @@ func (fd *FileDiff) Apply() error {
 	if !fd.Diff.Changed() {
 		return nil
 	}
-	return os.WriteFile(fd.Path, fd.Diff.Formatted, 0644)
+
+	return os.WriteFile(fd.Path, fd.Diff.Formatted, 0o644)
 }
 
 type FileDiffs map[string]*FileDiff
@@ -108,11 +111,13 @@ func (fds FileDiffs) Add(diff *FileDiff) error {
 	}
 
 	fds[diff.Path] = diff
+
 	return nil
 }
 
 func (fds FileDiffs) StrOutput() string {
 	result := ""
+
 	sortedPaths := fds.sortedPaths()
 	for _, path := range sortedPaths {
 		fd := fds[path]
@@ -120,11 +125,13 @@ func (fds FileDiffs) StrOutput() string {
 			result += fd.StrOutput()
 		}
 	}
+
 	return result
 }
 
 func (fds FileDiffs) StrOutputQuiet() string {
 	result := ""
+
 	sortedPaths := fds.sortedPaths()
 	for _, path := range sortedPaths {
 		fd := fds[path]
@@ -132,26 +139,31 @@ func (fds FileDiffs) StrOutputQuiet() string {
 			result += fd.StrOutputQuiet()
 		}
 	}
+
 	return result
 }
 
 func (fds FileDiffs) ApplyAll() error {
 	applyErrs := make(collections.Errors, len(fds))
+
 	i := 0
 	for _, diff := range fds {
 		applyErrs[i] = diff.Apply()
 		i++
 	}
+
 	return applyErrs.Combine()
 }
 
 func (fds FileDiffs) ChangedCount() int {
 	changed := 0
+
 	for _, fd := range fds {
 		if fd.Diff.Changed() {
 			changed++
 		}
 	}
+
 	return changed
 }
 
@@ -160,6 +172,8 @@ func (fds FileDiffs) sortedPaths() []string {
 	for path := range fds {
 		pathKeys = append(pathKeys, path)
 	}
+
 	slices.Sort(pathKeys)
+
 	return pathKeys
 }

@@ -25,5 +25,6 @@ import (
 func NewScanner(content []byte) *bufio.Scanner {
 	scanner := bufio.NewScanner(bytes.NewReader(content))
 	scanner.Buffer(nil, len(content)+1)
+
 	return scanner
 }

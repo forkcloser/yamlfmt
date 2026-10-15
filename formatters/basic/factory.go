@@ -15,8 +15,9 @@
 package basic
 
 import (
-	"github.com/google/yamlfmt"
 	"github.com/mitchellh/mapstructure"
+
+	"github.com/forkcloser/yamlfmt"
 )
 
 type BasicFormatterFactory struct{}
@@ -33,11 +34,13 @@ func (f *BasicFormatterFactory) NewFormatter(configData map[string]any) (yamlfmt
 			return nil, err
 		}
 	}
+
 	return newFormatter(config)
 }
 
 func newFormatter(config *Config) (yamlfmt.Formatter, error) {
 	yamlFeatures, err := ConfigureYAMLFeaturesFromConfig(config)
+
 	return &BasicFormatter{
 		Config:       config,
 		Features:     ConfigureFeaturesFromConfig(config),

@@ -19,7 +19,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/google/yamlfmt/internal/linescan"
+	"github.com/forkcloser/yamlfmt/internal/linescan"
 )
 
 // A line longer than bufio's default token limit must scan without error,
@@ -29,10 +29,12 @@ func TestNewScannerLongLine(t *testing.T) {
 	content := []byte("a\n" + long + "\nb\n")
 
 	var got []string
+
 	scanner := linescan.NewScanner(content)
 	for scanner.Scan() {
 		got = append(got, scanner.Text())
 	}
+
 	if err := scanner.Err(); err != nil {
 		t.Fatalf("unexpected scan error: %v", err)
 	}
@@ -41,6 +43,7 @@ func TestNewScannerLongLine(t *testing.T) {
 	if len(got) != len(want) {
 		t.Fatalf("got %d lines, want %d", len(got), len(want))
 	}
+
 	for i := range want {
 		if got[i] != want[i] {
 			t.Fatalf("line %d mismatch: len(got)=%d len(want)=%d", i, len(got[i]), len(want[i]))
@@ -54,6 +57,7 @@ func TestNewScannerEmpty(t *testing.T) {
 	for scanner.Scan() {
 		t.Fatalf("empty content should yield no lines, got %q", scanner.Text())
 	}
+
 	if err := scanner.Err(); err != nil {
 		t.Fatalf("unexpected scan error: %v", err)
 	}

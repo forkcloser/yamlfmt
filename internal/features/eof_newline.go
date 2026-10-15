@@ -17,7 +17,7 @@ package features
 import (
 	"context"
 
-	"github.com/google/yamlfmt"
+	"github.com/forkcloser/yamlfmt"
 )
 
 func MakeFeatureEOFNewline(linebreakStr string) yamlfmt.Feature {
@@ -34,6 +34,7 @@ func eofNewlineFeature(linebreakStr string) yamlfmt.FeatureFunc {
 			linebreakBytes := []byte(linebreakStr)
 			content = append(content, linebreakBytes...)
 		}
+
 		return nil, content, nil
 	}
 }

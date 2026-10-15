@@ -32,6 +32,7 @@ func Diff(a, b, lineSep string) (string, int) {
 		}),
 		cmp.Reporter(&reporter),
 	)
+
 	return reporter.String(), reporter.DiffCount
 }
 
@@ -86,23 +87,28 @@ func (r *Reporter) PushStep(ps cmp.PathStep) {
 
 func (r *Reporter) Report(rs cmp.Result) {
 	line := diffLine{}
+
 	vOld, vNew := r.path.Last().Values()
 	if !rs.Equal() {
 		r.DiffCount++
+
 		if vOld.IsValid() {
 			line.diff = diffTypeChange
 			line.old = fmt.Sprintf("%+v", vOld)
 		}
+
 		if vNew.IsValid() {
 			if line.diff == diffTypeEqual {
 				line.diff = diffTypeAdd
 			}
+
 			line.new = fmt.Sprintf("%+v", vNew)
 		}
 	} else {
 		line.old = fmt.Sprintf("%+v", vOld)
 		line.new = fmt.Sprintf("%+v", vOld)
 	}
+
 	r.lines = append(r.lines, line)
 }
 

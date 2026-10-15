@@ -23,6 +23,7 @@ func (e FormatErrors) Error() string {
 	for _, err := range e {
 		errStr += fmt.Sprintf("%s\n", err.Error())
 	}
+
 	return errStr
 }
 

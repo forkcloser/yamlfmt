@@ -20,10 +20,11 @@ import (
 	"errors"
 	"io"
 
-	"github.com/google/yamlfmt"
-	yamlFeature "github.com/google/yamlfmt/formatters/basic/features"
-	"github.com/google/yamlfmt/pkg/yaml"
 	"github.com/mitchellh/mapstructure"
+
+	"github.com/forkcloser/yamlfmt"
+	yamlFeature "github.com/forkcloser/yamlfmt/formatters/basic/features"
+	"github.com/forkcloser/yamlfmt/pkg/yaml"
 )
 
 const BasicFormatterType string = "basic"
@@ -43,6 +44,7 @@ func (f *BasicFormatter) Type() string {
 func (f *BasicFormatter) Format(input []byte) ([]byte, error) {
 	// Run all features with BeforeActions
 	ctx := context.Background()
+
 	ctx, yamlContent, err := f.Features.ApplyFeatures(ctx, input, yamlfmt.FeatureApplyBefore)
 	if err != nil {
 		return nil, err
@@ -52,15 +54,19 @@ func (f *BasicFormatter) Format(input []byte) ([]byte, error) {
 	reader := bytes.NewReader(yamlContent)
 	decoder := f.getNewDecoder(reader)
 	documents := []yaml.Node{}
+
 	for {
 		var docNode yaml.Node
+
 		err := decoder.Decode(&docNode)
 		if err != nil {
 			if errors.Is(err, io.EOF) {
 				break
 			}
+
 			return nil, err
 		}
+
 		documents = append(documents, docNode)
 	}
 
@@ -76,6 +82,7 @@ func (f *BasicFormatter) Format(input []byte) ([]byte, error) {
 	}
 
 	var b bytes.Buffer
+
 	e := f.getNewEncoder(&b)
 	for _, doc := range documents {
 		err := e.Encode(&doc)
@@ -98,6 +105,7 @@ func (f *BasicFormatter) getNewDecoder(reader io.Reader) *yaml.Decoder {
 	if f.Config.ScanFoldedAsLiteral {
 		d.SetScanBlockScalarAsLiteral(true)
 	}
+
 	return d
 }
 
@@ -122,6 +130,7 @@ func (f *BasicFormatter) getNewEncoder(buf *bytes.Buffer) *yaml.Encoder {
 	if f.Config.ArrayIndent > 0 {
 		e.SetArrayIndent(f.Config.ArrayIndent)
 	}
+
 	e.SetIndentRootArray(f.Config.IndentRootArray)
 
 	// Yes I know I could SetCorrectAliasKeys(!f.Config.DisableAliasKeyCorrection)
@@ -136,10 +145,13 @@ func (f *BasicFormatter) getNewEncoder(buf *bytes.Buffer) *yaml.Encoder {
 
 func (f *BasicFormatter) ConfigMap() (map[string]any, error) {
 	configMap := map[string]any{}
+
 	err := mapstructure.Decode(f.Config, &configMap)
 	if err != nil {
 		return nil, err
 	}
+
 	configMap["type"] = BasicFormatterType
+
 	return configMap, err
 }

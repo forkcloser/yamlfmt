@@ -18,8 +18,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/google/yamlfmt"
-	"github.com/google/yamlfmt/internal/linescan"
+	"github.com/forkcloser/yamlfmt"
+	"github.com/forkcloser/yamlfmt/internal/linescan"
 )
 
 func MakeFeatureTrimTrailingWhitespace(linebreakStr string) yamlfmt.Feature {
@@ -32,10 +32,12 @@ func MakeFeatureTrimTrailingWhitespace(linebreakStr string) yamlfmt.Feature {
 func trimTrailingWhitespaceFeature(linebreakStr string) yamlfmt.FeatureFunc {
 	return func(_ context.Context, content []byte) (context.Context, []byte, error) {
 		s := linescan.NewScanner(content)
+
 		newLines := []string{}
 		for s.Scan() {
 			newLines = append(newLines, strings.TrimRight(s.Text(), " "))
 		}
+
 		return nil, []byte(strings.Join(newLines, linebreakStr)), nil
 	}
 }

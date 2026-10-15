@@ -56,7 +56,7 @@ func Assert(t TestingT, condition bool, message string, args ...any) {
 
 // Assert that `got` equals `expected`. The types between compared
 // arguments must be the same. Uses `assert.EqualMessage`.
-func Equal[T comparable](t TestingT, expected T, got T) {
+func Equal[T comparable](t TestingT, expected, got T) {
 	t.Helper()
 	EqualMsg(t, expected, got, EqualMessage)
 }
@@ -64,7 +64,7 @@ func Equal[T comparable](t TestingT, expected T, got T) {
 // Assert that the value at `got` equals the value at `expected`. Will
 // error if either pointer is nil. Uses `assert.DereferenceEqualErrMsg`
 // and `assert.EqualMessage`.
-func DereferenceEqual[T comparable](t TestingT, expected *T, got *T) {
+func DereferenceEqual[T comparable](t TestingT, expected, got *T) {
 	t.Helper()
 	DereferenceEqualMsg(t, expected, got, DereferenceEqualErrMsg, EqualMessage)
 }
@@ -85,7 +85,7 @@ func NotNilErr(t TestingT, err error) {
 // different message if the lengths are different or if any element
 // mismatches. Uses `assert.SliceSizeMessage` and
 // `assert.SliceMismatchMessage`.
-func SliceEqual[T comparable](t TestingT, expected []T, got []T) {
+func SliceEqual[T comparable](t TestingT, expected, got []T) {
 	t.Helper()
 	SliceEqualMsg(
 		t,
@@ -98,7 +98,7 @@ func SliceEqual[T comparable](t TestingT, expected []T, got []T) {
 
 // Assert that `got` equals `expected`. The types between compared
 // arguments must be the same. Uses `message`.
-func EqualMsg[T comparable](t TestingT, expected T, got T, message string) {
+func EqualMsg[T comparable](t TestingT, expected, got T, message string) {
 	t.Helper()
 
 	if got != expected {

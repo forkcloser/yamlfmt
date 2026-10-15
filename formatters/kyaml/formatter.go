@@ -31,10 +31,12 @@ func (f *KYAMLFormatter) Type() string {
 func (f *KYAMLFormatter) Format(input []byte) ([]byte, error) {
 	encoder := &kyaml.Encoder{}
 	in := bytes.NewReader(input)
+
 	out := bytes.Buffer{}
 	if err := encoder.FromYAML(in, &out); err != nil {
 		return input, err
 	}
+
 	return out.Bytes(), nil
 }
 

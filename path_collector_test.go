@@ -25,9 +25,10 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/google/yamlfmt"
-	"github.com/google/yamlfmt/internal/collections"
-	"github.com/google/yamlfmt/internal/tempfile"
+
+	"github.com/forkcloser/yamlfmt"
+	"github.com/forkcloser/yamlfmt/internal/collections"
+	"github.com/forkcloser/yamlfmt/internal/tempfile"
 )
 
 func TestFilepathCollector(t *testing.T) {
@@ -347,6 +348,7 @@ func (tps testPatterns) allPatterns(path string) []string {
 			result[i] = fmt.Sprintf("%s/%s", path, tps[i].pattern)
 		}
 	}
+
 	return result
 }
 
@@ -357,6 +359,7 @@ func (tps testPatterns) allPatternsForceAbsolute(path string) []string {
 	for i := 0; i < len(tps); i++ {
 		result[i] = fmt.Sprintf("%s/%s", path, tps[i].pattern)
 	}
+
 	return result
 }
 
@@ -376,10 +379,12 @@ func (tc testCase) run(t *testing.T, makeCollector makeCollectorFunc) {
 	if err != nil {
 		t.Fatalf("could not get working directory: %v", err)
 	}
+
 	t.Run(tc.name, func(t *testing.T) {
 		if tc.skip {
 			t.Skip()
 		}
+
 		tempPath := t.TempDir()
 
 		if tc.changeToTempDir {
@@ -394,12 +399,14 @@ func (tc testCase) run(t *testing.T, makeCollector makeCollectorFunc) {
 		}
 
 		collector := makeCollector(tc, tempPath)
+
 		paths, err := collector.CollectPaths()
 		if err != nil {
 			t.Fatalf("Test case failed: %v", err)
 		}
 
 		filesToFormat := collections.Set[string]{}
+
 		for _, path := range paths {
 			formatPath := path
 			if strings.HasPrefix(formatPath, "/") {
@@ -408,8 +415,10 @@ func (tc testCase) run(t *testing.T, makeCollector makeCollectorFunc) {
 					t.Fatalf("Path %s could not match to path %s", tempPath, path)
 				}
 			}
+
 			filesToFormat.Add(formatPath)
 		}
+
 		if !filesToFormat.Equals(tc.expectedFiles) {
 			t.Fatalf("Expected to receive paths %v\nbut got %v", tc.expectedFiles, filesToFormat)
 		}
@@ -448,6 +457,7 @@ func useDoublestarCollector(tc testCase, path string) yamlfmt.PathCollector {
 		// something confusing from the main working directory.
 		includePatterns = tc.includePatterns.allPatternsForceAbsolute(path)
 	}
+
 	return &yamlfmt.DoublestarCollector{
 		Include: includePatterns,
 		Exclude: tc.excludePatterns.allPatterns(path),
@@ -462,6 +472,7 @@ func TestPatternFile(t *testing.T) {
 
 		fmt.Fprintln(&b, "# Comment followed by empty line")
 		fmt.Fprintln(&b)
+
 		for _, p := range patterns {
 			fmt.Fprintln(&b, p)
 		}

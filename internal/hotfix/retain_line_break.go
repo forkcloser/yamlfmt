@@ -22,8 +22,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/google/yamlfmt"
-	"github.com/google/yamlfmt/internal/linescan"
+	"github.com/forkcloser/yamlfmt"
+	"github.com/forkcloser/yamlfmt/internal/linescan"
 )
 
 const lineBreakPlaceholder = "#magic___^_^___line"
@@ -54,26 +54,36 @@ func MakeFeatureRetainLineBreak(linebreakStr string, chomp bool) yamlfmt.Feature
 func replaceLineBreakFeature(newlineStr string, chomp bool) yamlfmt.FeatureFunc {
 	return func(_ context.Context, content []byte) (context.Context, []byte, error) {
 		var buf bytes.Buffer
+
 		scanner := linescan.NewScanner(content)
-		var inLineBreaks bool
-		var padding paddinger
+
+		var (
+			inLineBreaks bool
+			padding      paddinger
+		)
+
 		for scanner.Scan() {
 			txt := scanner.Text()
 			padding.adjust(txt)
+
 			if strings.TrimSpace(txt) == "" { // line break or empty space line.
 				if chomp && inLineBreaks {
 					continue
 				}
+
 				buf.WriteString(padding.String()) // prepend some padding incase literal multiline strings.
 				buf.WriteString(lineBreakPlaceholder)
 				buf.WriteString(newlineStr)
+
 				inLineBreaks = true
 			} else {
 				buf.WriteString(txt)
 				buf.WriteString(newlineStr)
+
 				inLineBreaks = false
 			}
 		}
+
 		return nil, buf.Bytes(), scanner.Err()
 	}
 }
@@ -81,6 +91,7 @@ func replaceLineBreakFeature(newlineStr string, chomp bool) yamlfmt.FeatureFunc 
 func restoreLineBreakFeature(newlineStr string) yamlfmt.FeatureFunc {
 	return func(_ context.Context, content []byte) (context.Context, []byte, error) {
 		var buf bytes.Buffer
+
 		scanner := linescan.NewScanner(content)
 		for scanner.Scan() {
 			txt := scanner.Text()
@@ -90,13 +101,16 @@ func restoreLineBreakFeature(newlineStr string) yamlfmt.FeatureFunc {
 				// To fix it, the empty line could only be inserted by us.
 				continue
 			}
+
 			if strings.HasPrefix(strings.TrimLeft(txt, " "), lineBreakPlaceholder) {
 				buf.WriteString(newlineStr)
 				continue
 			}
+
 			buf.WriteString(txt)
 			buf.WriteString(newlineStr)
 		}
+
 		return nil, buf.Bytes(), scanner.Err()
 	}
 }

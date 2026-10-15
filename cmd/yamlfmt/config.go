@@ -24,14 +24,15 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/google/yamlfmt"
-	"github.com/google/yamlfmt/command"
-	"github.com/google/yamlfmt/engine"
-	"github.com/google/yamlfmt/formatters/kyaml"
-	"github.com/google/yamlfmt/internal/collections"
-	"github.com/google/yamlfmt/internal/logger"
-	"github.com/google/yamlfmt/pkg/yaml"
 	"github.com/mitchellh/mapstructure"
+
+	"github.com/forkcloser/yamlfmt"
+	"github.com/forkcloser/yamlfmt/command"
+	"github.com/forkcloser/yamlfmt/engine"
+	"github.com/forkcloser/yamlfmt/formatters/kyaml"
+	"github.com/forkcloser/yamlfmt/internal/collections"
+	"github.com/forkcloser/yamlfmt/internal/logger"
+	"github.com/forkcloser/yamlfmt/pkg/yaml"
 )
 
 var configFileNames = collections.Set[string]{
@@ -61,12 +62,15 @@ func (e *configPathError) Error() string {
 	if errors.Is(e.err, errConfPathInvalid) {
 		return fmt.Sprintf("config path %s was invalid", e.path)
 	}
+
 	if errors.Is(e.err, errConfPathNotExist) {
 		return fmt.Sprintf("no config file found in directory %s", filepath.Dir(e.path))
 	}
+
 	if errors.Is(e.err, errConfPathIsDir) {
 		return fmt.Sprintf("config path %s is a directory", e.path)
 	}
+
 	return e.err.Error()
 }
 
@@ -79,11 +83,14 @@ func readConfig(path string) (map[string]any, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	var configData map[string]interface{}
+
 	err = yaml.Unmarshal(yamlBytes, &configData)
 	if err != nil {
 		return nil, err
 	}
+
 	return configData, nil
 }
 
@@ -122,6 +129,7 @@ func getConfigPath() (string, error) {
 	// All else fails, no path and no error (signals to
 	// use default config).
 	logger.Debug(logger.DebugCodeConfig, "No config file found, using default config")
+
 	return "", nil
 }
 
@@ -139,6 +147,7 @@ func getConfigPathFromFlag() (string, error) {
 	}
 
 	logger.Debug(logger.DebugCodeConfig, "No config path specified in -conf")
+
 	return configPath, errNoConfFlag
 }
 
@@ -149,10 +158,12 @@ func getConfigPathFromDirTree() (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	absPath, err := filepath.Abs(wd)
 	if err != nil {
 		return "", err
 	}
+
 	dir := absPath
 	for true {
 		configPath, err := getConfigPathFromDir(dir)
@@ -160,12 +171,15 @@ func getConfigPathFromDirTree() (string, error) {
 			logger.Debug(logger.DebugCodeConfig, "Found config at %s", configPath)
 			return configPath, nil
 		}
+
 		previousDir := dir
+
 		dir = filepath.Dir(dir)
 		if dir == previousDir {
 			break
 		}
 	}
+
 	return "", errConfPathNotExist
 }
 
@@ -176,6 +190,7 @@ func getConfigPathFromConfigHome() (string, error) {
 	if runtime.GOOS == "windows" {
 		return getConfigPathFromAppDataLocal()
 	}
+
 	return getConfigPathFromXdgConfigHome()
 }
 
@@ -187,9 +202,12 @@ func getConfigPathFromXdgConfigHome() (string, error) {
 			// I fear whom's'tever does not have a $HOME set
 			return "", errNoConfigHome
 		}
+
 		configHome = filepath.Join(home, ".config")
 	}
+
 	homeConfigPath := filepath.Join(configHome, configHomeDir)
+
 	return getConfigPathFromDir(homeConfigPath)
 }
 
@@ -200,7 +218,9 @@ func getConfigPathFromAppDataLocal() (string, error) {
 		// so this should only happen to sickos with broken setups.
 		return "", errNoConfigHome
 	}
+
 	homeConfigPath := filepath.Join(configHome, configHomeDir)
+
 	return getConfigPathFromDir(homeConfigPath)
 }
 
@@ -212,7 +232,9 @@ func getConfigPathFromDir(dir string) (string, error) {
 			return configPath, nil
 		}
 	}
+
 	logger.Debug(logger.DebugCodeConfig, "No config file found in %s", dir)
+
 	return "", errConfPathNotExist
 }
 
@@ -225,17 +247,20 @@ func validatePath(path string) error {
 				err:  errConfPathNotExist,
 			}
 		}
+
 		if info.IsDir() {
 			return &configPathError{
 				path: path,
 				err:  errConfPathIsDir,
 			}
 		}
+
 		return &configPathError{
 			path: path,
 			err:  err,
 		}
 	}
+
 	return nil
 }
 
@@ -263,10 +288,12 @@ func makeCommandConfigFromData(configData map[string]any) (*command.Config, erro
 		if err != nil {
 			return nil, err
 		}
+
 		for k, v := range overrides {
 			if k == "type" {
 				config.FormatterConfig.Type = v.(string)
 			}
+
 			config.FormatterConfig.FormatterSettings[k] = v
 		}
 	}
@@ -289,12 +316,15 @@ func makeCommandConfigFromData(configData map[string]any) (*command.Config, erro
 	if !config.Doublestar {
 		config.Doublestar = *flagDoublestar
 	}
+
 	if !config.ContinueOnError {
 		config.ContinueOnError = *flagContinueOnError
 	}
+
 	if !config.GitignoreExcludes {
 		config.GitignoreExcludes = *flagGitignoreExcludes
 	}
+
 	config.GitignorePath = pickFirst(config.GitignorePath, *flagGitignorePath)
 	config.OutputFormat = pickFirst(config.OutputFormat, getOutputFormatFromFlag(), engine.EngineOutputDefault)
 
@@ -302,6 +332,7 @@ func makeCommandConfigFromData(configData map[string]any) (*command.Config, erro
 	if config.Doublestar {
 		defaultMatchType = yamlfmt.MatchTypeDoublestar
 	}
+
 	config.MatchType = pickFirst(config.MatchType, yamlfmt.MatchType(*flagMatchType), defaultMatchType)
 
 	// Overwrite config if includes are provided through args
@@ -338,6 +369,7 @@ func parseFormatterConfigFlag(flagValues []string) (map[string]any, error) {
 				flagErrors,
 				fmt.Errorf("badly formatted config field: %s", configField),
 			)
+
 			continue
 		}
 
@@ -372,5 +404,6 @@ func detectAlternateFormatterFlag() (string, error) {
 	if *flagKyaml {
 		return kyaml.KYAMLFormatterType, nil
 	}
+
 	return "", nil
 }

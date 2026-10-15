@@ -22,7 +22,7 @@ I'm going to use these links to GitHub Discussions as a blog of sorts, until I c
 
 To download the `yamlfmt` command, you can download the desired binary from releases or install the module directly:
 ```
-go install github.com/google/yamlfmt/cmd/yamlfmt@latest
+go install github.com/forkcloser/yamlfmt/cmd/yamlfmt@latest
 ```
 This currently requires Go version 1.21 or greater.
 
@@ -72,7 +72,7 @@ For in-depth configuration documentation see [Config](docs/config-file.md).
 
 NOTE: Support for verifying with cosign is present from v0.14.0 onward.
 
-In case you get the `yamlfmt` binary directly from a release, you may want to verify its authenticity. Checksums are applied to all released artifacts, and the resulting checksum file is signed using [cosign](https://docs.sigstore.dev/cosign/installation/).
+In case you get the `yamlfmt` binary directly from a release, you may want to verify its authenticity. Checksums are applied to all released artifacts, and the resulting checksum file is signed using [cosign](https://docs.sigstore.dev/cosign/system_config/installation/).
 
 Steps to verify (replace `A.B.C` in the commands listed below with the version you want):
 

@@ -17,8 +17,8 @@ package basic_test
 import (
 	"testing"
 
-	"github.com/google/yamlfmt"
-	"github.com/google/yamlfmt/formatters/basic"
+	"github.com/forkcloser/yamlfmt"
+	"github.com/forkcloser/yamlfmt/formatters/basic"
 )
 
 func TestNewWithConfigRetainsDefaultValues(t *testing.T) {
@@ -105,16 +105,19 @@ func TestNewWithConfigRetainsDefaultValues(t *testing.T) {
 	}
 
 	factory := basic.BasicFormatterFactory{}
+
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			formatter, err := factory.NewFormatter(tc.configMap)
 			if err != nil {
 				t.Fatalf("expected factory to create config, got error: %v", err)
 			}
+
 			basicFormatter, ok := formatter.(*basic.BasicFormatter)
 			if !ok {
 				t.Fatal("should have been able to cast to basic formatter")
 			}
+
 			if *basicFormatter.Config != tc.expectedConfig {
 				t.Fatalf("configs differed:\nexpected: %v\ngot: %v", *basicFormatter.Config, tc.expectedConfig)
 			}

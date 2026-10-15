@@ -19,9 +19,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/google/yamlfmt/formatters/basic"
-	"github.com/google/yamlfmt/formatters/basic/features"
 	"github.com/stretchr/testify/require"
+
+	"github.com/forkcloser/yamlfmt/formatters/basic"
+	"github.com/forkcloser/yamlfmt/formatters/basic/features"
 )
 
 var factory = basic.BasicFormatterFactory{}
@@ -243,6 +244,7 @@ map:
 				require.ErrorIs(t, err, tc.badConfigErr)
 				return
 			}
+
 			require.NoError(t, err)
 
 			result, err := f.Format([]byte(tc.input))
@@ -250,10 +252,12 @@ map:
 				require.Error(t, err)
 				return
 			}
+
 			require.NoError(t, err)
 
 			expected := tc.expect
 			actual := string(result)
+
 			if tc.expect == "" {
 				expected = tc.input
 			}
@@ -265,6 +269,7 @@ map:
 				expected = stripTrailingNewline(expected)
 				actual = stripTrailingNewline(actual)
 			}
+
 			require.Equal(t, expected, actual)
 		})
 	}
@@ -381,6 +386,7 @@ c: 3
 func TestRetainLineBreaksLongLine(t *testing.T) {
 	longValue := strings.Repeat("x", 200*1024) // 200KiB, well past the 64KiB limit
 	input := "a: 1\n\nbig: " + longValue + "\nb: 2\n"
+
 	for _, single := range []bool{false, true} {
 		t.Run(fmt.Sprintf("single=%t", single), func(t *testing.T) {
 			f, err := factory.NewFormatter(map[string]any{
@@ -404,5 +410,6 @@ func stripTrailingNewline(s string) string {
 			s = s[:len(s)-2]
 		}
 	}
+
 	return s
 }

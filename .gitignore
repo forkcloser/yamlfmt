@@ -1,14 +1,20 @@
 # Sometimes use these for testing
-.yamlfmt
+/.yamlfmt
 !integrationtest/**/.yamlfmt
 tmp
 
 # Goreleaser build folder
 dist/
 
-# build file with `make build`
-yamlfmt
-yamlfmt.exe
+# the binary `go build ./cmd/yamlfmt` leaves at the root
+/yamlfmt
+/yamlfmt.exe
 
 # vscode settings
 .vscode
+
+# Required by limen (book/mandatory-files.md, ".gitignore").
+/build
+/_scratch
+.claude
+.idea

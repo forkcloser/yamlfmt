@@ -17,7 +17,7 @@ package logger
 import (
 	"fmt"
 
-	"github.com/google/yamlfmt/internal/collections"
+	"github.com/forkcloser/yamlfmt/internal/collections"
 )
 
 type DebugCode int

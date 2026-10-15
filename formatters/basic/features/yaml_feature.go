@@ -14,12 +14,14 @@
 
 package features
 
-import "github.com/google/yamlfmt/pkg/yaml"
+import "github.com/forkcloser/yamlfmt/pkg/yaml"
 
 // These features will directly use the `yaml.Node` type and
 // as such are specific to this formatter.
-type YAMLFeatureFunc func(yaml.Node) error
-type YAMLFeatureList []YAMLFeatureFunc
+type (
+	YAMLFeatureFunc func(yaml.Node) error
+	YAMLFeatureList []YAMLFeatureFunc
+)
 
 func (y YAMLFeatureList) ApplyFeatures(node yaml.Node) error {
 	for _, f := range y {
@@ -27,9 +29,11 @@ func (y YAMLFeatureList) ApplyFeatures(node yaml.Node) error {
 		if f == nil {
 			continue
 		}
+
 		if err := f(node); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }

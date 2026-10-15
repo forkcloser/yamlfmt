@@ -49,10 +49,12 @@ func (r *Registry) GetFactory(fType string) (Factory, error) {
 	if fType == "" {
 		return r.GetDefaultFactory()
 	}
+
 	factory, ok := r.registry[fType]
 	if !ok {
 		return nil, fmt.Errorf("no formatter registered with type \"%s\"", fType)
 	}
+
 	return factory, nil
 }
 
@@ -61,5 +63,6 @@ func (r *Registry) GetDefaultFactory() (Factory, error) {
 	if !ok {
 		return nil, fmt.Errorf("no default formatter registered for type \"%s\"", r.defaultType)
 	}
+
 	return factory, nil
 }

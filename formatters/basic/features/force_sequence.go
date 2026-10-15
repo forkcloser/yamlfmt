@@ -18,7 +18,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/google/yamlfmt/pkg/yaml"
+	"github.com/forkcloser/yamlfmt/pkg/yaml"
 )
 
 type SequenceStyle string
@@ -32,6 +32,7 @@ var ErrUnrecognizedSequenceStyle = errors.New("unrecognized sequence style")
 
 func FeatureForceSequenceStyle(style SequenceStyle) (YAMLFeatureFunc, error) {
 	var styleVal yaml.Style
+
 	switch style {
 	case SequenceStyleFlow:
 		styleVal = yaml.FlowStyle
@@ -43,16 +44,22 @@ func FeatureForceSequenceStyle(style SequenceStyle) (YAMLFeatureFunc, error) {
 	default:
 		return nil, fmt.Errorf("%w: %s", ErrUnrecognizedSequenceStyle, style)
 	}
+
 	var forceStyle YAMLFeatureFunc
+
 	forceStyle = func(n yaml.Node) error {
 		var err error
+
 		for _, c := range n.Content {
 			if c.Kind == yaml.SequenceNode {
 				c.Style = styleVal
 			}
+
 			err = forceStyle(*c)
 		}
+
 		return err
 	}
+
 	return forceStyle, nil
 }

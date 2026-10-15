@@ -21,9 +21,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/yamlfmt"
-	"github.com/google/yamlfmt/internal/assert"
-	"github.com/google/yamlfmt/internal/gitlab"
+
+	"github.com/forkcloser/yamlfmt"
+	"github.com/forkcloser/yamlfmt/internal/assert"
+	"github.com/forkcloser/yamlfmt/internal/gitlab"
 )
 
 func TestCodeQuality(t *testing.T) {
@@ -70,6 +71,7 @@ func TestCodeQuality(t *testing.T) {
 
 			got, gotOK := gitlab.NewCodeQuality(tc.diff)
 			assert.Equal(t, tc.wantOK, gotOK)
+
 			if !gotOK {
 				return
 			}
@@ -82,6 +84,7 @@ func TestCodeQuality(t *testing.T) {
 			assert.NilErr(t, err)
 
 			var gotUnmarshal gitlab.CodeQuality
+
 			err = json.Unmarshal(data, &gotUnmarshal)
 			assert.NilErr(t, err)
 
@@ -209,6 +212,7 @@ func TestCodeQuality_DetectChangedLines_FromTestdata(t *testing.T) {
 
 			cq, ok := gitlab.NewCodeQuality(diff)
 			assert.Equal(t, c.wantOK, ok)
+
 			if !ok {
 				return
 			}

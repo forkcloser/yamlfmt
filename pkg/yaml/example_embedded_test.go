@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/google/yamlfmt/pkg/yaml"
+	"github.com/forkcloser/yamlfmt/pkg/yaml"
 )
 
 // An example showing how to unmarshal embedded
@@ -48,6 +48,7 @@ func ExampleUnmarshal_embedded() {
 	if err != nil {
 		log.Fatalf("cannot unmarshal data: %v", err)
 	}
+
 	fmt.Println(b.A)
 	fmt.Println(b.B)
 	// Output:

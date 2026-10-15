@@ -18,13 +18,13 @@ package yaml_test
 import (
 	"bytes"
 	"fmt"
-	"os"
-
 	"io"
+	"os"
 	"strings"
 
-	"github.com/google/yamlfmt/pkg/yaml"
 	. "gopkg.in/check.v1"
+
+	"github.com/forkcloser/yamlfmt/pkg/yaml"
 )
 
 var nodeTests = []struct {
@@ -45,10 +45,12 @@ var nodeTests = []struct {
 				Column: 1,
 			}},
 		},
-	}, {
+	},
+	{
 		"[encode]null\n",
 		yaml.Node{},
-	}, {
+	},
+	{
 		"foo\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -62,7 +64,8 @@ var nodeTests = []struct {
 				Column: 1,
 			}},
 		},
-	}, {
+	},
+	{
 		"\"foo\"\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -77,7 +80,8 @@ var nodeTests = []struct {
 				Column: 1,
 			}},
 		},
-	}, {
+	},
+	{
 		"'foo'\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -92,7 +96,8 @@ var nodeTests = []struct {
 				Column: 1,
 			}},
 		},
-	}, {
+	},
+	{
 		"!!str 123\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -107,7 +112,8 @@ var nodeTests = []struct {
 				Column: 1,
 			}},
 		},
-	}, {
+	},
+	{
 		// Although the node isn't TaggedStyle, dropping the tag would change the value.
 		"[encode]!!binary gIGC\n",
 		yaml.Node{
@@ -122,7 +128,8 @@ var nodeTests = []struct {
 				Column: 1,
 			}},
 		},
-	}, {
+	},
+	{
 		// Item doesn't have a tag, but needs to be binary encoded due to its content.
 		"[encode]!!binary gIGC\n",
 		yaml.Node{
@@ -136,7 +143,8 @@ var nodeTests = []struct {
 				Column: 1,
 			}},
 		},
-	}, {
+	},
+	{
 		// Same, but with strings we can just quote them.
 		"[encode]\"123\"\n",
 		yaml.Node{
@@ -151,7 +159,8 @@ var nodeTests = []struct {
 				Column: 1,
 			}},
 		},
-	}, {
+	},
+	{
 		"!tag:something 123\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -166,7 +175,8 @@ var nodeTests = []struct {
 				Column: 1,
 			}},
 		},
-	}, {
+	},
+	{
 		"[encode]!tag:something 123\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -180,7 +190,8 @@ var nodeTests = []struct {
 				Column: 1,
 			}},
 		},
-	}, {
+	},
+	{
 		"!tag:something {}\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -194,7 +205,8 @@ var nodeTests = []struct {
 				Column: 1,
 			}},
 		},
-	}, {
+	},
+	{
 		"[encode]!tag:something {}\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -208,7 +220,8 @@ var nodeTests = []struct {
 				Column: 1,
 			}},
 		},
-	}, {
+	},
+	{
 		"!tag:something []\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -222,7 +235,8 @@ var nodeTests = []struct {
 				Column: 1,
 			}},
 		},
-	}, {
+	},
+	{
 		"[encode]!tag:something []\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -236,7 +250,8 @@ var nodeTests = []struct {
 				Column: 1,
 			}},
 		},
-	}, {
+	},
+	{
 		"''\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -251,7 +266,8 @@ var nodeTests = []struct {
 				Column: 1,
 			}},
 		},
-	}, {
+	},
+	{
 		"|\n  foo\n  bar\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -266,7 +282,8 @@ var nodeTests = []struct {
 				Column: 1,
 			}},
 		},
-	}, {
+	},
+	{
 		"true\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -280,7 +297,8 @@ var nodeTests = []struct {
 				Column: 1,
 			}},
 		},
-	}, {
+	},
+	{
 		"-10\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -294,7 +312,8 @@ var nodeTests = []struct {
 				Column: 1,
 			}},
 		},
-	}, {
+	},
+	{
 		"4294967296\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -308,7 +327,8 @@ var nodeTests = []struct {
 				Column: 1,
 			}},
 		},
-	}, {
+	},
+	{
 		"0.1000\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -322,7 +342,8 @@ var nodeTests = []struct {
 				Column: 1,
 			}},
 		},
-	}, {
+	},
+	{
 		"-.inf\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -336,7 +357,8 @@ var nodeTests = []struct {
 				Column: 1,
 			}},
 		},
-	}, {
+	},
+	{
 		".nan\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -350,7 +372,8 @@ var nodeTests = []struct {
 				Column: 1,
 			}},
 		},
-	}, {
+	},
+	{
 		"{}\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -365,7 +388,8 @@ var nodeTests = []struct {
 				Column: 1,
 			}},
 		},
-	}, {
+	},
+	{
 		"a: b c\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -392,7 +416,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		"a:\n  b: c\n  d: e\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -442,7 +467,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		"a:\n  - b: c\n    d: e\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -498,7 +524,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		"a: # AI\n  - b\nc:\n  - d\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -549,7 +576,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		"[decode]a:\n  # HM\n  - # HB1\n    # HB2\n    b: # IB\n      c # IC\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -598,7 +626,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		// When encoding the value above, it loses b's inline comment.
 		"[encode]a:\n  # HM\n  - # HB1\n    # HB2\n    b: c # IC\n",
 		yaml.Node{
@@ -648,7 +677,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		// Multiple cases of comment inlining next to mapping keys.
 		"a: | # IA\n  str\nb: >- # IB\n  str\nc: # IC\n  - str\nd: # ID\n  str:\n",
 		yaml.Node{
@@ -734,7 +764,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		// Indentless sequence.
 		"[decode]a:\n# HM\n- # HB1\n  # HB2\n  b: # IB\n    c # IC\n",
 		yaml.Node{
@@ -783,7 +814,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		"- a\n- b\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -810,7 +842,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		"- a\n- - b\n  - c\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -848,7 +881,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		"[a, b]\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -876,7 +910,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		"- a\n- [b, c]\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -915,7 +950,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		"a: &x 1\nb: &y 2\nc: *x\nd: *y\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -926,13 +962,14 @@ var nodeTests = []struct {
 				Line:   1,
 				Column: 1,
 				Tag:    "!!map",
-				Content: []*yaml.Node{{
-					Kind:   yaml.ScalarNode,
-					Value:  "a",
-					Tag:    "!!str",
-					Line:   1,
-					Column: 1,
-				},
+				Content: []*yaml.Node{
+					{
+						Kind:   yaml.ScalarNode,
+						Value:  "a",
+						Tag:    "!!str",
+						Line:   1,
+						Column: 1,
+					},
 					saveNode("x", &yaml.Node{
 						Kind:   yaml.ScalarNode,
 						Value:  "1",
@@ -962,30 +999,34 @@ var nodeTests = []struct {
 						Tag:    "!!str",
 						Line:   3,
 						Column: 1,
-					}, {
+					},
+					{
 						Kind:   yaml.AliasNode,
 						Value:  "x",
 						Alias:  dropNode("x"),
 						Line:   3,
 						Column: 4,
-					}, {
+					},
+					{
 						Kind:   yaml.ScalarNode,
 						Value:  "d",
 						Tag:    "!!str",
 						Line:   4,
 						Column: 1,
-					}, {
+					},
+					{
 						Kind:   yaml.AliasNode,
 						Value:  "y",
 						Tag:    "",
 						Alias:  dropNode("y"),
 						Line:   4,
 						Column: 4,
-					}},
+					},
+				},
 			}},
 		},
-	}, {
-
+	},
+	{
 		"# One\n# Two\ntrue # Three\n# Four\n# Five\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -1002,8 +1043,8 @@ var nodeTests = []struct {
 				FootComment: "# Four\n# Five",
 			}},
 		},
-	}, {
-
+	},
+	{
 		"# š\ntrue # š\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -1019,8 +1060,8 @@ var nodeTests = []struct {
 				LineComment: "# š",
 			}},
 		},
-	}, {
-
+	},
+	{
 		"[decode]\n# One\n\n# Two\n\n# Three\ntrue # Four\n# Five\n\n# Six\n\n# Seven\n",
 		yaml.Node{
 			Kind:        yaml.DocumentNode,
@@ -1039,7 +1080,8 @@ var nodeTests = []struct {
 				FootComment: "# Five",
 			}},
 		},
-	}, {
+	},
+	{
 		// Write out the pound character if missing from comments.
 		"[encode]# One\n# Two\ntrue # Three\n# Four\n# Five\n",
 		yaml.Node{
@@ -1057,7 +1099,8 @@ var nodeTests = []struct {
 				FootComment: "Four\nFive\n",
 			}},
 		},
-	}, {
+	},
+	{
 		"[encode]#   One\n#   Two\ntrue #   Three\n#   Four\n#   Five\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -1074,7 +1117,8 @@ var nodeTests = []struct {
 				FootComment: "  Four\n  Five",
 			}},
 		},
-	}, {
+	},
+	{
 		"# DH1\n\n# DH2\n\n# H1\n# H2\ntrue # I\n# F1\n# F2\n\n# DF1\n\n# DF2\n",
 		yaml.Node{
 			Kind:        yaml.DocumentNode,
@@ -1093,7 +1137,8 @@ var nodeTests = []struct {
 				FootComment: "# F1\n# F2",
 			}},
 		},
-	}, {
+	},
+	{
 		"# DH1\n\n# DH2\n\n# HA1\n# HA2\nka: va # IA\n# FA1\n# FA2\n\n# HB1\n# HB2\nkb: vb # IB\n# FB1\n# FB2\n\n# DF1\n\n# DF2\n",
 		yaml.Node{
 			Kind:        yaml.DocumentNode,
@@ -1139,7 +1184,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		"# DH1\n\n# DH2\n\n# HA1\n# HA2\n- la # IA\n# FA1\n# FA2\n\n# HB1\n# HB2\n- lb # IB\n# FB1\n# FB2\n\n# DF1\n\n# DF2\n",
 		yaml.Node{
 			Kind:        yaml.DocumentNode,
@@ -1173,7 +1219,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		"# DH1\n\n- la # IA\n# HB1\n- lb\n",
 		yaml.Node{
 			Kind:        yaml.DocumentNode,
@@ -1202,7 +1249,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		"- la # IA\n- lb # IB\n- lc # IC\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -1237,7 +1285,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		"# DH1\n\n# HL1\n- - la\n  # HB1\n  - lb\n",
 		yaml.Node{
 			Kind:        yaml.DocumentNode,
@@ -1272,7 +1321,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		"# DH1\n\n# HL1\n- # HA1\n  - la\n  # HB1\n  - lb\n",
 		yaml.Node{
 			Kind:        yaml.DocumentNode,
@@ -1308,7 +1358,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		"[decode]# DH1\n\n# HL1\n- # HA1\n\n  - la\n  # HB1\n  - lb\n",
 		yaml.Node{
 			Kind:        yaml.DocumentNode,
@@ -1344,7 +1395,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		"# DH1\n\n# HA1\nka:\n  # HB1\n  kb:\n    # HC1\n    # HC2\n    - lc # IC\n    # FC1\n    # FC2\n\n    # HD1\n    - ld # ID\n    # FD1\n\n# DF1\n",
 		yaml.Node{
 			Kind:        yaml.DocumentNode,
@@ -1405,7 +1457,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		"# DH1\n\n# HA1\nka:\n  # HB1\n  kb:\n    # HC1\n    # HC2\n    - lc # IC\n    # FC1\n    # FC2\n\n    # HD1\n    - ld # ID\n    # FD1\nke: ve\n\n# DF1\n",
 		yaml.Node{
 			Kind:        yaml.DocumentNode,
@@ -1477,7 +1530,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		"# DH1\n\n# DH2\n\n# HA1\n# HA2\nka:\n  # HB1\n  # HB2\n  kb:\n" +
 			"    # HC1\n    # HC2\n    kc:\n      # HD1\n      # HD2\n      kd: vd\n      # FD1\n      # FD2\n" +
 			"    # FC1\n    # FC2\n  # FB1\n  # FB2\n# FA1\n# FA2\n\n# HE1\n# HE2\nke: ve\n# FE1\n# FE2\n\n# DF1\n\n# DF2\n",
@@ -1565,7 +1619,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		// Same as above but indenting ke in so it's also part of ka's value.
 		"# DH1\n\n# DH2\n\n# HA1\n# HA2\nka:\n  # HB1\n  # HB2\n  kb:\n" +
 			"    # HC1\n    # HC2\n    kc:\n      # HD1\n      # HD2\n      kd: vd\n      # FD1\n      # FD2\n" +
@@ -1654,7 +1709,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		// Decode only due to lack of newline at the end.
 		"[decode]# HA1\nka:\n  # HB1\n  kb: vb\n  # FB1\n# FA1",
 		yaml.Node{
@@ -1697,7 +1753,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		// Same as above, but with newline at the end.
 		"# HA1\nka:\n  # HB1\n  kb: vb\n  # FB1\n# FA1\n",
 		yaml.Node{
@@ -1740,7 +1797,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		// Same as above, but without FB1.
 		"# HA1\nka:\n  # HB1\n  kb: vb\n# FA1\n",
 		yaml.Node{
@@ -1782,7 +1840,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		// Same as above, but with two newlines at the end. Decode-only for that.
 		"[decode]# HA1\nka:\n  # HB1\n  kb: vb\n  # FB1\n# FA1\n\n",
 		yaml.Node{
@@ -1825,7 +1884,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		// Similar to above, but make HB1 look more like a footer of ka.
 		"[decode]# HA1\nka:\n# HB1\n\n  kb: vb\n# FA1\n",
 		yaml.Node{
@@ -1867,7 +1927,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		"ka:\n  kb: vb\n# FA1\n\nkc: vc\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -1918,7 +1979,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		"ka:\n  kb: vb\n# HC1\nkc: vc\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -1969,7 +2031,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		// Decode only due to empty line before HC1.
 		"[decode]ka:\n  kb: vb\n\n# HC1\nkc: vc\n",
 		yaml.Node{
@@ -2021,7 +2084,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		// Decode-only due to empty lines around HC1.
 		"[decode]ka:\n  kb: vb\n\n# HC1\n\nkc: vc\n",
 		yaml.Node{
@@ -2073,7 +2137,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		"ka: # IA\n  kb: # IB\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -2112,7 +2177,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		"# HA1\nka:\n  # HB1\n  kb: vb\n  # FB1\n# HC1\n# HC2\nkc: vc\n# FC1\n# FC2\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -2167,7 +2233,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		// Same as above, but decode only due to empty line between ka's value and kc's headers.
 		"[decode]# HA1\nka:\n  # HB1\n  kb: vb\n  # FB1\n\n# HC1\n# HC2\nkc: vc\n# FC1\n# FC2\n",
 		yaml.Node{
@@ -2223,7 +2290,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		"# H1\n[la, lb] # I\n# F1\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -2253,7 +2321,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		"# DH1\n\n# SH1\n[\n  # HA1\n  la, # IA\n  # FA1\n\n  # HB1\n  lb, # IB\n  # FB1\n]\n# SF1\n\n# DF1\n",
 		yaml.Node{
 			Kind:        yaml.DocumentNode,
@@ -2290,7 +2359,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		// Same as above, but with extra newlines before FB1 and FB2
 		"[decode]# DH1\n\n# SH1\n[\n  # HA1\n  la, # IA\n  # FA1\n\n  # HB1\n  lb, # IB\n\n\n  # FB1\n\n# FB2\n]\n# SF1\n\n# DF1\n",
 		yaml.Node{
@@ -2328,7 +2398,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		"# DH1\n\n# SH1\n[\n  # HA1\n  la,\n  # FA1\n\n  # HB1\n  lb,\n  # FB1\n]\n# SF1\n\n# DF1\n",
 		yaml.Node{
 			Kind:        yaml.DocumentNode,
@@ -2363,7 +2434,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		"ka:\n  kb: [\n    # HA1\n    la,\n    # FA1\n\n    # HB1\n    lb,\n    # FB1\n  ]\n",
 		yaml.Node{
 			Kind:   yaml.DocumentNode,
@@ -2418,7 +2490,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		"# DH1\n\n# MH1\n{\n  # HA1\n  ka: va, # IA\n  # FA1\n\n  # HB1\n  kb: vb, # IB\n  # FB1\n}\n# MF1\n\n# DF1\n",
 		yaml.Node{
 			Kind:        yaml.DocumentNode,
@@ -2467,7 +2540,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		"# DH1\n\n# MH1\n{\n  # HA1\n  ka: va,\n  # FA1\n\n  # HB1\n  kb: vb,\n  # FB1\n}\n# MF1\n\n# DF1\n",
 		yaml.Node{
 			Kind:        yaml.DocumentNode,
@@ -2514,7 +2588,8 @@ var nodeTests = []struct {
 				}},
 			}},
 		},
-	}, {
+	},
+	{
 		"# DH1\n\n# DH2\n\n# HA1\n# HA2\n- &x la # IA\n# FA1\n# FA2\n\n# HB1\n# HB2\n- *x # IB\n# FB1\n# FB2\n\n# DF1\n\n# DF2\n",
 		yaml.Node{
 			Kind:        yaml.DocumentNode,
@@ -2563,7 +2638,9 @@ func (s *S) TestNodeRoundtrip(c *C) {
 	c.Skip("see comment in test")
 
 	defer os.Setenv("TZ", os.Getenv("TZ"))
+
 	os.Setenv("TZ", "UTC")
+
 	for i, item := range nodeTests {
 		c.Logf("test %d: %q", i, item.yaml)
 
@@ -2581,6 +2658,7 @@ func (s *S) TestNodeRoundtrip(c *C) {
 			encode = false
 			testYaml = s
 		}
+
 		if s := strings.TrimPrefix(testYaml, "[encode]"); s != testYaml {
 			decode = false
 			testYaml = s
@@ -2588,15 +2666,19 @@ func (s *S) TestNodeRoundtrip(c *C) {
 
 		if decode {
 			var node yaml.Node
+
 			err := yaml.Unmarshal([]byte(testYaml), &node)
 			c.Assert(err, IsNil)
+
 			if strings.Contains(item.yaml, "#") {
 				var buf bytes.Buffer
 				fprintComments(&buf, &node, "    ")
 				c.Logf("  obtained comments:\n%s", buf.Bytes())
 			}
+
 			c.Assert(&node, DeepEquals, &item.node)
 		}
+
 		if encode {
 			node := deepCopyNode(&item.node, nil)
 			buf := bytes.Buffer{}
@@ -2618,18 +2700,23 @@ func deepCopyNode(node *yaml.Node, cache map[*yaml.Node]*yaml.Node) *yaml.Node {
 	if n, ok := cache[node]; ok {
 		return n
 	}
+
 	if cache == nil {
 		cache = make(map[*yaml.Node]*yaml.Node)
 	}
+
 	copy := *node
 	cache[node] = &copy
+
 	copy.Content = nil
 	for _, elem := range node.Content {
 		copy.Content = append(copy.Content, deepCopyNode(elem, cache))
 	}
+
 	if node.Alias != nil {
 		copy.Alias = deepCopyNode(node.Alias, cache)
 	}
+
 	return &copy
 }
 
@@ -2647,6 +2734,7 @@ func peekNode(name string) *yaml.Node {
 func dropNode(name string) *yaml.Node {
 	node := savedNodes[name]
 	delete(savedNodes, name)
+
 	return node
 }
 
@@ -2710,7 +2798,9 @@ var setStringTests = []struct {
 
 func (s *S) TestSetString(c *C) {
 	defer os.Setenv("TZ", os.Getenv("TZ"))
+
 	os.Setenv("TZ", "UTC")
+
 	for i, item := range setStringTests {
 		c.Logf("test %d: %q", i, item.str)
 
@@ -2730,10 +2820,12 @@ func (s *S) TestSetString(c *C) {
 		c.Assert(buf.String(), Equals, item.yaml)
 
 		var doc yaml.Node
+
 		err = yaml.Unmarshal([]byte(item.yaml), &doc)
 		c.Assert(err, IsNil)
 
 		var str string
+
 		err = node.Decode(&str)
 		c.Assert(err, IsNil)
 		c.Assert(str, Equals, item.str)
@@ -2808,11 +2900,13 @@ func (s *S) TestNodeEncodeDecode(c *C) {
 		c.Logf("Encode/Decode test value #%d: %#v", i, item.value)
 
 		var v interface{}
+
 		err := item.node.Decode(&v)
 		c.Assert(err, IsNil)
 		c.Assert(v, DeepEquals, item.value)
 
 		var n yaml.Node
+
 		err = n.Encode(item.value)
 		c.Assert(err, IsNil)
 		c.Assert(n, DeepEquals, item.node)
@@ -2822,6 +2916,7 @@ func (s *S) TestNodeEncodeDecode(c *C) {
 func (s *S) TestNodeZeroEncodeDecode(c *C) {
 	// Zero node value behaves as nil when encoding...
 	var n yaml.Node
+
 	data, err := yaml.Marshal(&n)
 	c.Assert(err, IsNil)
 	c.Assert(string(data), Equals, "null\n")
@@ -2846,6 +2941,7 @@ func (s *S) TestNodeOmitEmpty(c *C) {
 		A int
 		B yaml.Node ",omitempty"
 	}
+
 	v.A = 1
 	data, err := yaml.Marshal(&v)
 	c.Assert(err, IsNil)
@@ -2866,6 +2962,7 @@ func fprintComments(out io.Writer, node *yaml.Node, indent string) {
 		fmt.Fprintf(out, "%s<DOC> ", indent)
 		fprintCommentSet(out, node)
 		fmt.Fprintf(out, "\n")
+
 		for i := 0; i < len(node.Content); i++ {
 			fprintComments(out, node.Content[i], indent+"  ")
 		}
@@ -2873,6 +2970,7 @@ func fprintComments(out io.Writer, node *yaml.Node, indent string) {
 		fmt.Fprintf(out, "%s<MAP> ", indent)
 		fprintCommentSet(out, node)
 		fmt.Fprintf(out, "\n")
+
 		for i := 0; i < len(node.Content); i += 2 {
 			fprintComments(out, node.Content[i], indent+"  ")
 			fprintComments(out, node.Content[i+1], indent+"  ")
@@ -2881,6 +2979,7 @@ func fprintComments(out io.Writer, node *yaml.Node, indent string) {
 		fmt.Fprintf(out, "%s<SEQ> ", indent)
 		fprintCommentSet(out, node)
 		fmt.Fprintf(out, "\n")
+
 		for i := 0; i < len(node.Content); i++ {
 			fprintComments(out, node.Content[i], indent+"  ")
 		}

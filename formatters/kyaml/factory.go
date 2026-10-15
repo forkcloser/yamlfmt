@@ -14,7 +14,7 @@
 
 package kyaml
 
-import "github.com/google/yamlfmt"
+import "github.com/forkcloser/yamlfmt"
 
 type KYAMLFormatterFactory struct{}
 

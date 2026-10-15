@@ -5,7 +5,7 @@ NOTE: https://github.com/google/yamlfmt/discussions/278
 Starting in v0.7.1, `yamlfmt` can be used as a hook for the popular [pre-commit](https://pre-commit.com/) tool. To include a `yamlfmt` hook in your `pre-commit` config, add the following to the `repos` block in your `.pre-commit-config.yaml`:
 
 ```yaml
-- repo: https://github.com/google/yamlfmt
+- repo: https://github.com/forkcloser/yamlfmt
   rev: v0.19.0
   hooks:
     - id: yamlfmt
@@ -18,7 +18,7 @@ When running yamlfmt with the `pre-commit` hook, the only way to configure it is
 If you would prefer to manage your `yamlfmt` installation yourself, you can have the hook use your installed `yamlfmt` binary instead. As long as `yamlfmt` is in your PATH, you can override the `language` setting to `system`.
 
 ```yaml
-- repo: https://github.com/google/yamlfmt
+- repo: https://github.com/forkcloser/yamlfmt
   rev: v0.19.0
   hooks:
     - id: yamlfmt
@@ -30,7 +30,7 @@ If you would prefer to manage your `yamlfmt` installation yourself, you can have
 By default, `yamlfmt` will run on all staged `.yaml` files. If you want to run on other filetypes, you can override the `types` configuration:
 
 ```yaml
-- repo: https://github.com/google/yamlfmt
+- repo: https://github.com/forkcloser/yamlfmt
   rev: v0.19.0
   hooks:
     - id: yamlfmt
@@ -45,7 +45,7 @@ You can read more on file filtering in [the pre-commit docs for filtering files 
 If you are providing your own `yamlfmt` configuration file, the default hook experience is going to make `yamlfmt` behave in adverse ways. The experience the hook gives should be fine without a config file, or if your config file only provides `formatter` configuration, but if you provide path configuration there can be strange behaviour. One way around this is to modify the hook not to pass filenames as arguments:
 
 ```yaml
-- repo: https://github.com/google/yamlfmt
+- repo: https://github.com/forkcloser/yamlfmt
   rev: v0.19.0
   hooks:
     - id: yamlfmt

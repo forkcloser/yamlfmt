@@ -1,62 +1,55 @@
-# Copyright 2022 Google LLC
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-name: Go test
+# Seeded once by `limen fix`, then the project's own: limen never updates it.
+# The shared lanes (verify on every platform, fuzz, tools) live in
+# limen-verify.yaml, content-pinned and kept current by `limen fix`; this file
+# calls them, adds the project's own jobs, and gates on all of them.
+name: ci
 
 on:
+  push:
+    branches: [main]
   pull_request:
 
+# No default token permissions: each job states what it needs. This workflow
+# only ever reads the repository — it cannot write code, releases, or
+# packages even if a step is compromised.
+permissions: {}
+
+# A superseded run (new push to the same branch/PR) is cancelled, not raced.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  run-lint:
-    runs-on: ubuntu-latest
+  limen:
+    uses: ./.github/workflows/limen-verify.yaml
+    permissions:
+      contents: read
+      # A project that needs another runner set passes it here, e.g.
+      # with:
+      #   os: '["ubuntu-24.04", "macos-15"]'
+
+  # The ONE required status check (defaultRequiredChecks in
+  # internal/github/audit.go). Requiring the lanes by name would bake the
+  # runner list into every ruleset; this job collapses them to one stable
+  # name. A project job joins `needs` and the assertion below.
+  gate:
+    needs: [limen]
+    # always(), and the result asserted explicitly. Without always() a failed
+    # or cancelled dependency SKIPS this job instead of failing it, and a
+    # skipped required check does not block a merge — branch protection that
+    # quietly stops protecting. `needs.limen.result` is success only when
+    # every lane it ran succeeded: each verify leg, fuzz and tools.
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions: {}
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: 1.25
-          cache: true
-
-      - name: Install tools
-        run: make install_tools
-
-      - name: Check license headers
-        run: make addlicense_check
-
-  run-test:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go: [ '1.23', '1.24', '1.25' ]
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: ${{ matrix.go }}
-          cache: true
-
-      - name: Go Mod Tidy
-        run: go mod tidy
-
-      - name: Go Vet
-        run: make vet
-
-      - name: Test
-        run: make test_v
-
-      - name: Integration Test
-        run: make integrationtest
+      - name: Every lane succeeded
+        env:
+          # Via env, never interpolated into the script: the shell sees data,
+          # not something the expression layer can rewrite into code.
+          RESULT: ${{ needs.limen.result }}
+        shell: bash
+        run: |
+          printf 'limen: %s\n' "$RESULT"
+          [ "$RESULT" = "success" ]

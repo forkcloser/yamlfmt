@@ -1,8 +1,6 @@
-module github.com/google/yamlfmt
+module github.com/forkcloser/yamlfmt
 
-go 1.22
-
-toolchain go1.27.1
+go 1.26.0
 
 require (
 	github.com/bmatcuk/doublestar/v4 v4.7.1
