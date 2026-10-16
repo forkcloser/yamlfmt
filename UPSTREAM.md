@@ -19,6 +19,7 @@ Fork of https://github.com/google/yamlfmt (`main`).
 
 | Change | Here |
 | --- | --- |
+| `ConsecutiveEngine` reports a path given twice instead of formatting it twice | https://github.com/forkcloser/yamlfmt/pull/2 |
 | `preserve_comment_indents` keeps line comments at their source column | https://github.com/forkcloser/yamlfmt/pull/3 |
 | `exclude` matches paths, not strings, in the default collector | https://github.com/forkcloser/yamlfmt/pull/4 |
 | `line_ending` defaults to `lf` on every platform | https://github.com/forkcloser/yamlfmt/pull/5 |
@@ -32,3 +33,4 @@ Fork of https://github.com/google/yamlfmt (`main`).
 | `gitignore_excludes` finds the repository's gitignore and matches from it | https://github.com/forkcloser/yamlfmt/pull/31 |
 | The configuration lookup is deterministic and does not dereference a failed stat | https://github.com/forkcloser/yamlfmt/pull/32 |
 | The `line` and `gitlab` outputs report each file's own finding | https://github.com/forkcloser/yamlfmt/pull/33 |
+| An `Unmarshaler` that wraps a `*TypeError` reports type errors, not a hard failure | https://github.com/forkcloser/yamlfmt/pull/34 |
