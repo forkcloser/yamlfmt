@@ -431,7 +431,15 @@ func replaceLineBreakFeature(newlineStr string, chomp bool) yamlfmt.FeatureFunc 
 
 		breaks.replace("", true)
 
-		return nil, breaks.buf.Bytes(), scanner.Err()
+		// An input without a final line terminator keeps lacking it: a
+		// block scalar at the end takes a terminator added here into its
+		// value, where the encoder would have written it as clipped.
+		out := breaks.buf.Bytes()
+		if len(content) > 0 && !bytes.HasSuffix(content, []byte(newlineStr)) {
+			out = bytes.TrimSuffix(out, []byte(newlineStr))
+		}
+
+		return nil, out, scanner.Err()
 	}
 }
 
