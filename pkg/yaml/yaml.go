@@ -642,14 +642,8 @@ type fieldInfo struct {
 var (
 	structMap       = make(map[reflect.Type]*structInfo)
 	fieldMapMutex   sync.RWMutex
-	unmarshalerType reflect.Type
+	unmarshalerType = reflect.TypeFor[Unmarshaler]()
 )
-
-func init() {
-	var v Unmarshaler
-
-	unmarshalerType = reflect.ValueOf(&v).Elem().Type()
-}
 
 func getStructInfo(st reflect.Type) (*structInfo, error) {
 	fieldMapMutex.RLock()

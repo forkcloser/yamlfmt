@@ -78,6 +78,20 @@ golangci:
         - path: ^pkg/yaml/
           linters:
             - dupword
+        # pkg/yaml's tests use Han-script strings as Unicode test data
+        # (gosmopolitan), and declare inline structs whose field order is what
+        # they assert: duplicate-key detection, output key order, positional
+        # literals, a panic text quoting the struct (embeddedstructfieldcheck).
+        - path: ^pkg/yaml/.*_test\.go$
+          linters:
+            - gosmopolitan
+            - embeddedstructfieldcheck
+        # resolve.go's two init functions fill go-yaml's resolve and tag lookup
+        # tables in loops; an initializer function would restructure the
+        # vendored code for the linter alone.
+        - path: ^pkg/yaml/resolve\.go$
+          linters:
+            - gochecknoinits
         # ---------------------------------------------------------------------------
         # ONBOARDING BACKLOG. Not a judgment: these are the findings the baseline
         # raised on code that predates it, exempted so the enrolment lands green
@@ -367,17 +381,15 @@ golangci:
             - gocritic # 2
             - intrange # 2
         - path: ^pkg/yaml/decode_test\.go$
-          linters: # 236 findings
+          linters: # 232 findings
             - modernize # 138
             - revive # 59
             - gochecknoglobals # 11
             - usestdlibvars # 11
             - govet # 7
-            - embeddedstructfieldcheck # 3
             - dupl # 2
             - staticcheck # 2
             - err113 # 1
-            - errname # 1
             - unused # 1
         - path: ^pkg/yaml/emitterc\.go$
           linters: # 212 findings
@@ -404,19 +416,16 @@ golangci:
             - gocritic # 1
             - intrange # 1
         - path: ^pkg/yaml/encode_test\.go$
-          linters: # 130 findings
+          linters: # 125 findings
             - revive # 50
             - modernize # 40
             - govet # 24
             - usestdlibvars # 5
             - gochecknoglobals # 4
-            - gosmopolitan # 4
-            - embeddedstructfieldcheck # 1
             - err113 # 1
         - path: ^pkg/yaml/example_embedded_test\.go$
-          linters: # 3 findings
+          linters: # 2 findings
             - depguard # 1
-            - embeddedstructfieldcheck # 1
             - gochecknoglobals # 1
         - path: ^pkg/yaml/formattest/encode_test\.go$
           linters: # 13 findings
@@ -466,12 +475,11 @@ golangci:
             - staticcheck # 1
             - varnamelen # 1
         - path: ^pkg/yaml/resolve\.go$
-          linters: # 32 findings
+          linters: # 30 findings
             - revive # 9
             - varnamelen # 7
             - gochecknoglobals # 5
             - modernize # 4
-            - gochecknoinits # 2
             - gocritic # 2
             - gocognit # 1
             - mnd # 1
@@ -507,7 +515,7 @@ golangci:
           linters: # 2 findings
             - revive # 2
         - path: ^pkg/yaml/yaml\.go$
-          linters: # 74 findings
+          linters: # 73 findings
             - revive # 18
             - modernize # 12
             - govet # 10
@@ -518,7 +526,6 @@ golangci:
             - gochecknoglobals # 3
             - staticcheck # 3
             - funcorder # 1
-            - gochecknoinits # 1
             - gocognit # 1
             - unparam # 1
         - path: ^pkg/yaml/yamlh\.go$
