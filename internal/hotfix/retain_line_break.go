@@ -390,10 +390,36 @@ func (s *breakScanner) replace(next string, atEnd bool) {
 	case s.inside(next, atEnd):
 		s.verbatim()
 	case s.region != nil:
+		if s.region.kind == block {
+			// A line of spaces indented past the parent is the block's
+			// content, and the content runs to the last such line, the
+			// empty lines between included; only what follows is breaks.
+			s.verbatimThrough(func(line string) bool { return lineIndent(line) > s.region.parent })
+		}
+
 		s.placeholders(strings.Repeat(" ", s.region.parent))
 	default:
 		s.placeholders(s.padding.String())
 	}
+}
+
+// verbatimThrough writes the pending blank lines up to and including the
+// last one that content accepts, as they are, and keeps the rest pending.
+func (s *breakScanner) verbatimThrough(content func(string) bool) {
+	n := 0
+
+	for i, line := range s.pending {
+		if content(line) {
+			n = i + 1
+		}
+	}
+
+	for _, line := range s.pending[:n] {
+		s.buf.WriteString(line)
+		s.buf.WriteString(s.newline)
+	}
+
+	s.pending = s.pending[n:]
 }
 
 // restore keeps the pending blank lines when they are a block's content

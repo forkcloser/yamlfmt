@@ -754,6 +754,33 @@ next: 1
 `,
 		},
 		{
+			name:  "a line of spaces ends a literal scalar",
+			input: "a: |\n  x\n   \nb: 1\n",
+			expect: `a: "x\n \n"
+b: 1
+`,
+		},
+		{
+			name:  "lines of spaces around an empty line end a literal scalar",
+			input: "a: |\n  x\n   \n\n   \nb: 1\n",
+			expect: `a: "x\n \n\n \n"
+b: 1
+`,
+		},
+		{
+			name:  "an empty line then a line of spaces end a literal scalar",
+			input: "a: |\n  x\n\n   \nb: 1\n",
+			expect: `a: "x\n\n \n"
+b: 1
+`,
+		},
+		{
+			name:  "a line of spaces ends a literal scalar at the end",
+			input: "a: |\n  x\n   ",
+			expect: `a: "x\n "
+`,
+		},
+		{
 			name: "indentation indicator",
 			input: `a: |2
     one
