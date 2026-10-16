@@ -2244,6 +2244,15 @@ func yaml_emitter_write_literal_scalar(emitter *yaml_emitter_t, value []byte) bo
 	if !yaml_emitter_process_line_comment(emitter) {
 		return false
 	}
+
+	// The indicator line ends here, as libyaml's PUT_BREAK ends it, unless a
+	// comment on it ended it already: a value that opens with a break then
+	// writes that break as an empty line of its own, instead of lending it
+	// to the indicator.
+	if emitter.column > 0 && !put_break(emitter) {
+		return false
+	}
+
 	//emitter.indention = true
 	emitter.whitespace = true
 	breaks := true
@@ -2284,6 +2293,12 @@ func yaml_emitter_write_folded_scalar(emitter *yaml_emitter_t, value []byte) boo
 	}
 
 	if !yaml_emitter_process_line_comment(emitter) {
+		return false
+	}
+
+	// As in the literal scalar: the indicator line ends here, unless a
+	// comment on it did.
+	if emitter.column > 0 && !put_break(emitter) {
 		return false
 	}
 
