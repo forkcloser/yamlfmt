@@ -15,8 +15,10 @@
 package basic_test
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"reflect"
 	"strings"
 	"testing"
@@ -941,5 +943,92 @@ func TestBlockScalarLeadingBreak(t *testing.T) {
 			assert.NilErr(t, err)
 			assert.EqualMsg(t, string(got), string(again), "second pass differs.\nfirst:  %q\nsecond: %q")
 		}
+	}
+}
+
+// TestEmptyDocuments: a document with no content keeps its marker and its
+// comments, so a stream keeps its document count through the formatter, on
+// every pass, with and without retained line breaks and with explicit
+// document starts.
+func TestEmptyDocuments(t *testing.T) {
+	t.Parallel()
+
+	cases := map[string]string{
+		"---\n---\n":                  "---\n---\n",
+		"---\n---\na: 1\n":            "---\n---\na: 1\n",
+		"a: 1\n---\n":                 "a: 1\n---\n",
+		"---\n":                       "---\n",
+		"a: 1\n---\nb: 2\n":           "a: 1\n---\nb: 2\n",
+		"---\na: 1\n---\n---\nb: 2\n": "a: 1\n---\n---\nb: 2\n",
+		// an empty document's comments are kept, a comment on the marker's
+		// own line coming back on a line of its own
+		"---\n# c\n---\na: 1\n":   "---\n# c\n---\na: 1\n",
+		"--- # c\n---\n":          "---\n# c\n---\n",
+		"# top\n---\n---\na: 1\n": "# top\n---\n---\na: 1\n",
+	}
+
+	// With explicit document starts asked for, every document the encoder
+	// writes opens with a marker of its own.
+	explicit := map[string]string{
+		"---\n---\n":                  "---\n---\n",
+		"---\n---\na: 1\n":            "---\n---\na: 1\n",
+		"a: 1\n---\n":                 "---\na: 1\n---\n",
+		"---\n":                       "---\n",
+		"a: 1\n---\nb: 2\n":           "---\na: 1\n---\nb: 2\n",
+		"---\na: 1\n---\n---\nb: 2\n": "---\na: 1\n---\n---\nb: 2\n",
+		"---\n# c\n---\na: 1\n":       "---\n# c\n---\na: 1\n",
+	}
+
+	configs := []struct {
+		config map[string]any
+		cases  map[string]string
+	}{
+		{map[string]any{}, cases},
+		{map[string]any{"retain_line_breaks_single": true}, cases},
+		{map[string]any{"include_document_start": true}, explicit},
+	}
+
+	for _, c := range configs {
+		f, err := factory.NewFormatter(c.config)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		for input, want := range c.cases {
+			got, err := f.Format([]byte(input))
+			assert.NilErr(t, err)
+			assert.EqualMsg(t, want, string(got), outputMismatch)
+
+			if before, after := documentCount(t, []byte(input)), documentCount(t, got); before != after {
+				t.Errorf("%q: %d documents in, %d out", input, before, after)
+			}
+
+			again, err := f.Format(got)
+			assert.NilErr(t, err)
+			assert.EqualMsg(t, string(got), string(again), "second pass differs.\nfirst:  %q\nsecond: %q")
+		}
+	}
+}
+
+// documentCount parses every document of a stream.
+func documentCount(t *testing.T, stream []byte) int {
+	t.Helper()
+
+	dec := yaml.NewDecoder(bytes.NewReader(stream))
+	n := 0
+
+	for {
+		var doc yaml.Node
+
+		err := dec.Decode(&doc)
+		if errors.Is(err, io.EOF) {
+			return n
+		}
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		n++
 	}
 }
