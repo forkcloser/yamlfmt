@@ -913,7 +913,7 @@ func (s *S) TestUnmarshal(c *C) {
 		value := reflect.New(t)
 
 		err := yaml.Unmarshal([]byte(item.data), value.Interface())
-		if _, ok := err.(*yaml.TypeError); !ok {
+		if !errors.As(err, new(*yaml.TypeError)) {
 			c.Assert(err, IsNil)
 		}
 
@@ -950,7 +950,7 @@ func (s *S) TestDecoderSingleDocument(c *C) {
 		value := reflect.New(t)
 
 		err := yaml.NewDecoder(strings.NewReader(item.data)).Decode(value.Interface())
-		if _, ok := err.(*yaml.TypeError); !ok {
+		if !errors.As(err, new(*yaml.TypeError)) {
 			c.Assert(err, IsNil)
 		}
 
@@ -994,7 +994,7 @@ func (s *S) TestDecoder(c *C) {
 			var value interface{}
 
 			err := dec.Decode(&value)
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				break
 			}
 
