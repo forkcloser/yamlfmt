@@ -2296,12 +2296,16 @@ func yaml_emitter_write_folded_scalar(emitter *yaml_emitter_t, value []byte) boo
 	for i := 0; i < len(value); {
 		if is_break(value, i) {
 			if !breaks && !leading_spaces && value[i] == '\n' {
-				k := 0
-				for is_break(value, k) {
+				// The line after the break decides whether the break needs an
+				// empty line to survive folding: a more-indented line keeps its
+				// break on its own. That line starts at i, not at the value's
+				// start.
+				k := i
+				for k < len(value) && is_break(value, k) {
 					k += width(value[k])
 				}
 
-				if !emitter.assume_folded_as_literal && !is_blankz(value, k) {
+				if !emitter.assume_folded_as_literal && k < len(value) && !is_blankz(value, k) {
 					if !put_break(emitter) {
 						return false
 					}
