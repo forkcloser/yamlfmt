@@ -75,7 +75,7 @@ func (e *ConsecutiveEngine) Lint(paths []string) (fmt.Stringer, error) {
 	}
 
 	if formatDiffs.ChangedCount() == 0 {
-		return nil, nil
+		return nil, nil //nolint:nilnil // a nil result is the Engine's "nothing changed"; for Lint, a non-nil one fails the run
 	}
 
 	return getEngineOutput(e.OutputFormat, yamlfmt.OperationLint, formatDiffs, e.Quiet, e.Verbose)
@@ -88,7 +88,7 @@ func (e *ConsecutiveEngine) DryRun(paths []string) (fmt.Stringer, error) {
 	}
 
 	if formatDiffs.ChangedCount() == 0 {
-		return nil, nil
+		return nil, nil //nolint:nilnil // a nil result is the Engine's "nothing changed"; DryRun prints a non-nil one
 	}
 
 	return getEngineOutput(e.OutputFormat, yamlfmt.OperationDry, formatDiffs, e.Quiet, e.Verbose)

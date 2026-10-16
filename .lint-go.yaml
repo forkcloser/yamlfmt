@@ -153,11 +153,10 @@ golangci:
             - gosec # 1
             - mnd # 1
         - path: ^engine/consecutive_engine\.go$
-          linters: # 16 findings
+          linters: # 14 findings
             - revive # 7
             - wrapcheck # 3
             - forbidigo # 2
-            - nilnil # 2
             - gosec # 1
             - govet # 1
         - path: ^engine/errors\.go$
