@@ -17,7 +17,7 @@ package engine
 import (
 	"encoding/json"
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/forkcloser/yamlfmt"
@@ -107,10 +107,22 @@ type engineOutputSingleLine struct {
 	Quiet     bool
 }
 
+// String names the files whose formatting differs, one per line, in path
+// order; a file already formatted is not a finding.
 func (eosl engineOutputSingleLine) String() string {
-	var msg strings.Builder
+	paths := make([]string, 0, len(eosl.Files))
+
 	for _, fileDiff := range eosl.Files {
-		msg.WriteString(fileDiff.Path + ": formatting difference found\n")
+		if fileDiff.Diff != nil && fileDiff.Diff.Changed() {
+			paths = append(paths, fileDiff.Path)
+		}
+	}
+
+	slices.Sort(paths)
+
+	var msg strings.Builder
+	for _, path := range paths {
+		msg.WriteString(path + ": formatting difference found\n")
 	}
 
 	return msg.String()
@@ -135,7 +147,9 @@ func (eo engineOutputGitlab) String() string {
 		return ""
 	}
 
-	sort.Sort(byPath(findings))
+	slices.SortFunc(findings, func(a, b gitlab.CodeQuality) int {
+		return strings.Compare(a.Location.Path, b.Location.Path)
+	})
 
 	var b strings.Builder
 
@@ -150,13 +164,4 @@ func (eo engineOutputGitlab) String() string {
 	}
 
 	return b.String()
-}
-
-// byPath is used to sort by Location.Path.
-type byPath []gitlab.CodeQuality
-
-func (b byPath) Len() int           { return len(b) }
-func (b byPath) Less(i, j int) bool { return b[i].Location.Path < b[j].Location.Path }
-func (b byPath) Swap(i, j int) {
-	b[i].Location.Path, b[j].Location.Path = b[j].Location.Path, b[i].Location.Path
 }
