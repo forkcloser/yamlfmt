@@ -867,3 +867,52 @@ func TestFoldedScalarMoreIndentedLine(t *testing.T) {
 		}
 	}
 }
+
+// TestBlockScalarLeadingBreak: a block scalar whose value opens with a
+// newline keeps it as an empty first line, under an indentation indicator,
+// in text and value, on every pass.
+func TestBlockScalarLeadingBreak(t *testing.T) {
+	t.Parallel()
+
+	cases := map[string]string{
+		"a: |\n\n  x\nb: 1\n":      "a: |2\n\n  x\nb: 1\n",
+		"a: |2\n\n  x\nb: 1\n":     "a: |2\n\n  x\nb: 1\n",
+		"a: >\n\n  x\nb: 1\n":      "a: >2\n\n  x\nb: 1\n",
+		"a: |\n  x\n\n  y\nb: 1\n": "a: |\n  x\n\n  y\nb: 1\n",
+		"a: |\n  x\nb: 1\n":        "a: |\n  x\nb: 1\n",
+		// a comment on the indicator line ends it already
+		"a: | # note\n  x\nb: 1\n":    "a: | # note\n  x\nb: 1\n",
+		"a: >- # c\n  x\n  y\nb: 1\n": "a: >- # c\n  x y\nb: 1\n",
+		"a: |+ # c\n  x\n\nb: 1\n":    "a: |+ # c\n  x\n\nb: 1\n",
+		"a: | # note\n\n  x\nb: 1\n":  "a: |2 # note\n\n  x\nb: 1\n",
+	}
+
+	for _, config := range []map[string]any{{}, {"retain_line_breaks_single": true}} {
+		f, err := factory.NewFormatter(config)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		for input, want := range cases {
+			got, err := f.Format([]byte(input))
+			assert.NilErr(t, err)
+			assert.EqualMsg(t, want, string(got), outputMismatch)
+
+			var before, after any
+
+			assert.NilErr(t, yaml.Unmarshal([]byte(input), &before))
+			assert.NilErr(t, yaml.Unmarshal(got, &after))
+			assert.Assert(
+				t,
+				reflect.DeepEqual(before, after),
+				"formatting changed the value:\nbefore: %#v\nafter:  %#v",
+				before,
+				after,
+			)
+
+			again, err := f.Format(got)
+			assert.NilErr(t, err)
+			assert.EqualMsg(t, string(got), string(again), "second pass differs.\nfirst:  %q\nsecond: %q")
+		}
+	}
+}
