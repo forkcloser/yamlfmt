@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"strings"
 
 	"github.com/mitchellh/mapstructure"
 
@@ -81,18 +82,13 @@ func (f *BasicFormatter) Format(input []byte) ([]byte, error) {
 		}
 	}
 
-	var b bytes.Buffer
-
-	e := f.getNewEncoder(&b)
-	for _, doc := range documents {
-		err := e.Encode(&doc)
-		if err != nil {
-			return nil, err
-		}
+	encoded, err := f.encodeDocuments(documents)
+	if err != nil {
+		return nil, err
 	}
 
 	// Run all features with AfterActions
-	_, resultYaml, err := f.Features.ApplyFeatures(ctx, b.Bytes(), yamlfmt.FeatureApplyAfter)
+	_, resultYaml, err := f.Features.ApplyFeatures(ctx, encoded, yamlfmt.FeatureApplyAfter)
 	if err != nil {
 		return nil, err
 	}
@@ -107,6 +103,89 @@ func (f *BasicFormatter) getNewDecoder(reader io.Reader) *yaml.Decoder {
 	}
 
 	return d
+}
+
+// encodeDocuments writes the documents in order. An empty document decodes
+// to a null scalar with no text and encodes to nothing, and nothing between
+// two markers is one document, not two: its marker is its only form, so it
+// is written here, and a document encoded after one opens with a marker of
+// its own, as the encoder does from its second document on.
+func (f *BasicFormatter) encodeDocuments(documents []yaml.Node) ([]byte, error) {
+	var b bytes.Buffer
+
+	e := f.getNewEncoder(&b)
+	marker := "---" + f.lineBreak()
+	encoded, markers := 0, 0
+
+	for _, doc := range documents {
+		if isEmptyDocument(&doc) {
+			f.writeEmptyDocument(&b, &doc)
+
+			markers++
+
+			continue
+		}
+
+		// The encoder's first document starts implicitly unless explicit
+		// starts were asked for, and would merge with a marker before it.
+		if encoded == 0 && markers > 0 && !f.Config.IncludeDocumentStart {
+			b.WriteString(marker)
+		}
+
+		if err := e.Encode(&doc); err != nil {
+			return nil, err
+		}
+
+		encoded++
+	}
+
+	return b.Bytes(), nil
+}
+
+// writeEmptyDocument writes an empty document: its comments before the
+// marker stay before it, the marker, then the comments after it, each
+// comment block as the lines it holds. The decoder puts a comment on the
+// marker's own line among those after it, so it comes back on its own line.
+func (f *BasicFormatter) writeEmptyDocument(b *bytes.Buffer, doc *yaml.Node) {
+	f.writeComment(b, doc.HeadComment)
+	b.WriteString("---" + f.lineBreak())
+
+	scalar := doc.Content[0]
+	for _, comment := range []string{scalar.HeadComment, scalar.LineComment, scalar.FootComment, doc.LineComment, doc.FootComment} {
+		f.writeComment(b, comment)
+	}
+}
+
+// writeComment writes a comment block's lines, if any.
+func (f *BasicFormatter) writeComment(b *bytes.Buffer, comment string) {
+	if comment == "" {
+		return
+	}
+
+	for line := range strings.SplitSeq(comment, "\n") {
+		b.WriteString(line + f.lineBreak())
+	}
+}
+
+// isEmptyDocument reports a document with no text at all: a null scalar
+// the decoder made for it, as against an explicit `null` or `~`.
+func isEmptyDocument(doc *yaml.Node) bool {
+	if doc.Kind != yaml.DocumentNode || len(doc.Content) != 1 {
+		return false
+	}
+
+	c := doc.Content[0]
+
+	return c.Kind == yaml.ScalarNode && c.Tag == "!!null" && c.Value == ""
+}
+
+// lineBreak is the configured line terminator.
+func (f *BasicFormatter) lineBreak() string {
+	if f.Config.LineEnding == yamlfmt.LineBreakStyleCRLF {
+		return "\r\n"
+	}
+
+	return "\n"
 }
 
 func (f *BasicFormatter) getNewEncoder(buf *bytes.Buffer) *yaml.Encoder {
