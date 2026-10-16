@@ -32,24 +32,6 @@ type GoldenCtx struct {
 	Update    bool
 }
 
-// Given either a result or golden path, this will strip
-// and give you the base.
-func (g GoldenCtx) basePath(path string) string {
-	if basePath, ok := strings.CutPrefix(path, g.GoldenDir); ok {
-		return basePath
-	}
-
-	if basePath, ok := strings.CutPrefix(path, g.ResultDir); ok {
-		return basePath
-	}
-
-	return path
-}
-
-func (g GoldenCtx) goldenPath(path string) string {
-	return filepath.Join(g.GoldenDir, g.basePath(path))
-}
-
 func (g GoldenCtx) CompareGoldenFile(path string, gotContent []byte) error {
 	// If we are updating, just rewrite the file.
 	if g.Update {
@@ -118,6 +100,24 @@ func (g GoldenCtx) CompareDirectory(resultPath string) error {
 	// If there are no errors this will be nil, otherwise will be a
 	// combination of every error that occurred.
 	return compareErrors.Combine()
+}
+
+// Given either a result or golden path, this will strip
+// and give you the base.
+func (g GoldenCtx) basePath(path string) string {
+	if basePath, ok := strings.CutPrefix(path, g.GoldenDir); ok {
+		return basePath
+	}
+
+	if basePath, ok := strings.CutPrefix(path, g.ResultDir); ok {
+		return basePath
+	}
+
+	return path
+}
+
+func (g GoldenCtx) goldenPath(path string) string {
+	return filepath.Join(g.GoldenDir, g.basePath(path))
 }
 
 func (g GoldenCtx) updateGoldenDirectory(resultPath string) error {

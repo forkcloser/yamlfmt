@@ -229,11 +229,10 @@ golangci:
             - revive # 3
             - varnamelen # 1
         - path: ^formatters/basic/formatter\.go$
-          linters: # 23 findings
+          linters: # 21 findings
             - revive # 8
             - wrapcheck # 7
             - govet # 3
-            - funcorder # 2
             - varnamelen # 2
             - depguard # 1
         - path: ^formatters/basic/formatter_test\.go$
@@ -320,11 +319,10 @@ golangci:
             - depguard # 2
             - exhaustive # 1
         - path: ^internal/tempfile/golden\.go$
-          linters: # 19 findings
+          linters: # 17 findings
             - revive # 6
             - gosec # 5
             - wrapcheck # 3
-            - funcorder # 2
             - depguard # 1
             - err113 # 1
             - forbidigo # 1
@@ -515,7 +513,7 @@ golangci:
           linters: # 2 findings
             - revive # 2
         - path: ^pkg/yaml/yaml\.go$
-          linters: # 73 findings
+          linters: # 72 findings
             - revive # 18
             - modernize # 12
             - govet # 10
@@ -525,7 +523,6 @@ golangci:
             - exhaustive # 3
             - gochecknoglobals # 3
             - staticcheck # 3
-            - funcorder # 1
             - gocognit # 1
             - unparam # 1
         - path: ^pkg/yaml/yamlh\.go$

@@ -96,6 +96,19 @@ func (f *BasicFormatter) Format(input []byte) ([]byte, error) {
 	return resultYaml, nil
 }
 
+func (f *BasicFormatter) ConfigMap() (map[string]any, error) {
+	configMap := map[string]any{}
+
+	err := mapstructure.Decode(f.Config, &configMap)
+	if err != nil {
+		return nil, err
+	}
+
+	configMap["type"] = BasicFormatterType
+
+	return configMap, err
+}
+
 func (f *BasicFormatter) getNewDecoder(reader io.Reader) *yaml.Decoder {
 	d := yaml.NewDecoder(reader)
 	if f.Config.ScanFoldedAsLiteral {
@@ -221,17 +234,4 @@ func (f *BasicFormatter) getNewEncoder(buf *bytes.Buffer) *yaml.Encoder {
 	}
 
 	return e
-}
-
-func (f *BasicFormatter) ConfigMap() (map[string]any, error) {
-	configMap := map[string]any{}
-
-	err := mapstructure.Decode(f.Config, &configMap)
-	if err != nil {
-		return nil, err
-	}
-
-	configMap["type"] = BasicFormatterType
-
-	return configMap, err
 }
