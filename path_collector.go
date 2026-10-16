@@ -271,6 +271,30 @@ func (c *DoublestarCollector) CollectPaths() ([]string, error) {
 	return pathsToFormat, nil
 }
 
+// pathFromRoot is path as git sees it from the gitignore's directory:
+// slash-separated and relative to root. A path outside root stays as it is.
+func pathFromRoot(root, path string) (string, error) {
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		return "", fmt.Errorf("resolve %s: %w", path, err)
+	}
+
+	rel, err := filepath.Rel(root, abs)
+	if err != nil || strings.HasPrefix(rel, "..") {
+		return filepath.ToSlash(path), nil //nolint:nilerr // outside the root, the path is matched as given
+	}
+
+	return filepath.ToSlash(rel), nil
+}
+
+// errNoGitignore is a repository, or a tree outside one, with no gitignore
+// at the configured name: nothing is ignored, and nothing is wrong.
+var errNoGitignore = errors.New("no gitignore found")
+
+// findGitIgnorePath finds the gitignore: an absolute path as given, a
+// relative one in the working directory or its parents up to the one that
+// holds .git. It returns errNoGitignore when no such file exists along the
+// way, which excludes nothing.
 func findGitIgnorePath(gitignorePath string) (string, error) {
 	// if path is absolute, check if exists and return
 	if filepath.IsAbs(gitignorePath) {
@@ -294,13 +318,13 @@ func findGitIgnorePath(gitignorePath string) (string, error) {
 		// check if we are at the git root directory
 		gitRoot := filepath.Join(dir, ".git")
 		if _, err := os.Stat(gitRoot); err == nil {
-			return gitignorePath, errors.New("gitignore not found")
+			return gitignorePath, errNoGitignore
 		}
 
 		// check if we are at the root of the filesystem
 		parent := filepath.Dir(dir)
 		if parent == dir {
-			return gitignorePath, errors.New("no git repository found")
+			return gitignorePath, errNoGitignore
 		}
 
 		// level up
@@ -308,8 +332,18 @@ func findGitIgnorePath(gitignorePath string) (string, error) {
 	}
 }
 
+// ExcludeWithGitignore drops the paths the gitignore ignores. The patterns
+// are git's, relative to the gitignore's own directory, so each path is
+// matched as its path from there, wherever the command runs; a tree with no
+// gitignore ignores nothing.
 func ExcludeWithGitignore(gitignorePath string, paths []string) ([]string, error) {
 	gitignorePath, err := findGitIgnorePath(gitignorePath)
+	if errors.Is(err, errNoGitignore) {
+		logger.Debug(logger.DebugCodePaths, "no gitignore at %s: nothing excluded", gitignorePath)
+
+		return paths, nil
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -321,10 +355,20 @@ func ExcludeWithGitignore(gitignorePath string, paths []string) ([]string, error
 		return nil, err
 	}
 
+	root, err := filepath.Abs(filepath.Dir(gitignorePath))
+	if err != nil {
+		return nil, fmt.Errorf("gitignore directory: %w", err)
+	}
+
 	pathsToFormat := []string{}
 
 	for _, path := range paths {
-		if ok, pattern := ignorer.MatchesPathHow(path); !ok {
+		fromRoot, err := pathFromRoot(root, path)
+		if err != nil {
+			return nil, err
+		}
+
+		if ok, pattern := ignorer.MatchesPathHow(fromRoot); !ok {
 			pathsToFormat = append(pathsToFormat, path)
 		} else {
 			logger.Debug(logger.DebugCodePaths, "pattern %s matches %s, excluding", pattern.Line, path)
