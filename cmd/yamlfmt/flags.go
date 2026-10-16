@@ -98,7 +98,7 @@ func (a *arrayFlag) Set(value string) error {
 }
 
 func configureHelp() {
-	flag.Usage = func() {
+	flag.Usage = func() { //nolint:reassign // flag.Usage is the flag package's documented hook for custom help
 		fmt.Println(`yamlfmt is a simple command line tool for formatting yaml files.
 
 	Arguments:

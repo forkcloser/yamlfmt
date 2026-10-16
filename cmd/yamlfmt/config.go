@@ -271,10 +271,7 @@ func validatePath(path string) error {
 }
 
 func makeCommandConfigFromData(configData map[string]any) (*command.Config, error) {
-	altFormatter, err := detectAlternateFormatterFlag()
-	if err != nil {
-		return nil, err
-	}
+	altFormatter := detectAlternateFormatterFlag()
 
 	config := command.Config{FormatterConfig: command.NewFormatterConfig()}
 	if altFormatter != "" {
@@ -398,14 +395,12 @@ func parseFormatterConfigFlag(flagValues []string) (map[string]any, error) {
 	return formatterValues, flagErrors.Combine()
 }
 
-func detectAlternateFormatterFlag() (string, error) {
-	// Right now there is only one alternate formatter flag so I'm
-	// being a bit cheap with the implementation. If another formatter
-	// is added, this will need to return an error if more than one
-	// is requested.
+// detectAlternateFormatterFlag knows the one alternate formatter flag; a second
+// one needs a check that at most one was given.
+func detectAlternateFormatterFlag() string {
 	if *flagKyaml {
-		return kyaml.KYAMLFormatterType, nil
+		return kyaml.KYAMLFormatterType
 	}
 
-	return "", nil
+	return ""
 }
