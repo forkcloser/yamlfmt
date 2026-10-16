@@ -35,12 +35,16 @@ import (
 	"github.com/forkcloser/yamlfmt/pkg/yaml"
 )
 
-var configFileNames = collections.Set[string]{
-	".yamlfmt":      {},
-	".yamlfmt.yml":  {},
-	".yamlfmt.yaml": {},
-	"yamlfmt.yml":   {},
-	"yamlfmt.yaml":  {},
+// configFileNames are the names a configuration file is looked for under,
+// in the order docs/config-file.md states, the first present winning; a
+// set would make the choice between two present files depend on map
+// iteration.
+var configFileNames = []string{
+	".yamlfmt",
+	"yamlfmt.yml",
+	"yamlfmt.yaml",
+	".yamlfmt.yaml",
+	".yamlfmt.yml",
 }
 
 const configHomeDir string = "yamlfmt"
@@ -225,7 +229,7 @@ func getConfigPathFromAppDataLocal() (string, error) {
 }
 
 func getConfigPathFromDir(dir string) (string, error) {
-	for filename := range configFileNames {
+	for _, filename := range configFileNames {
 		configPath := filepath.Join(dir, filename)
 		if err := validatePath(configPath); err == nil {
 			logger.Debug(logger.DebugCodeConfig, "Found config at %s", configPath)
@@ -248,16 +252,18 @@ func validatePath(path string) error {
 			}
 		}
 
-		if info.IsDir() {
-			return &configPathError{
-				path: path,
-				err:  errConfPathIsDir,
-			}
-		}
-
 		return &configPathError{
 			path: path,
 			err:  err,
+		}
+	}
+
+	// A directory is not a configuration file; the stat succeeded, so the
+	// info is there to ask.
+	if info.IsDir() {
+		return &configPathError{
+			path: path,
+			err:  errConfPathIsDir,
 		}
 	}
 

@@ -2,7 +2,7 @@
 
 ## Config File Discovery
 
-The config file is a file is a YAML file that contains a valid yamlfmt configuration. yamlfmt will automatically search for files with the following names:
+The config file is a YAML file that contains a valid yamlfmt configuration. yamlfmt will automatically search for files with the following names; the first present wins, in this order:
 
   - `.yamlfmt`
   - `yamlfmt.yml`
