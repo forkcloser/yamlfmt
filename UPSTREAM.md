@@ -14,3 +14,21 @@ Fork of https://github.com/google/yamlfmt (`main`).
 
 | Upstream commit | Why |
 |---|---|
+
+## Changes upstream does not have
+
+| Change | Here |
+| --- | --- |
+| `preserve_comment_indents` keeps line comments at their source column | https://github.com/forkcloser/yamlfmt/pull/3 |
+| `exclude` matches paths, not strings, in the default collector | https://github.com/forkcloser/yamlfmt/pull/4 |
+| `line_ending` defaults to `lf` on every platform | https://github.com/forkcloser/yamlfmt/pull/5 |
+| Retaining line breaks leaves block scalars' blank lines alone | https://github.com/forkcloser/yamlfmt/pull/21 |
+| The emitter keeps a folded scalar's more-indented line as it is | https://github.com/forkcloser/yamlfmt/pull/25 |
+| Retaining line breaks leaves quoted and plain multi-line scalars alone | https://github.com/forkcloser/yamlfmt/pull/26 |
+| Retaining line breaks keeps an input's missing final newline | https://github.com/forkcloser/yamlfmt/pull/27 |
+| Retaining line breaks keeps a block scalar's trailing lines of spaces | https://github.com/forkcloser/yamlfmt/pull/28 |
+| The emitter keeps a block scalar's leading empty line | https://github.com/forkcloser/yamlfmt/pull/29 |
+| An empty document keeps its marker and its comments | https://github.com/forkcloser/yamlfmt/pull/30 |
+| `gitignore_excludes` finds the repository's gitignore and matches from it | https://github.com/forkcloser/yamlfmt/pull/31 |
+| The configuration lookup is deterministic and does not dereference a failed stat | https://github.com/forkcloser/yamlfmt/pull/32 |
+| The `line` and `gitlab` outputs report each file's own finding | https://github.com/forkcloser/yamlfmt/pull/33 |
