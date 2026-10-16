@@ -1388,28 +1388,28 @@ func (s *S) TestObsoleteUnmarshalerTypeErrorProxying(c *C) {
 		"  line 1: cannot unmarshal !!str `B` into int")
 }
 
-var failingErr = errors.New("failingErr")
+var errFailing = errors.New("failingErr")
 
 type failingUnmarshaler struct{}
 
 func (ft *failingUnmarshaler) UnmarshalYAML(node *yaml.Node) error {
-	return failingErr
+	return errFailing
 }
 
 func (s *S) TestUnmarshalerError(c *C) {
 	err := yaml.Unmarshal([]byte("a: b"), &failingUnmarshaler{})
-	c.Assert(err, Equals, failingErr)
+	c.Assert(err, Equals, errFailing)
 }
 
 type obsoleteFailingUnmarshaler struct{}
 
 func (ft *obsoleteFailingUnmarshaler) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	return failingErr
+	return errFailing
 }
 
 func (s *S) TestObsoleteUnmarshalerError(c *C) {
 	err := yaml.Unmarshal([]byte("a: b"), &obsoleteFailingUnmarshaler{})
-	c.Assert(err, Equals, failingErr)
+	c.Assert(err, Equals, errFailing)
 }
 
 type sliceUnmarshaler []int
