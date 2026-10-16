@@ -595,3 +595,43 @@ func TestPatternFile(t *testing.T) {
 		})
 	}
 }
+
+// TestExcludeWithGitignoreFromSubdirectory: the gitignore is found at the
+// repository's root and its patterns apply from there, wherever the command
+// runs; without a gitignore nothing is excluded and nothing fails.
+func TestExcludeWithGitignoreFromSubdirectory(t *testing.T) {
+	repo := t.TempDir()
+
+	for _, dir := range []string{".git", "sub"} {
+		if err := os.Mkdir(filepath.Join(repo, dir), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	t.Chdir(filepath.Join(repo, "sub"))
+
+	got, err := yamlfmt.ExcludeWithGitignore(".gitignore", []string{"x.yml", "y.yml"})
+	if err != nil || len(got) != 2 {
+		t.Fatalf("without a gitignore: %v, %v; want both paths and no error", got, err)
+	}
+
+	if err = os.WriteFile(filepath.Join(repo, ".gitignore"), []byte("sub/x.yml\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err = yamlfmt.ExcludeWithGitignore(".gitignore", []string{"x.yml", "y.yml"})
+	if err != nil || len(got) != 1 || got[0] != "y.yml" {
+		t.Fatalf("from the subdirectory: %v, %v; want y.yml alone", got, err)
+	}
+
+	t.Chdir(repo)
+
+	got, err = yamlfmt.ExcludeWithGitignore(".gitignore", []string{"sub/x.yml", "sub/y.yml"})
+	if err != nil || len(got) != 1 || got[0] != "sub/y.yml" {
+		t.Fatalf("from the root: %v, %v; want sub/y.yml alone", got, err)
+	}
+
+	if _, err = yamlfmt.ExcludeWithGitignore(filepath.Join(repo, "missing"), []string{"x.yml"}); err == nil {
+		t.Fatal("an explicit gitignore path that does not exist was accepted")
+	}
+}
