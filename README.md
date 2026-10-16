@@ -2,7 +2,7 @@
 
 `yamlfmt` is an extensible command line tool or library to format yaml files. 
 
-This is forkcloser's fork of [google/yamlfmt](https://github.com/google/yamlfmt); [UPSTREAM.md](./UPSTREAM.md) records where it forked and what it has taken from upstream since.
+This is forkcloser's fork of [google/yamlfmt](https://github.com/google/yamlfmt); [UPSTREAM.md](./UPSTREAM.md) records where it forked, what it has taken from upstream since, and what it fixes and changes that upstream does not have.
 
 ## Goals
 
