@@ -88,7 +88,7 @@ golangci:
         # Counts are the measurement at enrolment, per file and linter: 2364 in 72 files.
         # ---------------------------------------------------------------------------
         - path: ^cmd/yamlfmt/config\.go$
-          linters: # 19 findings
+          linters: # 18 findings
             - wrapcheck # 6
             - revive # 3
             - depguard # 1
@@ -99,15 +99,13 @@ golangci:
             - gosec # 1
             - modernize # 1
             - staticcheck # 1
-            - unparam # 1
             - varnamelen # 1
         - path: ^cmd/yamlfmt/flags\.go$
-          linters: # 45 findings
+          linters: # 44 findings
             - gochecknoglobals # 23
             - revive # 19
             - forbidigo # 1
             - goconst # 1
-            - reassign # 1
         - path: ^cmd/yamlfmt/main\.go$
           linters: # 7 findings
             - revive # 2
