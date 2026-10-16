@@ -93,6 +93,12 @@ a:`,
   multiline
   folded
   scalar`,
+			// The input ends without a line break, so the value has none:
+			// strip chomping, where clip would add one.
+			expect: `a: >-
+  multiline
+  folded
+  scalar`,
 		},
 		{
 			name: "indentless arrays",
@@ -466,7 +472,7 @@ x:
 			expect: `a: 1
 x:
   y:
-    shell: |
+    shell: |-
       #!/usr/bin/env bash
 
         # bye
@@ -741,6 +747,13 @@ next: 1
 `,
 		},
 		{
+			name:  "a literal scalar at the end of an input without a final newline",
+			input: "a: |\n  x",
+			expect: `a: |-
+  x
+`,
+		},
+		{
 			name: "indentation indicator",
 			input: `a: |2
     one
@@ -767,11 +780,9 @@ b: 1
 			assert.NilErr(t, err)
 			assert.EqualMsg(t, tc.expect, string(got), outputMismatch)
 
-			// The formatter ends the file with a newline, which a block
-			// scalar at the end of an input without one gains as content.
 			var before, after any
 
-			assert.NilErr(t, yaml.Unmarshal([]byte(strings.TrimRight(tc.input, "\n")+"\n"), &before))
+			assert.NilErr(t, yaml.Unmarshal([]byte(tc.input), &before))
 			assert.NilErr(t, yaml.Unmarshal(got, &after))
 			assert.Assert(
 				t,
