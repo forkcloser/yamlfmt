@@ -21,8 +21,6 @@ NOTE: Recommended setup if this is your first time installing Go would be in [th
 
 You can also download the binary you want from releases. The binary is self-sufficient with no dependencies, and can simply be put somewhere on your PATH and run with the command `yamlfmt`. Read more about verifying the authenticity of released artifacts [here](#verifying-release-artifacts).
 
-You can also install the command as a [pre-commit](https://pre-commit.com/) hook. See the [pre-commit hook](./docs/pre-commit.md) docs for instructions.
-
 ## Basic Usage
 
 See [Command Usage](./docs/command-usage.md) for in-depth information and available flags.
