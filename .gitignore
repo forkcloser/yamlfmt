@@ -1,10 +1,6 @@
 # Sometimes use these for testing
 /.yamlfmt
 !integrationtest/**/.yamlfmt
-tmp
-
-# Goreleaser build folder
-dist/
 
 # the binary `go build ./cmd/yamlfmt` leaves at the root
 /yamlfmt
