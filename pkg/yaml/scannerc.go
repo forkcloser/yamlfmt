@@ -1346,11 +1346,9 @@ func yaml_parser_fetch_block_entry(parser *yaml_parser_t) bool {
 		if !yaml_parser_roll_indent(parser, parser.mark.column, -1, yaml_BLOCK_SEQUENCE_START_TOKEN, parser.mark) {
 			return false
 		}
-	} else {
-		// It is an error for the '-' indicator to occur in the flow context,
-		// but we let the Parser detect and report about it because the Parser
-		// is able to point to the context.
 	}
+	// A '-' in the flow context is an error the parser reports, since it can
+	// point to the context.
 
 	// Reset any potential simple keys on the current flow level.
 	if !yaml_parser_remove_simple_key(parser) {

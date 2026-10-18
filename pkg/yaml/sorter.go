@@ -30,12 +30,12 @@ func (l keyList) Less(i, j int) bool {
 	ak := a.Kind()
 	bk := b.Kind()
 
-	for (ak == reflect.Interface || ak == reflect.Ptr) && !a.IsNil() {
+	for (ak == reflect.Interface || ak == reflect.Pointer) && !a.IsNil() {
 		a = a.Elem()
 		ak = a.Kind()
 	}
 
-	for (bk == reflect.Interface || bk == reflect.Ptr) && !b.IsNil() {
+	for (bk == reflect.Interface || bk == reflect.Pointer) && !b.IsNil() {
 		b = b.Elem()
 		bk = b.Kind()
 	}

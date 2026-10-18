@@ -94,12 +94,10 @@ func (c *Command) Run() error {
 		}
 
 		if c.Config.GitignoreExcludes {
-			newPaths, err := yamlfmt.ExcludeWithGitignore(c.Config.GitignorePath, collectedPaths)
+			collectedPaths, err = yamlfmt.ExcludeWithGitignore(c.Config.GitignorePath, collectedPaths)
 			if err != nil {
 				return err
 			}
-
-			collectedPaths = newPaths
 		}
 
 		paths, err = c.analyzePaths(collectedPaths)
@@ -157,8 +155,7 @@ func (c *Command) Run() error {
 	case yamlfmt.OperationPrintConfig:
 		commandConfig := map[string]any{}
 
-		err = mapstructure.Decode(c.Config, &commandConfig)
-		if err != nil {
+		if err := mapstructure.Decode(c.Config, &commandConfig); err != nil {
 			return err
 		}
 

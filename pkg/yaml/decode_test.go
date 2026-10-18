@@ -1692,8 +1692,8 @@ var unmarshalNullTests = []struct {
 	pristine, expected func() interface{}
 }{{
 	"null",
-	func() interface{} { var v interface{}; v = "v"; return &v },
-	func() interface{} { var v interface{}; v = nil; return &v },
+	func() interface{} { var v interface{} = "v"; return &v },
+	func() interface{} { var v interface{}; return &v },
 }, {
 	"null",
 	func() interface{} { s := "s"; return &s },

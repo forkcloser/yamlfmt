@@ -59,8 +59,7 @@ func (f *BasicFormatter) Format(input []byte) ([]byte, error) {
 	for {
 		var docNode yaml.Node
 
-		err := decoder.Decode(&docNode)
-		if err != nil {
+		if err = decoder.Decode(&docNode); err != nil {
 			if errors.Is(err, io.EOF) {
 				break
 			}
@@ -77,7 +76,7 @@ func (f *BasicFormatter) Format(input []byte) ([]byte, error) {
 
 	// Run all YAML features.
 	for _, d := range documents {
-		if err := f.YAMLFeatures.ApplyFeatures(d); err != nil {
+		if err = f.YAMLFeatures.ApplyFeatures(d); err != nil {
 			return nil, err
 		}
 	}
