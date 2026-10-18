@@ -435,7 +435,7 @@ func (s *breakScanner) restore(next string, atEnd bool) {
 }
 
 func replaceLineBreakFeature(newlineStr string, chomp bool) yamlfmt.FeatureFunc {
-	return func(_ context.Context, content []byte) (context.Context, []byte, error) {
+	return func(ctx context.Context, content []byte) (context.Context, []byte, error) {
 		breaks := &breakScanner{newline: newlineStr, chomp: chomp, owner: -1}
 		scanner := linescan.NewScanner(content)
 
@@ -465,12 +465,12 @@ func replaceLineBreakFeature(newlineStr string, chomp bool) yamlfmt.FeatureFunc 
 			out = bytes.TrimSuffix(out, []byte(newlineStr))
 		}
 
-		return nil, out, scanner.Err()
+		return ctx, out, scanner.Err()
 	}
 }
 
 func restoreLineBreakFeature(newlineStr string) yamlfmt.FeatureFunc {
-	return func(_ context.Context, content []byte) (context.Context, []byte, error) {
+	return func(ctx context.Context, content []byte) (context.Context, []byte, error) {
 		breaks := &breakScanner{newline: newlineStr, owner: -1}
 		scanner := linescan.NewScanner(content)
 
@@ -499,6 +499,6 @@ func restoreLineBreakFeature(newlineStr string) yamlfmt.FeatureFunc {
 
 		breaks.restore("", true)
 
-		return nil, breaks.buf.Bytes(), scanner.Err()
+		return ctx, breaks.buf.Bytes(), scanner.Err()
 	}
 }

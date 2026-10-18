@@ -36,3 +36,4 @@ Fork of https://github.com/google/yamlfmt (`main`).
 | An `Unmarshaler` that wraps a `*TypeError` reports type errors, not a hard failure | https://github.com/forkcloser/yamlfmt/pull/34 |
 | The empty value of a flow-sequence pair is positioned on the token after the `:`, as libyaml does | https://github.com/forkcloser/yamlfmt/pull/49 |
 | The configuration decodes through the vendored YAML library instead of mapstructure | https://github.com/forkcloser/yamlfmt/pull/53 |
+| `strip_directives` no longer panics beside `retain_line_breaks`, `trim_trailing_whitespace` or `eof_newline` | https://github.com/forkcloser/yamlfmt/pull/54 |

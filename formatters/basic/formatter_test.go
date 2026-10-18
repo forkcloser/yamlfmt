@@ -231,6 +231,36 @@ b: 2
 			input: "%YAML:1.0\na: 1",
 		},
 		{
+			name: "strip directives after retained line breaks",
+			config: map[string]any{
+				"strip_directives":       true,
+				"retain_line_breaks":     true,
+				"include_document_start": true,
+			},
+			input:  "%YAML 1.2\n---\na: 1\n\nb: 2\n",
+			expect: "%YAML 1.2\n---\na: 1\n\nb: 2\n",
+		},
+		{
+			name: "strip directives after trimmed whitespace",
+			config: map[string]any{
+				"strip_directives":         true,
+				"trim_trailing_whitespace": true,
+				"include_document_start":   true,
+			},
+			input:  "%YAML 1.2\n---\na: 1   \n",
+			expect: "%YAML 1.2\n---\na: 1\n",
+		},
+		{
+			name: "strip directives after the end-of-file newline",
+			config: map[string]any{
+				"strip_directives":       true,
+				"eof_newline":            true,
+				"include_document_start": true,
+			},
+			input:  "%YAML 1.2\n---\na: 1",
+			expect: "%YAML 1.2\n---\na: 1\n",
+		},
+		{
 			name: "array indent",
 			config: map[string]any{
 				"array_indent": 2,
