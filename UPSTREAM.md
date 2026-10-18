@@ -41,3 +41,4 @@ Fork of https://github.com/google/yamlfmt (`main`).
 | `strip_directives` keeps the document start marker that follows directives | https://github.com/forkcloser/yamlfmt/pull/55 |
 | `strip_directives` keeps the document end marker before a directive between documents | https://github.com/forkcloser/yamlfmt/pull/55 |
 | `-kyaml` replaces the configured formatter and keeps the rest of the configuration | https://github.com/forkcloser/yamlfmt/pull/56 |
+| `-formatter type=` takes any value as a formatter name instead of panicking on a number or a bool | https://github.com/forkcloser/yamlfmt/pull/56 |

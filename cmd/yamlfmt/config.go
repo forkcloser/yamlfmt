@@ -292,8 +292,9 @@ func makeCommandConfigFromData(configData map[string]any) (*command.Config, erro
 		}
 
 		for k, v := range overrides {
+			// A type names a formatter, whatever the flag parsing read it as.
 			if k == "type" {
-				config.FormatterConfig.Type = v.(string)
+				config.FormatterConfig.Type = fmt.Sprint(v)
 			}
 
 			config.FormatterConfig.FormatterSettings[k] = v
