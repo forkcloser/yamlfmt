@@ -85,7 +85,8 @@ func restoreDirectivesFeature(lineSepChar string) yamlfmt.FeatureFunc {
 
 		currLine := 1
 		for scanner.Scan() {
-			if !doneDirectives && currLine == directives[directiveIdx].line {
+			// Consecutive directives are due one after the other at the same point.
+			for !doneDirectives && currLine == directives[directiveIdx].line {
 				result.WriteString(directives[directiveIdx].content + lineSepChar)
 
 				currLine++
@@ -100,8 +101,12 @@ func restoreDirectivesFeature(lineSepChar string) yamlfmt.FeatureFunc {
 		// Edge case: There technically can be a directive as the final line. This would be
 		// useless as far as I can tell so maybe yamlfmt should just remove it anyway LOL but
 		// no we'll keep it.
-		if !doneDirectives && currLine == directives[directiveIdx].line {
+		for !doneDirectives && currLine == directives[directiveIdx].line {
 			result.WriteString(directives[directiveIdx].content + lineSepChar)
+
+			currLine++
+			directiveIdx++
+			doneDirectives = directiveIdx == len(directives)
 		}
 
 		return ctx, []byte(result.String()), nil

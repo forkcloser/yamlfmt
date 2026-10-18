@@ -231,6 +231,23 @@ b: 2
 			input: "%YAML:1.0\na: 1",
 		},
 		{
+			name: "strip directives keeps consecutive directives",
+			config: map[string]any{
+				"strip_directives":       true,
+				"include_document_start": true,
+			},
+			input:  "%YAML 1.2\n%FOO bar\n---\na: 1\n",
+			expect: "%YAML 1.2\n%FOO bar\n---\na: 1\n",
+		},
+		{
+			name: "strip directives keeps consecutive trailing directives",
+			config: map[string]any{
+				"strip_directives": true,
+			},
+			input:  "a: 1\n%FOO bar\n%BAR baz\n",
+			expect: "a: 1\n%FOO bar\n%BAR baz\n",
+		},
+		{
 			name: "strip directives after retained line breaks",
 			config: map[string]any{
 				"strip_directives":       true,
