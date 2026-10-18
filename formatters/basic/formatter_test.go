@@ -231,6 +231,22 @@ b: 2
 			input: "%YAML:1.0\na: 1",
 		},
 		{
+			name: "strip directives keeps the document start marker after them",
+			config: map[string]any{
+				"strip_directives": true,
+			},
+			input:  "%YAML 1.2\n---\na: 1\n",
+			expect: "%YAML 1.2\n---\na: 1\n",
+		},
+		{
+			name: "strip directives adds no marker the input did not have",
+			config: map[string]any{
+				"strip_directives": true,
+			},
+			input:  "%YAML:1.0\na: 1\n%TAG:hi\nb: 2\n",
+			expect: "%YAML:1.0\na: 1\n%TAG:hi\nb: 2\n",
+		},
+		{
 			name: "strip directives keeps consecutive directives",
 			config: map[string]any{
 				"strip_directives":       true,

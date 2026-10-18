@@ -38,3 +38,4 @@ Fork of https://github.com/google/yamlfmt (`main`).
 | The configuration decodes through the vendored YAML library instead of mapstructure | https://github.com/forkcloser/yamlfmt/pull/53 |
 | `strip_directives` no longer panics beside `retain_line_breaks`, `trim_trailing_whitespace` or `eof_newline` | https://github.com/forkcloser/yamlfmt/pull/54 |
 | `strip_directives` restores every directive of a run, not only the first | https://github.com/forkcloser/yamlfmt/pull/55 |
+| `strip_directives` keeps the document start marker that follows directives | https://github.com/forkcloser/yamlfmt/pull/55 |

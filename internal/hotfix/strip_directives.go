@@ -29,6 +29,10 @@ var contextDirectivesKey directiveKey = "directives"
 type Directive struct {
 	line    int
 	content string
+	// markerAfter is set on the last directive of a run that the input
+	// followed with a document start marker, which the formatter leaves out
+	// of a first document unless include_document_start is set.
+	markerAfter bool
 }
 
 func ContextWithDirectives(ctx context.Context, directives []Directive) context.Context {
@@ -64,6 +68,11 @@ func stripDirectivesFeature(lineSepChar string) yamlfmt.FeatureFunc {
 					content: line,
 				})
 			} else {
+				last := len(directives) - 1
+				if last >= 0 && directives[last].line == currLine-1 && isDocumentStart(line) {
+					directives[last].markerAfter = true
+				}
+
 				result.WriteString(line + lineSepChar)
 			}
 
@@ -84,14 +93,25 @@ func restoreDirectivesFeature(lineSepChar string) yamlfmt.FeatureFunc {
 		var result strings.Builder
 
 		currLine := 1
+
 		for scanner.Scan() {
+			markerDue := false
+
 			// Consecutive directives are due one after the other at the same point.
 			for !doneDirectives && currLine == directives[directiveIdx].line {
 				result.WriteString(directives[directiveIdx].content + lineSepChar)
+				markerDue = directives[directiveIdx].markerAfter
 
 				currLine++
 				directiveIdx++
 				doneDirectives = directiveIdx == len(directives)
+			}
+
+			// A directive without its document start marker is not YAML.
+			if markerDue && !isDocumentStart(scanner.Text()) {
+				result.WriteString("---" + lineSepChar)
+
+				currLine++
 			}
 
 			result.WriteString(scanner.Text() + lineSepChar)
@@ -111,4 +131,9 @@ func restoreDirectivesFeature(lineSepChar string) yamlfmt.FeatureFunc {
 
 		return ctx, []byte(result.String()), nil
 	}
+}
+
+// isDocumentStart reports whether line opens a document with its marker.
+func isDocumentStart(line string) bool {
+	return line == "---" || strings.HasPrefix(line, "--- ") || strings.HasPrefix(line, "---\t")
 }
