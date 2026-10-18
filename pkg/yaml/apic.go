@@ -107,15 +107,6 @@ func yaml_parser_set_input_reader(parser *yaml_parser_t, r io.Reader) {
 	parser.input_reader = r
 }
 
-// Set the source encoding.
-func yaml_parser_set_encoding(parser *yaml_parser_t, encoding yaml_encoding_t) {
-	if parser.encoding != yaml_ANY_ENCODING {
-		panic("must set the encoding only once")
-	}
-
-	parser.encoding = encoding
-}
-
 // Create a new emitter object.
 func yaml_emitter_initialize(emitter *yaml_emitter_t) {
 	*emitter = yaml_emitter_t{
@@ -163,29 +154,6 @@ func yaml_emitter_set_output_writer(emitter *yaml_emitter_t, w io.Writer) {
 
 	emitter.write_handler = yaml_writer_write_handler
 	emitter.output_writer = w
-}
-
-// Set the output encoding.
-func yaml_emitter_set_encoding(emitter *yaml_emitter_t, encoding yaml_encoding_t) {
-	if emitter.encoding != yaml_ANY_ENCODING {
-		panic("must set the output encoding only once")
-	}
-
-	emitter.encoding = encoding
-}
-
-// Set the canonical output style.
-func yaml_emitter_set_canonical(emitter *yaml_emitter_t, canonical bool) {
-	emitter.canonical = canonical
-}
-
-// Set the indentation increment.
-func yaml_emitter_set_indent(emitter *yaml_emitter_t, indent int) {
-	if indent < 2 || indent > 9 {
-		indent = 2
-	}
-
-	emitter.best_indent = indent
 }
 
 // Set the preferred line width.

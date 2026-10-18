@@ -71,6 +71,12 @@ golangci:
         - path: ^pkg/yaml/.*_test\.go$
           linters:
             - tagalign
+        # The same bare tags, which reflect.StructTag.Get cannot parse: govet's
+        # structtag reports exactly what those tests exist to exercise.
+        - path: ^pkg/yaml/.*_test\.go$
+          text: '^structtag: '
+          linters:
+            - govet
         # pkg/yaml's comments quote libyaml's C (`{ NULL, NULL, NULL }`) and
         # draw token streams where a token repeats (BLOCK-END, BLOCK-END), and
         # a test expects Go's own "struct struct {" panic text: repeated words
@@ -102,17 +108,15 @@ golangci:
         # Counts are the measurement at enrolment, per file and linter: 2364 in 72 files.
         # ---------------------------------------------------------------------------
         - path: ^cmd/yamlfmt/config\.go$
-          linters: # 18 findings
+          linters: # 16 findings
             - wrapcheck # 6
             - revive # 3
-            - depguard # 1
             - err113 # 1
             - gochecknoglobals # 1
             - gocognit # 1
             - goconst # 1
             - gosec # 1
             - modernize # 1
-            - staticcheck # 1
             - varnamelen # 1
         - path: ^cmd/yamlfmt/flags\.go$
           linters: # 44 findings
@@ -129,12 +133,10 @@ golangci:
             - varnamelen # 1
             - wrapcheck # 1
         - path: ^command/command\.go$
-          linters: # 42 findings
+          linters: # 35 findings
             - wrapcheck # 16
             - forbidigo # 8
             - revive # 7
-            - govet # 6
-            - depguard # 1
             - err113 # 1
             - exhaustive # 1
             - gocognit # 1
@@ -165,12 +167,11 @@ golangci:
             - gosec # 1
             - mnd # 1
         - path: ^engine/consecutive_engine\.go$
-          linters: # 14 findings
+          linters: # 13 findings
             - revive # 7
             - wrapcheck # 3
             - forbidigo # 2
             - gosec # 1
-            - govet # 1
         - path: ^engine/errors\.go$
           linters: # 3 findings
             - revive # 2
@@ -198,9 +199,8 @@ golangci:
           linters: # 2 findings
             - revive # 2
         - path: ^formatters/basic/factory\.go$
-          linters: # 8 findings
+          linters: # 7 findings
             - revive # 6
-            - depguard # 1
             - wrapcheck # 1
         - path: ^formatters/basic/factory_test\.go$
           linters: # 9 findings
@@ -229,12 +229,10 @@ golangci:
             - revive # 3
             - varnamelen # 1
         - path: ^formatters/basic/formatter\.go$
-          linters: # 21 findings
+          linters: # 17 findings
             - revive # 8
             - wrapcheck # 7
-            - govet # 3
             - varnamelen # 2
-            - depguard # 1
         - path: ^formatters/basic/formatter_test\.go$
           linters: # 8 findings
             - paralleltest # 6
@@ -245,9 +243,8 @@ golangci:
             - revive # 8
             - modernize # 1
         - path: ^formatters/kyaml/formatter\.go$
-          linters: # 11 findings
+          linters: # 10 findings
             - revive # 9
-            - depguard # 1
             - wrapcheck # 1
         - path: ^formatters/kyaml/formatter_test\.go$
           linters: # 2 findings
@@ -314,16 +311,14 @@ golangci:
             - gochecknoglobals # 2
             - forbidigo # 1
         - path: ^internal/multilinediff/multilinediff\.go$
-          linters: # 9 findings
+          linters: # 7 findings
             - revive # 6
-            - depguard # 2
             - exhaustive # 1
         - path: ^internal/tempfile/golden\.go$
-          linters: # 17 findings
+          linters: # 16 findings
             - revive # 6
             - gosec # 5
             - wrapcheck # 3
-            - depguard # 1
             - err113 # 1
             - forbidigo # 1
         - path: ^internal/tempfile/path\.go$
@@ -342,12 +337,11 @@ golangci:
             - err113 # 2
             - paralleltest # 2
         - path: ^path_collector\.go$
-          linters: # 37 findings
+          linters: # 35 findings
             - revive # 12
             - wrapcheck # 8
             - err113 # 5
             - varnamelen # 5
-            - depguard # 2
             - gocognit # 2
             - forbidigo # 1
             - gocritic # 1
@@ -360,37 +354,31 @@ golangci:
             - usetesting # 2
             - revive # 1
         - path: ^pkg/yaml/apic\.go$
-          linters: # 115 findings
+          linters: # 111 findings
             - revive # 108
-            - unused # 4
             - wrapcheck # 2
             - gocritic # 1
         - path: ^pkg/yaml/decode\.go$
-          linters: # 89 findings
+          linters: # 81 findings
             - varnamelen # 31
             - modernize # 15
             - exhaustive # 8
             - gochecknoglobals # 8
             - revive # 6
             - gocognit # 5
-            - govet # 4
             - mnd # 4
-            - unused # 4
             - gocritic # 2
             - intrange # 2
         - path: ^pkg/yaml/decode_test\.go$
-          linters: # 232 findings
+          linters: # 222 findings
             - modernize # 138
             - revive # 59
             - gochecknoglobals # 11
             - usestdlibvars # 11
-            - govet # 7
             - dupl # 2
-            - staticcheck # 2
             - err113 # 1
-            - unused # 1
         - path: ^pkg/yaml/emitterc\.go$
-          linters: # 212 findings
+          linters: # 208 findings
             - revive # 109
             - mnd # 32
             - gocritic # 22
@@ -399,25 +387,21 @@ golangci:
             - exhaustive # 7
             - intrange # 7
             - modernize # 5
-            - staticcheck # 3
             - gosec # 1
             - unparam # 1
-            - unused # 1
         - path: ^pkg/yaml/encode\.go$
-          linters: # 36 findings
+          linters: # 32 findings
             - varnamelen # 18
             - revive # 6
-            - govet # 4
             - exhaustive # 2
             - gocognit # 2
             - modernize # 2
             - gocritic # 1
             - intrange # 1
         - path: ^pkg/yaml/encode_test\.go$
-          linters: # 125 findings
+          linters: # 101 findings
             - revive # 50
             - modernize # 40
-            - govet # 24
             - usestdlibvars # 5
             - gochecknoglobals # 4
             - err113 # 1
@@ -431,8 +415,7 @@ golangci:
             - revive # 1
             - testpackage # 1
         - path: ^pkg/yaml/formattest/testcase\.go$
-          linters: # 4 findings
-            - depguard # 1
+          linters: # 3 findings
             - err113 # 1
             - gosec # 1
             - varnamelen # 1
@@ -444,36 +427,31 @@ golangci:
             - gochecknoglobals # 1
             - intrange # 1
         - path: ^pkg/yaml/node_test\.go$
-          linters: # 39 findings
+          linters: # 37 findings
             - revive # 13
             - dupl # 11
             - modernize # 6
             - gochecknoglobals # 4
             - intrange # 2
             - exhaustive # 1
-            - govet # 1
-            - unused # 1
         - path: ^pkg/yaml/parserc\.go$
-          linters: # 85 findings
+          linters: # 81 findings
             - revive # 69
             - gocognit # 6
             - gocritic # 3
-            - staticcheck # 3
             - exhaustive # 1
             - gochecknoglobals # 1
-            - govet # 1
             - unparam # 1
         - path: ^pkg/yaml/readerc\.go$
-          linters: # 68 findings
+          linters: # 67 findings
             - mnd # 43
             - revive # 19
             - gocritic # 2
             - exhaustive # 1
             - gocognit # 1
-            - staticcheck # 1
             - varnamelen # 1
         - path: ^pkg/yaml/resolve\.go$
-          linters: # 30 findings
+          linters: # 29 findings
             - revive # 9
             - varnamelen # 7
             - gochecknoglobals # 5
@@ -481,9 +459,8 @@ golangci:
             - gocritic # 2
             - gocognit # 1
             - mnd # 1
-            - staticcheck # 1
         - path: ^pkg/yaml/scannerc\.go$
-          linters: # 223 findings
+          linters: # 219 findings
             - revive # 138
             - mnd # 23
             - gocritic # 18
@@ -491,17 +468,14 @@ golangci:
             - gocognit # 11
             - modernize # 6
             - intrange # 3
-            - unused # 3
             - dupl # 2
             - forbidigo # 2
             - gosec # 2
-            - staticcheck # 1
             - unparam # 1
         - path: ^pkg/yaml/sorter\.go$
-          linters: # 23 findings
+          linters: # 21 findings
             - varnamelen # 15
             - exhaustive # 2
-            - govet # 2
             - mnd # 2
             - gocognit # 1
             - revive # 1
@@ -513,32 +487,55 @@ golangci:
           linters: # 2 findings
             - revive # 2
         - path: ^pkg/yaml/yaml\.go$
-          linters: # 72 findings
+          linters: # 59 findings
             - revive # 18
             - modernize # 12
-            - govet # 10
             - varnamelen # 9
             - err113 # 8
             - gocritic # 4
             - exhaustive # 3
             - gochecknoglobals # 3
-            - staticcheck # 3
             - gocognit # 1
             - unparam # 1
         - path: ^pkg/yaml/yamlh\.go$
-          linters: # 292 findings
+          linters: # 259 findings
             - revive # 258
-            - unused # 33
             - gochecknoglobals # 1
         - path: ^pkg/yaml/yamlprivateh\.go$
-          linters: # 47 findings
+          linters: # 46 findings
             - revive # 29
             - mnd # 10
             - gocritic # 4
             - varnamelen # 2
             - unparam # 1
-            - unused # 1
+    settings:
+      depguard:
+        rules:
+          main:
+            allow:
+              # What the formatter is built on: doublestar matches the include
+              # and exclude globs, go-gitignore applies .gitignore, mapstructure
+              # decodes the configuration into the formatter's options, kyaml
+              # is the kyaml formatter, and go-cmp computes the diffs the dry
+              # run and lint print and the golden-file helpers compare with.
+              - github.com/bmatcuk/doublestar/v4
+              - github.com/sabhiram/go-gitignore
+              - github.com/mitchellh/mapstructure
+              - sigs.k8s.io/yaml/kyaml
+              - github.com/google/go-cmp/cmp
+
 nilaway:
-  # ONBOARDING BACKLOG, not a judgment: NilAway's 80 findings at enrolment
-  # print without failing the lane until alignment reaches them.
-  blocking: false
+  exclude-errors-in-files:
+    # NilAway cannot see that a map indexed over its own sorted keys holds
+    # each key, nor that assert.NilErr stops the test: every finding in
+    # these files is one of the two.
+    - engine.go
+    - command/command_test.go
+    - formatters/basic/formatter_test.go
+    # ONBOARDING BACKLOG, not a judgment: the findings left, per file and
+    # target. Alignment empties this list as it does the linters' block.
+    - pkg/yaml/decode.go # 2
+    - pkg/yaml/decode_test.go # 2
+    - pkg/yaml/parserc.go # 1
+    - pkg/yaml/scannerc.go # 4
+    - pkg/yaml/yaml.go # 1

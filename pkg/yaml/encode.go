@@ -129,7 +129,7 @@ func (e *encoder) marshalDoc(tag string, in reflect.Value) {
 func (e *encoder) marshal(tag string, in reflect.Value) {
 	tag = shortTag(tag)
 
-	if !in.IsValid() || in.Kind() == reflect.Ptr && in.IsNil() {
+	if !in.IsValid() || in.Kind() == reflect.Pointer && in.IsNil() {
 		e.nilv()
 		return
 	}
@@ -189,7 +189,7 @@ func (e *encoder) marshal(tag string, in reflect.Value) {
 		e.marshal(tag, in.Elem())
 	case reflect.Map:
 		e.mapv(tag, in)
-	case reflect.Ptr:
+	case reflect.Pointer:
 		e.marshal(tag, in.Elem())
 	case reflect.Struct:
 		e.structv(tag, in)
@@ -225,7 +225,7 @@ func (e *encoder) mapv(tag string, in reflect.Value) {
 func (e *encoder) fieldByIndex(v reflect.Value, index []int) (field reflect.Value) {
 	for _, num := range index {
 		for {
-			if v.Kind() == reflect.Ptr {
+			if v.Kind() == reflect.Pointer {
 				if v.IsNil() {
 					return reflect.Value{}
 				}
@@ -589,7 +589,7 @@ func (e *encoder) node(node *Node, tail string) {
 		// since the value for each key may be a nested structure and the foot needs to be
 		// processed only the entirety of the value is streamed. The last tail is processed
 		// with the mapping end event.
-		var tail string
+		tail = ""
 
 		for i := 0; i+1 < len(node.Content); i += 2 {
 			k := node.Content[i]

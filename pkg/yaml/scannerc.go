@@ -502,13 +502,6 @@ import (
 //      BLOCK-END
 //
 
-// Ensure that the buffer contains the required number of characters.
-// Return true on success, false on failure (reader error or memory error).
-func cache(parser *yaml_parser_t, length int) bool {
-	// [Go] This was inlined: !cache(A, B) -> unread < B && !update(A, B)
-	return parser.unread >= length || yaml_parser_update_buffer(parser, length)
-}
-
 // Advance the buffer pointer.
 func skip(parser *yaml_parser_t) {
 	if !is_blank(parser.buffer, parser.buffer_pos) {
@@ -607,36 +600,6 @@ func read_line(parser *yaml_parser_t, s []byte) []byte {
 	return s
 }
 
-// Get the next token.
-func yaml_parser_scan(parser *yaml_parser_t, token *yaml_token_t) bool {
-	// Erase the token object.
-	*token = yaml_token_t{} // [Go] Is this necessary?
-
-	// No tokens after STREAM-END or error.
-	if parser.stream_end_produced || parser.error != yaml_NO_ERROR {
-		return true
-	}
-
-	// Ensure that the tokens queue contains enough tokens.
-	if !parser.token_available {
-		if !yaml_parser_fetch_more_tokens(parser) {
-			return false
-		}
-	}
-
-	// Fetch the next token from the queue.
-	*token = parser.tokens[parser.tokens_head]
-	parser.tokens_head++
-	parser.tokens_parsed++
-	parser.token_available = false
-
-	if token.typ == yaml_STREAM_END_TOKEN {
-		parser.stream_end_produced = true
-	}
-
-	return true
-}
-
 // Set the scanner error and return false.
 func yaml_parser_set_scanner_error(
 	parser *yaml_parser_t,
@@ -665,15 +628,6 @@ func yaml_parser_set_scanner_tag_error(
 	}
 
 	return yaml_parser_set_scanner_error(parser, context, context_mark, problem)
-}
-
-func trace(args ...interface{}) func() {
-	pargs := append([]interface{}{"+++"}, args...)
-	fmt.Println(pargs...)
-
-	pargs = append([]interface{}{"---"}, args...)
-
-	return func() { fmt.Println(pargs...) }
 }
 
 // Ensure that the tokens queue contains at least one token which can be
@@ -1346,11 +1300,9 @@ func yaml_parser_fetch_block_entry(parser *yaml_parser_t) bool {
 		if !yaml_parser_roll_indent(parser, parser.mark.column, -1, yaml_BLOCK_SEQUENCE_START_TOKEN, parser.mark) {
 			return false
 		}
-	} else {
-		// It is an error for the '-' indicator to occur in the flow context,
-		// but we let the Parser detect and report about it because the Parser
-		// is able to point to the context.
 	}
+	// A '-' in the flow context is an error the parser reports, since it can
+	// point to the context.
 
 	// Reset any potential simple keys on the current flow level.
 	if !yaml_parser_remove_simple_key(parser) {

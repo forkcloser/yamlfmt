@@ -205,7 +205,7 @@ func resolve(tag, in string) (rtag string, out interface{}) {
 				}
 			}
 
-			plain := strings.Replace(in, "_", "", -1)
+			plain := strings.ReplaceAll(in, "_", "")
 
 			intv, err := strconv.ParseInt(plain, 0, 64)
 			if err == nil {
