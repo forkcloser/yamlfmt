@@ -612,6 +612,12 @@ var unmarshalTests = []struct {
 		}{1, 0},
 	},
 
+	// A %YAML 1.2 directive, which libyaml accepts as well as 1.1.
+	{
+		"%YAML 1.2\n---\na: 1\n",
+		map[string]any{"a": 1},
+	},
+
 	// Bug #1191981
 	{
 		"" +
@@ -1038,6 +1044,8 @@ var unmarshalErrorTests = []struct {
 	data, error string
 }{
 	{"v: !!float 'error'", "yaml: cannot decode !!str `error` as a !!float"},
+	{"%YAML 1.3\n---\na: 1\n", "yaml: found incompatible YAML document"},
+	{"%YAML 2.0\n---\na: 1\n", "yaml: found incompatible YAML document"},
 	{"v: [A,", "yaml: line 1: did not find expected node content"},
 	{"v:\n- [A,", "yaml: line 2: did not find expected node content"},
 	{"a:\n- b: *,", "yaml: line 2: did not find expected alphabetic or numeric character"},
