@@ -17,7 +17,7 @@ package yaml_test
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 
 	"github.com/forkcloser/yamlfmt/pkg/yaml"
 )
@@ -46,7 +46,9 @@ func ExampleUnmarshal_embedded() {
 
 	err := yaml.Unmarshal([]byte(data), &b)
 	if err != nil {
-		log.Fatalf("cannot unmarshal data: %v", err)
+		slog.Error("cannot unmarshal data", "err", err)
+
+		return
 	}
 
 	fmt.Println(b.A)
