@@ -273,15 +273,15 @@ func makeCommandConfigFromData(configData map[string]any) (*command.Config, erro
 	altFormatter := detectAlternateFormatterFlag()
 
 	config := command.Config{FormatterConfig: command.NewFormatterConfig()}
+	if err := configmap.Decode(configData, &config); err != nil {
+		return nil, err
+	}
+
+	// An alternate formatter flag replaces the configured formatter, its
+	// settings included; the rest of the configuration stands.
 	if altFormatter != "" {
-		// If an alternate formatter was specified via CLI flag, override
-		// the formatter from the configuration.
+		config.FormatterConfig = command.NewFormatterConfig()
 		config.FormatterConfig.Type = altFormatter
-	} else {
-		err := configmap.Decode(configData, &config)
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	// Parse overrides for formatter configuration

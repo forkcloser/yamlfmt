@@ -1,0 +1,5 @@
+# The -kyaml flag replaces the formatter; the exclude still applies.
+exclude:
+  - skip.yaml
+formatter:
+  retain_line_breaks: true

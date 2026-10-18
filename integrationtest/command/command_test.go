@@ -212,3 +212,11 @@ func TestKyamlFlag(t *testing.T) {
 		Update:  *updateFlag,
 	}.Run(t)
 }
+
+func TestKyamlFlagKeepsTheConfiguration(t *testing.T) {
+	TestCase{
+		Dir:     "kyaml_flag_config",
+		Command: yamlfmtWithArgs("-kyaml ."),
+		Update:  *updateFlag,
+	}.Run(t)
+}
