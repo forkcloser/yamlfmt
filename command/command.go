@@ -21,16 +21,15 @@ import (
 	"io"
 	"os"
 
-	"github.com/mitchellh/mapstructure"
-
 	"github.com/forkcloser/yamlfmt"
 	"github.com/forkcloser/yamlfmt/engine"
+	"github.com/forkcloser/yamlfmt/internal/configmap"
 	"github.com/forkcloser/yamlfmt/pkg/yaml"
 )
 
 type FormatterConfig struct {
-	Type              string         `mapstructure:"type"`
-	FormatterSettings map[string]any `mapstructure:",remain"`
+	Type              string         `yaml:"type"`
+	FormatterSettings map[string]any `yaml:",inline"`
 }
 
 // NewFormatterConfig returns an empty formatter config with all fields initialized.
@@ -39,18 +38,18 @@ func NewFormatterConfig() *FormatterConfig {
 }
 
 type Config struct {
-	Extensions        []string                  `mapstructure:"extensions"`
-	MatchType         yamlfmt.MatchType         `mapstructure:"match_type"`
-	Include           []string                  `mapstructure:"include"`
-	Exclude           []string                  `mapstructure:"exclude"`
-	RegexExclude      []string                  `mapstructure:"regex_exclude"`
-	FormatterConfig   *FormatterConfig          `mapstructure:"formatter,omitempty"`
-	Doublestar        bool                      `mapstructure:"doublestar"`
-	ContinueOnError   bool                      `mapstructure:"continue_on_error"`
-	LineEnding        yamlfmt.LineBreakStyle    `mapstructure:"line_ending"`
-	GitignoreExcludes bool                      `mapstructure:"gitignore_excludes"`
-	GitignorePath     string                    `mapstructure:"gitignore_path"`
-	OutputFormat      engine.EngineOutputFormat `mapstructure:"output_format"`
+	Extensions        []string                  `yaml:"extensions"`
+	MatchType         yamlfmt.MatchType         `yaml:"match_type"`
+	Include           []string                  `yaml:"include"`
+	Exclude           []string                  `yaml:"exclude"`
+	RegexExclude      []string                  `yaml:"regex_exclude"`
+	FormatterConfig   *FormatterConfig          `yaml:"formatter,omitempty"`
+	Doublestar        bool                      `yaml:"doublestar"`
+	ContinueOnError   bool                      `yaml:"continue_on_error"`
+	LineEnding        yamlfmt.LineBreakStyle    `yaml:"line_ending"`
+	GitignoreExcludes bool                      `yaml:"gitignore_excludes"`
+	GitignorePath     string                    `yaml:"gitignore_path"`
+	OutputFormat      engine.EngineOutputFormat `yaml:"output_format"`
 }
 
 type Command struct {
@@ -153,11 +152,7 @@ func (c *Command) Run() error {
 
 		fmt.Printf("%s", out)
 	case yamlfmt.OperationPrintConfig:
-		commandConfig := map[string]any{}
-
-		if err := mapstructure.Decode(c.Config, &commandConfig); err != nil {
-			return err
-		}
+		commandConfig := configmap.Map(c.Config)
 
 		delete(commandConfig, "formatter")
 

@@ -21,10 +21,9 @@ import (
 	"io"
 	"strings"
 
-	"github.com/mitchellh/mapstructure"
-
 	"github.com/forkcloser/yamlfmt"
 	yamlFeature "github.com/forkcloser/yamlfmt/formatters/basic/features"
+	"github.com/forkcloser/yamlfmt/internal/configmap"
 	"github.com/forkcloser/yamlfmt/pkg/yaml"
 )
 
@@ -96,16 +95,10 @@ func (f *BasicFormatter) Format(input []byte) ([]byte, error) {
 }
 
 func (f *BasicFormatter) ConfigMap() (map[string]any, error) {
-	configMap := map[string]any{}
-
-	err := mapstructure.Decode(f.Config, &configMap)
-	if err != nil {
-		return nil, err
-	}
-
+	configMap := configmap.Map(f.Config)
 	configMap["type"] = BasicFormatterType
 
-	return configMap, err
+	return configMap, nil
 }
 
 func (f *BasicFormatter) getNewDecoder(reader io.Reader) *yaml.Decoder {

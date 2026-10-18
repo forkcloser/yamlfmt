@@ -35,3 +35,4 @@ Fork of https://github.com/google/yamlfmt (`main`).
 | The `line` and `gitlab` outputs report each file's own finding | https://github.com/forkcloser/yamlfmt/pull/33 |
 | An `Unmarshaler` that wraps a `*TypeError` reports type errors, not a hard failure | https://github.com/forkcloser/yamlfmt/pull/34 |
 | The empty value of a flow-sequence pair is positioned on the token after the `:`, as libyaml does | https://github.com/forkcloser/yamlfmt/pull/49 |
+| The configuration decodes through the vendored YAML library instead of mapstructure | https://github.com/forkcloser/yamlfmt/pull/53 |

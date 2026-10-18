@@ -24,13 +24,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/mitchellh/mapstructure"
-
 	"github.com/forkcloser/yamlfmt"
 	"github.com/forkcloser/yamlfmt/command"
 	"github.com/forkcloser/yamlfmt/engine"
 	"github.com/forkcloser/yamlfmt/formatters/kyaml"
 	"github.com/forkcloser/yamlfmt/internal/collections"
+	"github.com/forkcloser/yamlfmt/internal/configmap"
 	"github.com/forkcloser/yamlfmt/internal/logger"
 	"github.com/forkcloser/yamlfmt/pkg/yaml"
 )
@@ -279,7 +278,7 @@ func makeCommandConfigFromData(configData map[string]any) (*command.Config, erro
 		// the formatter from the configuration.
 		config.FormatterConfig.Type = altFormatter
 	} else {
-		err := mapstructure.Decode(configData, &config)
+		err := configmap.Decode(configData, &config)
 		if err != nil {
 			return nil, err
 		}

@@ -509,18 +509,23 @@ golangci:
             - varnamelen # 2
             - unparam # 1
     settings:
+      tagliatelle:
+        case:
+          rules:
+            # The configuration's keys are snake_case (max_line_length,
+            # retain_line_breaks): the file format users write, decoded
+            # through these tags.
+            yaml: snake
       depguard:
         rules:
           main:
             allow:
               # What the formatter is built on: doublestar matches the include
-              # and exclude globs, go-gitignore applies .gitignore, mapstructure
-              # decodes the configuration into the formatter's options, kyaml
-              # is the kyaml formatter, and go-cmp computes the diffs the dry
-              # run and lint print and the golden-file helpers compare with.
+              # and exclude globs, go-gitignore applies .gitignore, kyaml is the
+              # kyaml formatter, and go-cmp computes the diffs the dry run and
+              # lint print and the golden-file helpers compare with.
               - github.com/bmatcuk/doublestar/v4
               - github.com/sabhiram/go-gitignore
-              - github.com/mitchellh/mapstructure
               - sigs.k8s.io/yaml/kyaml
               - github.com/google/go-cmp/cmp
 
