@@ -108,10 +108,9 @@ golangci:
         # Counts are the measurement at enrolment, per file and linter: 2364 in 72 files.
         # ---------------------------------------------------------------------------
         - path: ^cmd/yamlfmt/config\.go$
-          linters: # 17 findings
+          linters: # 16 findings
             - wrapcheck # 6
             - revive # 3
-            - depguard # 1
             - err113 # 1
             - gochecknoglobals # 1
             - gocognit # 1
@@ -134,11 +133,10 @@ golangci:
             - varnamelen # 1
             - wrapcheck # 1
         - path: ^command/command\.go$
-          linters: # 36 findings
+          linters: # 35 findings
             - wrapcheck # 16
             - forbidigo # 8
             - revive # 7
-            - depguard # 1
             - err113 # 1
             - exhaustive # 1
             - gocognit # 1
@@ -201,9 +199,8 @@ golangci:
           linters: # 2 findings
             - revive # 2
         - path: ^formatters/basic/factory\.go$
-          linters: # 8 findings
+          linters: # 7 findings
             - revive # 6
-            - depguard # 1
             - wrapcheck # 1
         - path: ^formatters/basic/factory_test\.go$
           linters: # 9 findings
@@ -232,11 +229,10 @@ golangci:
             - revive # 3
             - varnamelen # 1
         - path: ^formatters/basic/formatter\.go$
-          linters: # 18 findings
+          linters: # 17 findings
             - revive # 8
             - wrapcheck # 7
             - varnamelen # 2
-            - depguard # 1
         - path: ^formatters/basic/formatter_test\.go$
           linters: # 8 findings
             - paralleltest # 6
@@ -247,9 +243,8 @@ golangci:
             - revive # 8
             - modernize # 1
         - path: ^formatters/kyaml/formatter\.go$
-          linters: # 11 findings
+          linters: # 10 findings
             - revive # 9
-            - depguard # 1
             - wrapcheck # 1
         - path: ^formatters/kyaml/formatter_test\.go$
           linters: # 2 findings
@@ -316,16 +311,14 @@ golangci:
             - gochecknoglobals # 2
             - forbidigo # 1
         - path: ^internal/multilinediff/multilinediff\.go$
-          linters: # 9 findings
+          linters: # 7 findings
             - revive # 6
-            - depguard # 2
             - exhaustive # 1
         - path: ^internal/tempfile/golden\.go$
-          linters: # 17 findings
+          linters: # 16 findings
             - revive # 6
             - gosec # 5
             - wrapcheck # 3
-            - depguard # 1
             - err113 # 1
             - forbidigo # 1
         - path: ^internal/tempfile/path\.go$
@@ -344,12 +337,11 @@ golangci:
             - err113 # 2
             - paralleltest # 2
         - path: ^path_collector\.go$
-          linters: # 37 findings
+          linters: # 35 findings
             - revive # 12
             - wrapcheck # 8
             - err113 # 5
             - varnamelen # 5
-            - depguard # 2
             - gocognit # 2
             - forbidigo # 1
             - gocritic # 1
@@ -423,8 +415,7 @@ golangci:
             - revive # 1
             - testpackage # 1
         - path: ^pkg/yaml/formattest/testcase\.go$
-          linters: # 4 findings
-            - depguard # 1
+          linters: # 3 findings
             - err113 # 1
             - gosec # 1
             - varnamelen # 1
@@ -517,6 +508,22 @@ golangci:
             - gocritic # 4
             - varnamelen # 2
             - unparam # 1
+    settings:
+      depguard:
+        rules:
+          main:
+            allow:
+              # What the formatter is built on: doublestar matches the include
+              # and exclude globs, go-gitignore applies .gitignore, mapstructure
+              # decodes the configuration into the formatter's options, kyaml
+              # is the kyaml formatter, and go-cmp computes the diffs the dry
+              # run and lint print and the golden-file helpers compare with.
+              - github.com/bmatcuk/doublestar/v4
+              - github.com/sabhiram/go-gitignore
+              - github.com/mitchellh/mapstructure
+              - sigs.k8s.io/yaml/kyaml
+              - github.com/google/go-cmp/cmp
+
 nilaway:
   # ONBOARDING BACKLOG, not a judgment: NilAway's 80 findings at enrolment
   # print without failing the lane until alignment reaches them.
