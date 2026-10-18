@@ -239,6 +239,14 @@ b: 2
 			expect: "%YAML 1.2\n---\na: 1\n",
 		},
 		{
+			name: "strip directives keeps the end of the document before them",
+			config: map[string]any{
+				"strip_directives": true,
+			},
+			input:  "a: 1\n...\n%YAML 1.2\n---\nb: 2\n",
+			expect: "a: 1\n...\n%YAML 1.2\n---\nb: 2\n",
+		},
+		{
 			name: "strip directives adds no marker the input did not have",
 			config: map[string]any{
 				"strip_directives": true,
