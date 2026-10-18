@@ -362,13 +362,12 @@ golangci:
             - usetesting # 2
             - revive # 1
         - path: ^pkg/yaml/apic\.go$
-          linters: # 115 findings
+          linters: # 111 findings
             - revive # 108
-            - unused # 4
             - wrapcheck # 2
             - gocritic # 1
         - path: ^pkg/yaml/decode\.go$
-          linters: # 85 findings
+          linters: # 81 findings
             - varnamelen # 31
             - modernize # 15
             - exhaustive # 8
@@ -376,20 +375,18 @@ golangci:
             - revive # 6
             - gocognit # 5
             - mnd # 4
-            - unused # 4
             - gocritic # 2
             - intrange # 2
         - path: ^pkg/yaml/decode_test\.go$
-          linters: # 223 findings
+          linters: # 222 findings
             - modernize # 138
             - revive # 59
             - gochecknoglobals # 11
             - usestdlibvars # 11
             - dupl # 2
             - err113 # 1
-            - unused # 1
         - path: ^pkg/yaml/emitterc\.go$
-          linters: # 209 findings
+          linters: # 208 findings
             - revive # 109
             - mnd # 32
             - gocritic # 22
@@ -400,7 +397,6 @@ golangci:
             - modernize # 5
             - gosec # 1
             - unparam # 1
-            - unused # 1
         - path: ^pkg/yaml/encode\.go$
           linters: # 32 findings
             - varnamelen # 18
@@ -440,14 +436,13 @@ golangci:
             - gochecknoglobals # 1
             - intrange # 1
         - path: ^pkg/yaml/node_test\.go$
-          linters: # 38 findings
+          linters: # 37 findings
             - revive # 13
             - dupl # 11
             - modernize # 6
             - gochecknoglobals # 4
             - intrange # 2
             - exhaustive # 1
-            - unused # 1
         - path: ^pkg/yaml/parserc\.go$
           linters: # 81 findings
             - revive # 69
@@ -474,7 +469,7 @@ golangci:
             - gocognit # 1
             - mnd # 1
         - path: ^pkg/yaml/scannerc\.go$
-          linters: # 222 findings
+          linters: # 219 findings
             - revive # 138
             - mnd # 23
             - gocritic # 18
@@ -482,7 +477,6 @@ golangci:
             - gocognit # 11
             - modernize # 6
             - intrange # 3
-            - unused # 3
             - dupl # 2
             - forbidigo # 2
             - gosec # 2
@@ -513,18 +507,16 @@ golangci:
             - gocognit # 1
             - unparam # 1
         - path: ^pkg/yaml/yamlh\.go$
-          linters: # 292 findings
+          linters: # 259 findings
             - revive # 258
-            - unused # 33
             - gochecknoglobals # 1
         - path: ^pkg/yaml/yamlprivateh\.go$
-          linters: # 47 findings
+          linters: # 46 findings
             - revive # 29
             - mnd # 10
             - gocritic # 4
             - varnamelen # 2
             - unparam # 1
-            - unused # 1
 nilaway:
   # ONBOARDING BACKLOG, not a judgment: NilAway's 80 findings at enrolment
   # print without failing the lane until alignment reaches them.

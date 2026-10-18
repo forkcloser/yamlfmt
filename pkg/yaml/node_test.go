@@ -2724,10 +2724,6 @@ func saveNode(name string, node *yaml.Node) *yaml.Node {
 	return node
 }
 
-func peekNode(name string) *yaml.Node {
-	return savedNodes[name]
-}
-
 func dropNode(name string) *yaml.Node {
 	node := savedNodes[name]
 	delete(savedNodes, name)
