@@ -2986,3 +2986,25 @@ func fprintCommentSet(out io.Writer, node *yaml.Node) {
 		fmt.Fprintf(out, "%q / %q / %q", node.HeadComment, node.LineComment, node.FootComment)
 	}
 }
+
+// The empty value of a pair in a flow sequence is placed where libyaml places
+// it, at the token after the ':', not on the ':' itself.
+func (s *S) TestFlowSequenceEmptyValuePosition(c *C) {
+	for _, item := range []struct {
+		yaml   string
+		column int
+	}{
+		{"[a: ]", 5},
+		{"[a:   , b]", 7},
+		{"[? a : ]", 8},
+	} {
+		var node yaml.Node
+
+		c.Assert(yaml.Unmarshal([]byte(item.yaml), &node), IsNil)
+
+		value := node.Content[0].Content[0].Content[1]
+		c.Check(value.Value, Equals, "", Commentf("%q", item.yaml))
+		c.Check(value.Line, Equals, 1, Commentf("%q", item.yaml))
+		c.Check(value.Column, Equals, item.column, Commentf("%q", item.yaml))
+	}
+}

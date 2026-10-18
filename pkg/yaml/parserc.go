@@ -1160,7 +1160,7 @@ func yaml_parser_parse_flow_sequence_entry_mapping_value(parser *yaml_parser_t, 
 	if token.typ == yaml_VALUE_TOKEN {
 		skip_token(parser)
 
-		token := peek_token(parser)
+		token = peek_token(parser)
 		if token == nil {
 			return false
 		}
