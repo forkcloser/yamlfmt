@@ -525,6 +525,17 @@ golangci:
               - github.com/google/go-cmp/cmp
 
 nilaway:
-  # ONBOARDING BACKLOG, not a judgment: NilAway's 80 findings at enrolment
-  # print without failing the lane until alignment reaches them.
-  blocking: false
+  exclude-errors-in-files:
+    # NilAway cannot see that a map indexed over its own sorted keys holds
+    # each key, nor that assert.NilErr stops the test: every finding in
+    # these files is one of the two.
+    - engine.go
+    - command/command_test.go
+    - formatters/basic/formatter_test.go
+    # ONBOARDING BACKLOG, not a judgment: the findings left, per file and
+    # target. Alignment empties this list as it does the linters' block.
+    - pkg/yaml/decode.go # 2
+    - pkg/yaml/decode_test.go # 2
+    - pkg/yaml/parserc.go # 1
+    - pkg/yaml/scannerc.go # 4
+    - pkg/yaml/yaml.go # 1
