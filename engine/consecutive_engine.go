@@ -15,11 +15,12 @@
 package engine
 
 import (
+	"context"
 	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/forkcloser/yamlfmt"
-	"github.com/forkcloser/yamlfmt/internal/logger"
 )
 
 // Engine that will process each file one by one consecutively.
@@ -39,16 +40,11 @@ func (e *ConsecutiveEngine) FormatContent(content []byte) ([]byte, error) {
 func (e *ConsecutiveEngine) Format(paths []string) (fmt.Stringer, error) {
 	formatDiffs, formatErrs := e.formatAll(paths)
 
-	// Debug format diff output. Manually check for the debug code
-	// to be active since the diff string construction can be
-	// performance intensive, thus don't want to calculate it if
-	// it's not needed.
-	if logger.DebugCodeIsActive(logger.DebugCodeDiffs) {
-		logger.Debug(
-			logger.DebugCodeDiffs,
-			"The following files were modified:\n%s",
-			formatDiffs.StrOutput(),
-		)
+	// The diff string is costly, so it is built only when debug records are
+	// wanted at all; the handler keeps or drops the diffs code.
+	if slog.Default().Enabled(context.Background(), slog.LevelDebug) {
+		slog.Debug("the following files were modified",
+			yamlfmt.DebugCodeAttr, yamlfmt.DebugCodeDiffs, "diffs", formatDiffs.StrOutput())
 	}
 
 	if len(formatErrs) > 0 {
