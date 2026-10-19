@@ -1036,6 +1036,14 @@ func TestEmptyDocuments(t *testing.T) {
 		"---\n# c\n---\na: 1\n":   "---\n# c\n---\na: 1\n",
 		"--- # c\n---\n":          "---\n# c\n---\n",
 		"# top\n---\n---\na: 1\n": "# top\n---\n---\na: 1\n",
+		// after another document, a comment on the line right after the
+		// marker reads as that document's foot, so the empty document's
+		// first comment line goes on the marker's line, which reads back as
+		// this document's with and without retained line breaks
+		"a\n--- #\n":            "a\n--- #\n",
+		"0: \n--- #\n":          "0:\n--- #\n",
+		"a\n--- # m\n--- # n\n": "a\n--- # m\n--- # n\n",
+		"a\n--- # m\n# after\n": "a\n--- # m\n# after\n",
 	}
 
 	// With explicit document starts asked for, every document the encoder

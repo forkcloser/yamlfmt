@@ -816,7 +816,24 @@ func yaml_parser_parse_block_sequence_entry(parser *yaml_parser_t, event *yaml_e
 			return yaml_parser_parse_node(parser, event, true, false)
 		} else {
 			parser.state = yaml_PARSE_BLOCK_SEQUENCE_ENTRY_STATE
-			return yaml_parser_process_empty_scalar(parser, event, mark)
+			if !yaml_parser_process_empty_scalar(parser, event, mark) {
+				return false
+			}
+
+			// The comments before the entry head it, as they head an entry
+			// with a node; left pending they would be the document's foot.
+			// The peek above may have unfolded the next token's comments
+			// behind them, which stay pending.
+			if prior_head_len > 0 {
+				event.head_comment = parser.head_comment[:prior_head_len]
+				if prior_head_len < len(parser.head_comment) {
+					parser.head_comment = append([]byte(nil), parser.head_comment[prior_head_len+1:]...)
+				} else {
+					parser.head_comment = nil
+				}
+			}
+
+			return true
 		}
 	}
 

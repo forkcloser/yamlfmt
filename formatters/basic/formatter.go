@@ -122,9 +122,9 @@ func (f *BasicFormatter) encodeDocuments(documents []yaml.Node) ([]byte, error) 
 	marker := "---" + f.lineBreak()
 	encoded, markers := 0, 0
 
-	for _, doc := range documents {
+	for i, doc := range documents {
 		if isEmptyDocument(&doc) {
-			f.writeEmptyDocument(&b, &doc)
+			f.writeEmptyDocument(&b, &doc, i == 0)
 
 			markers++
 
@@ -151,14 +151,37 @@ func (f *BasicFormatter) encodeDocuments(documents []yaml.Node) ([]byte, error) 
 // marker stay before it, the marker, then the comments after it, each
 // comment block as the lines it holds. The decoder puts a comment on the
 // marker's own line among those after it, so it comes back on its own line.
-func (f *BasicFormatter) writeEmptyDocument(b *bytes.Buffer, doc *yaml.Node) {
+// After another document, a comment on the line right after the marker is
+// read as that document's foot, and an empty line between them is not kept
+// when line breaks are retained, so there the first comment line goes on
+// the marker's line, the form that reads back as this document's whatever
+// the configuration.
+func (f *BasicFormatter) writeEmptyDocument(b *bytes.Buffer, doc *yaml.Node, first bool) {
 	f.writeComment(b, doc.HeadComment)
-	b.WriteString("---" + f.lineBreak())
+	b.WriteString("---")
 
 	scalar := doc.Content[0]
+	onMarker := !first
+
 	for _, comment := range []string{scalar.HeadComment, scalar.LineComment, scalar.FootComment, doc.LineComment, doc.FootComment} {
-		f.writeComment(b, comment)
+		for line := range strings.SplitSeq(comment, "\n") {
+			if comment == "" {
+				break
+			}
+
+			if onMarker {
+				b.WriteString(" " + line)
+
+				onMarker = false
+
+				continue
+			}
+
+			b.WriteString(f.lineBreak() + line)
+		}
 	}
+
+	b.WriteString(f.lineBreak())
 }
 
 // writeComment writes a comment block's lines, if any.

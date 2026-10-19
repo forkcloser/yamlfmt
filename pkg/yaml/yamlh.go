@@ -669,6 +669,14 @@ type yaml_emitter_t struct {
 
 	space_above bool // Is there's an empty line above?
 	foot_indent int  // The indent used to write the foot comment above, or -1 if none.
+	// keep_chomped says the last scalar written was a block scalar with the
+	// keep chomping indicator: an empty line after it is its content, so a
+	// foot comment must not be separated from it by one.
+	keep_chomped bool
+	// empty_value says the last thing written was an empty plain scalar, a
+	// key's value written as nothing: a comment after it reads back as the
+	// enclosing node's, not the key's.
+	empty_value bool
 
 	// Anchor analysis.
 	anchor_data struct {
