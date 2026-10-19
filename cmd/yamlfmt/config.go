@@ -24,13 +24,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/mitchellh/mapstructure"
-
 	"github.com/forkcloser/yamlfmt"
 	"github.com/forkcloser/yamlfmt/command"
 	"github.com/forkcloser/yamlfmt/engine"
 	"github.com/forkcloser/yamlfmt/formatters/kyaml"
 	"github.com/forkcloser/yamlfmt/internal/collections"
+	"github.com/forkcloser/yamlfmt/internal/configmap"
 	"github.com/forkcloser/yamlfmt/internal/logger"
 	"github.com/forkcloser/yamlfmt/pkg/yaml"
 )
@@ -274,15 +273,15 @@ func makeCommandConfigFromData(configData map[string]any) (*command.Config, erro
 	altFormatter := detectAlternateFormatterFlag()
 
 	config := command.Config{FormatterConfig: command.NewFormatterConfig()}
+	if err := configmap.Decode(configData, &config); err != nil {
+		return nil, err
+	}
+
+	// An alternate formatter flag replaces the configured formatter, its
+	// settings included; the rest of the configuration stands.
 	if altFormatter != "" {
-		// If an alternate formatter was specified via CLI flag, override
-		// the formatter from the configuration.
+		config.FormatterConfig = command.NewFormatterConfig()
 		config.FormatterConfig.Type = altFormatter
-	} else {
-		err := mapstructure.Decode(configData, &config)
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	// Parse overrides for formatter configuration
@@ -293,8 +292,9 @@ func makeCommandConfigFromData(configData map[string]any) (*command.Config, erro
 		}
 
 		for k, v := range overrides {
+			// A type names a formatter, whatever the flag parsing read it as.
 			if k == "type" {
-				config.FormatterConfig.Type = v.(string)
+				config.FormatterConfig.Type = fmt.Sprint(v)
 			}
 
 			config.FormatterConfig.FormatterSettings[k] = v

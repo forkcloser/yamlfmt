@@ -30,7 +30,7 @@ func MakeFeatureTrimTrailingWhitespace(linebreakStr string) yamlfmt.Feature {
 }
 
 func trimTrailingWhitespaceFeature(linebreakStr string) yamlfmt.FeatureFunc {
-	return func(_ context.Context, content []byte) (context.Context, []byte, error) {
+	return func(ctx context.Context, content []byte) (context.Context, []byte, error) {
 		s := linescan.NewScanner(content)
 
 		newLines := []string{}
@@ -38,6 +38,6 @@ func trimTrailingWhitespaceFeature(linebreakStr string) yamlfmt.FeatureFunc {
 			newLines = append(newLines, strings.TrimRight(s.Text(), " "))
 		}
 
-		return nil, []byte(strings.Join(newLines, linebreakStr)), nil
+		return ctx, []byte(strings.Join(newLines, linebreakStr)), nil
 	}
 }

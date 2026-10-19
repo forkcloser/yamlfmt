@@ -28,13 +28,13 @@ func MakeFeatureEOFNewline(linebreakStr string) yamlfmt.Feature {
 }
 
 func eofNewlineFeature(linebreakStr string) yamlfmt.FeatureFunc {
-	return func(_ context.Context, content []byte) (context.Context, []byte, error) {
+	return func(ctx context.Context, content []byte) (context.Context, []byte, error) {
 		// This check works in both linebreak modes.
 		if len(content) == 0 || content[len(content)-1] != '\n' {
 			linebreakBytes := []byte(linebreakStr)
 			content = append(content, linebreakBytes...)
 		}
 
-		return nil, content, nil
+		return ctx, content, nil
 	}
 }

@@ -15,9 +15,8 @@
 package basic
 
 import (
-	"github.com/mitchellh/mapstructure"
-
 	"github.com/forkcloser/yamlfmt"
+	"github.com/forkcloser/yamlfmt/internal/configmap"
 )
 
 type BasicFormatterFactory struct{}
@@ -29,7 +28,7 @@ func (f *BasicFormatterFactory) Type() string {
 func (f *BasicFormatterFactory) NewFormatter(configData map[string]any) (yamlfmt.Formatter, error) {
 	config := DefaultConfig()
 	if configData != nil {
-		err := mapstructure.Decode(configData, &config)
+		err := configmap.Decode(configData, config)
 		if err != nil {
 			return nil, err
 		}

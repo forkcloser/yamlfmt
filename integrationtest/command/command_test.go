@@ -212,3 +212,20 @@ func TestKyamlFlag(t *testing.T) {
 		Update:  *updateFlag,
 	}.Run(t)
 }
+
+func TestFormatterTypeFlagIsAName(t *testing.T) {
+	TestCase{
+		Dir:     "formatter_type_flag",
+		Command: yamlfmtWithArgs("-formatter type=1 ."),
+		IsError: true,
+		Update:  *updateFlag,
+	}.Run(t)
+}
+
+func TestKyamlFlagKeepsTheConfiguration(t *testing.T) {
+	TestCase{
+		Dir:     "kyaml_flag_config",
+		Command: yamlfmtWithArgs("-kyaml ."),
+		Update:  *updateFlag,
+	}.Run(t)
+}

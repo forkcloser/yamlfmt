@@ -20,26 +20,26 @@ import (
 )
 
 type Config struct {
-	Indent                    int                        `mapstructure:"indent"`
-	IncludeDocumentStart      bool                       `mapstructure:"include_document_start"`
-	LineEnding                yamlfmt.LineBreakStyle     `mapstructure:"line_ending"`
-	LineLength                int                        `mapstructure:"max_line_length"`
-	RetainLineBreaks          bool                       `mapstructure:"retain_line_breaks"`
-	RetainLineBreaksSingle    bool                       `mapstructure:"retain_line_breaks_single"`
-	DisallowAnchors           bool                       `mapstructure:"disallow_anchors"`
-	ScanFoldedAsLiteral       bool                       `mapstructure:"scan_folded_as_literal"`
-	IndentlessArrays          bool                       `mapstructure:"indentless_arrays"`
-	DropMergeTag              bool                       `mapstructure:"drop_merge_tag"`
-	PadLineComments           int                        `mapstructure:"pad_line_comments"`
-	PreserveCommentIndents    bool                       `mapstructure:"preserve_comment_indents"`
-	TrimTrailingWhitespace    bool                       `mapstructure:"trim_trailing_whitespace"`
-	EOFNewline                bool                       `mapstructure:"eof_newline"`
-	StripDirectives           bool                       `mapstructure:"strip_directives"`
-	ArrayIndent               int                        `mapstructure:"array_indent"`
-	IndentRootArray           bool                       `mapstructure:"indent_root_array"`
-	DisableAliasKeyCorrection bool                       `mapstructure:"disable_alias_key_correction"`
-	ForceArrayStyle           yamlFeatures.SequenceStyle `mapstructure:"force_array_style"`
-	ForceQuoteStyle           yamlFeatures.QuoteStyle    `mapstructure:"force_quote_style"`
+	Indent                    int                        `yaml:"indent"`
+	IncludeDocumentStart      bool                       `yaml:"include_document_start"`
+	LineEnding                yamlfmt.LineBreakStyle     `yaml:"line_ending"`
+	LineLength                int                        `yaml:"max_line_length"`
+	RetainLineBreaks          bool                       `yaml:"retain_line_breaks"`
+	RetainLineBreaksSingle    bool                       `yaml:"retain_line_breaks_single"`
+	DisallowAnchors           bool                       `yaml:"disallow_anchors"`
+	ScanFoldedAsLiteral       bool                       `yaml:"scan_folded_as_literal"`
+	IndentlessArrays          bool                       `yaml:"indentless_arrays"`
+	DropMergeTag              bool                       `yaml:"drop_merge_tag"`
+	PadLineComments           int                        `yaml:"pad_line_comments"`
+	PreserveCommentIndents    bool                       `yaml:"preserve_comment_indents"`
+	TrimTrailingWhitespace    bool                       `yaml:"trim_trailing_whitespace"`
+	EOFNewline                bool                       `yaml:"eof_newline"`
+	StripDirectives           bool                       `yaml:"strip_directives"`
+	ArrayIndent               int                        `yaml:"array_indent"`
+	IndentRootArray           bool                       `yaml:"indent_root_array"`
+	DisableAliasKeyCorrection bool                       `yaml:"disable_alias_key_correction"`
+	ForceArrayStyle           yamlFeatures.SequenceStyle `yaml:"force_array_style"`
+	ForceQuoteStyle           yamlFeatures.QuoteStyle    `yaml:"force_quote_style"`
 }
 
 func DefaultConfig() *Config {

@@ -34,3 +34,12 @@ Fork of https://github.com/google/yamlfmt (`main`).
 | The configuration lookup is deterministic and does not dereference a failed stat | https://github.com/forkcloser/yamlfmt/pull/32 |
 | The `line` and `gitlab` outputs report each file's own finding | https://github.com/forkcloser/yamlfmt/pull/33 |
 | An `Unmarshaler` that wraps a `*TypeError` reports type errors, not a hard failure | https://github.com/forkcloser/yamlfmt/pull/34 |
+| The empty value of a flow-sequence pair is positioned on the token after the `:`, as libyaml does | https://github.com/forkcloser/yamlfmt/pull/49 |
+| The configuration decodes through the vendored YAML library instead of mapstructure | https://github.com/forkcloser/yamlfmt/pull/53 |
+| `strip_directives` no longer panics beside `retain_line_breaks`, `trim_trailing_whitespace` or `eof_newline` | https://github.com/forkcloser/yamlfmt/pull/54 |
+| `strip_directives` restores every directive of a run, not only the first | https://github.com/forkcloser/yamlfmt/pull/55 |
+| `strip_directives` keeps the document start marker that follows directives | https://github.com/forkcloser/yamlfmt/pull/55 |
+| `strip_directives` keeps the document end marker before a directive between documents | https://github.com/forkcloser/yamlfmt/pull/55 |
+| `-kyaml` replaces the configured formatter and keeps the rest of the configuration | https://github.com/forkcloser/yamlfmt/pull/56 |
+| `-formatter type=` takes any value as a formatter name instead of panicking on a number or a bool | https://github.com/forkcloser/yamlfmt/pull/56 |
+| A `%YAML 1.2` directive is accepted, as libyaml accepts it | https://github.com/forkcloser/yamlfmt/pull/58 |
