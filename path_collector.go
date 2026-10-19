@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -29,7 +30,6 @@ import (
 	ignore "github.com/sabhiram/go-gitignore"
 
 	"github.com/forkcloser/yamlfmt/internal/collections"
-	"github.com/forkcloser/yamlfmt/internal/logger"
 )
 
 type MatchType string
@@ -51,7 +51,7 @@ type FilepathCollector struct {
 }
 
 func (c *FilepathCollector) CollectPaths() ([]string, error) {
-	logger.Debug(logger.DebugCodePaths, "using file path matching. include patterns: %s", c.Include)
+	slog.Debug("using file path matching", DebugCodeAttr, DebugCodePaths, "include", c.Include)
 
 	pathsFound := []string{}
 
@@ -78,7 +78,7 @@ func (c *FilepathCollector) CollectPaths() ([]string, error) {
 		pathsFound = append(pathsFound, paths...)
 	}
 
-	logger.Debug(logger.DebugCodePaths, "found paths: %s", pathsFound)
+	slog.Debug("found paths", DebugCodeAttr, DebugCodePaths, "paths", pathsFound)
 
 	pathsToFormat := collections.SliceToSet(pathsFound)
 
@@ -111,7 +111,7 @@ func (c *FilepathCollector) CollectPaths() ([]string, error) {
 		}
 
 		if info.IsDir() {
-			logger.Debug(logger.DebugCodePaths, "for exclude dir: %s", exclPath)
+			slog.Debug("exclude dir", DebugCodeAttr, DebugCodePaths, "path", exclPath)
 
 			// The separator bounds the match: excluding a/b keeps a/bc.
 			prefix := absExcl
@@ -121,16 +121,16 @@ func (c *FilepathCollector) CollectPaths() ([]string, error) {
 
 			for foundPath, absPath := range absFound {
 				if strings.HasPrefix(absPath, prefix) {
-					logger.Debug(logger.DebugCodePaths, "excluding %s", foundPath)
+					slog.Debug("excluding", DebugCodeAttr, DebugCodePaths, "path", foundPath)
 					pathsToFormat.Remove(foundPath)
 				}
 			}
 		} else {
-			logger.Debug(logger.DebugCodePaths, "for exclude file: %s", exclPath)
+			slog.Debug("exclude file", DebugCodeAttr, DebugCodePaths, "path", exclPath)
 
 			for foundPath, absPath := range absFound {
 				if absPath == absExcl {
-					logger.Debug(logger.DebugCodePaths, "excluding %s", foundPath)
+					slog.Debug("excluding", DebugCodeAttr, DebugCodePaths, "path", foundPath)
 					pathsToFormat.Remove(foundPath)
 				}
 			}
@@ -138,7 +138,7 @@ func (c *FilepathCollector) CollectPaths() ([]string, error) {
 	}
 
 	pathsToFormatSlice := pathsToFormat.ToSlice()
-	logger.Debug(logger.DebugCodePaths, "paths to format: %s", pathsToFormat)
+	slog.Debug("paths to format", DebugCodeAttr, DebugCodePaths, "paths", pathsToFormat.ToSlice())
 
 	return pathsToFormatSlice, nil
 }
@@ -214,19 +214,19 @@ type DoublestarCollector struct {
 }
 
 func (c *DoublestarCollector) CollectPaths() ([]string, error) {
-	logger.Debug(logger.DebugCodePaths, "using doublestar path matching. include patterns: %s", c.Include)
+	slog.Debug("using doublestar path matching", DebugCodeAttr, DebugCodePaths, "include", c.Include)
 
 	includedPaths := []string{}
 
 	for _, pattern := range c.Include {
-		logger.Debug(logger.DebugCodePaths, "trying pattern: %s", pattern)
+		slog.Debug("trying pattern", DebugCodeAttr, DebugCodePaths, "pattern", pattern)
 
 		globMatches, err := doublestar.FilepathGlob(pattern)
 		if err != nil {
 			return nil, err
 		}
 
-		logger.Debug(logger.DebugCodePaths, "pattern %s matches: %s", pattern, globMatches)
+		slog.Debug("pattern matches", DebugCodeAttr, DebugCodePaths, "pattern", pattern, "paths", globMatches)
 		includedPaths = append(includedPaths, globMatches...)
 	}
 
@@ -240,7 +240,7 @@ func (c *DoublestarCollector) CollectPaths() ([]string, error) {
 
 		excluded := false
 
-		logger.Debug(logger.DebugCodePaths, "calculating excludes for %s", path)
+		slog.Debug("calculating excludes", DebugCodeAttr, DebugCodePaths, "path", path)
 
 		for _, pattern := range c.Exclude {
 			match, err := doublestar.PathMatch(filepath.Clean(pattern), path)
@@ -249,24 +249,24 @@ func (c *DoublestarCollector) CollectPaths() ([]string, error) {
 			}
 
 			if match {
-				logger.Debug(logger.DebugCodePaths, "pattern %s matched, excluding", pattern)
+				slog.Debug("pattern matched, excluding", DebugCodeAttr, DebugCodePaths, "pattern", pattern)
 
 				excluded = true
 
 				break
 			}
 
-			logger.Debug(logger.DebugCodePaths, "pattern %s did not match path", pattern)
+			slog.Debug("pattern did not match path", DebugCodeAttr, DebugCodePaths, "pattern", pattern)
 		}
 
 		if !excluded {
-			logger.Debug(logger.DebugCodePaths, "path %s included", path)
+			slog.Debug("path included", DebugCodeAttr, DebugCodePaths, "path", path)
 			pathsToFormatSet.Add(path)
 		}
 	}
 
 	pathsToFormat := pathsToFormatSet.ToSlice()
-	logger.Debug(logger.DebugCodePaths, "paths to format: %s", pathsToFormat)
+	slog.Debug("paths to format", DebugCodeAttr, DebugCodePaths, "paths", pathsToFormat)
 
 	return pathsToFormat, nil
 }
@@ -339,7 +339,7 @@ func findGitIgnorePath(gitignorePath string) (string, error) {
 func ExcludeWithGitignore(gitignorePath string, paths []string) ([]string, error) {
 	gitignorePath, err := findGitIgnorePath(gitignorePath)
 	if errors.Is(err, errNoGitignore) {
-		logger.Debug(logger.DebugCodePaths, "no gitignore at %s: nothing excluded", gitignorePath)
+		slog.Debug("no gitignore, nothing excluded", DebugCodeAttr, DebugCodePaths, "path", gitignorePath)
 
 		return paths, nil
 	}
@@ -348,7 +348,7 @@ func ExcludeWithGitignore(gitignorePath string, paths []string) ([]string, error
 		return nil, err
 	}
 
-	logger.Debug(logger.DebugCodePaths, "excluding paths with gitignore: %s", gitignorePath)
+	slog.Debug("excluding paths with gitignore", DebugCodeAttr, DebugCodePaths, "path", gitignorePath)
 
 	ignorer, err := ignore.CompileIgnoreFile(gitignorePath)
 	if err != nil {
@@ -371,11 +371,12 @@ func ExcludeWithGitignore(gitignorePath string, paths []string) ([]string, error
 		if ok, pattern := ignorer.MatchesPathHow(fromRoot); !ok {
 			pathsToFormat = append(pathsToFormat, path)
 		} else {
-			logger.Debug(logger.DebugCodePaths, "pattern %s matches %s, excluding", pattern.Line, path)
+			slog.Debug("pattern matches, excluding",
+				DebugCodeAttr, DebugCodePaths, "pattern", pattern.Line, "path", path)
 		}
 	}
 
-	logger.Debug(logger.DebugCodePaths, "paths to format: %s", pathsToFormat)
+	slog.Debug("paths to format", DebugCodeAttr, DebugCodePaths, "paths", pathsToFormat)
 
 	return pathsToFormat, nil
 }

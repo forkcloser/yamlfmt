@@ -108,7 +108,7 @@ String array flags can be provided in two ways. For example with a flag called `
 
 ## Debug Logging
 
-Debug logging can be enabled through the `-debug` [array flag](#string-array-flags). The following is the list of supported debug codes:
+Debug logging can be enabled through the `-debug` [array flag](#string-array-flags). Debug lines go to standard error, each as `DEBUG: <message> code=<code> key=value...`, a multi-line value (a diff) on the lines after; standard output stays the command's own. The following is the list of supported debug codes:
 * `paths`
     - Log the details for the path discovery process. Use it to debug your include/exclude patterns.
 * `config`

@@ -18,6 +18,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -30,7 +31,6 @@ import (
 	"github.com/forkcloser/yamlfmt/formatters/kyaml"
 	"github.com/forkcloser/yamlfmt/internal/collections"
 	"github.com/forkcloser/yamlfmt/internal/configmap"
-	"github.com/forkcloser/yamlfmt/internal/logger"
 	"github.com/forkcloser/yamlfmt/pkg/yaml"
 )
 
@@ -131,7 +131,7 @@ func getConfigPath() (string, error) {
 
 	// All else fails, no path and no error (signals to
 	// use default config).
-	logger.Debug(logger.DebugCodeConfig, "No config file found, using default config")
+	slog.Debug("no config file found, using default config", yamlfmt.DebugCodeAttr, yamlfmt.DebugCodeConfig)
 
 	return "", nil
 }
@@ -139,17 +139,19 @@ func getConfigPath() (string, error) {
 func getConfigPathFromFlag() (string, error) {
 	// First check if the global configuration was explicitly requested as that takes precedence.
 	if *flagGlobalConf {
-		logger.Debug(logger.DebugCodeConfig, "Using -global_conf flag")
+		slog.Debug("using -global_conf flag", yamlfmt.DebugCodeAttr, yamlfmt.DebugCodeConfig)
 		return getConfigPathFromXdgConfigHome()
 	}
 	// If the global config wasn't explicitly requested, check if there was a specific configuration path supplied.
 	configPath := *flagConf
 	if configPath != "" {
-		logger.Debug(logger.DebugCodeConfig, "Using config path %s from -conf flag", configPath)
+		slog.Debug("using config path from -conf flag",
+			yamlfmt.DebugCodeAttr, yamlfmt.DebugCodeConfig, "path", configPath)
+
 		return configPath, validatePath(configPath)
 	}
 
-	logger.Debug(logger.DebugCodeConfig, "No config path specified in -conf")
+	slog.Debug("no config path specified in -conf", yamlfmt.DebugCodeAttr, yamlfmt.DebugCodeConfig)
 
 	return configPath, errNoConfFlag
 }
@@ -171,7 +173,7 @@ func getConfigPathFromDirTree() (string, error) {
 	for {
 		configPath, err := getConfigPathFromDir(dir)
 		if err == nil {
-			logger.Debug(logger.DebugCodeConfig, "Found config at %s", configPath)
+			slog.Debug("found config", yamlfmt.DebugCodeAttr, yamlfmt.DebugCodeConfig, "path", configPath)
 			return configPath, nil
 		}
 
@@ -231,12 +233,12 @@ func getConfigPathFromDir(dir string) (string, error) {
 	for _, filename := range configFileNames {
 		configPath := filepath.Join(dir, filename)
 		if err := validatePath(configPath); err == nil {
-			logger.Debug(logger.DebugCodeConfig, "Found config at %s", configPath)
+			slog.Debug("found config", yamlfmt.DebugCodeAttr, yamlfmt.DebugCodeConfig, "path", configPath)
 			return configPath, nil
 		}
 	}
 
-	logger.Debug(logger.DebugCodeConfig, "No config file found in %s", dir)
+	slog.Debug("no config file found", yamlfmt.DebugCodeAttr, yamlfmt.DebugCodeConfig, "dir", dir)
 
 	return "", errConfPathNotExist
 }

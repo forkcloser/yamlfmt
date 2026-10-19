@@ -1,0 +1,6 @@
+# Goldens are compared byte for byte against the command's output: a diff
+# golden keeps the trailing spaces the formatter removed, a message golden
+# ends in the blank line the command prints. Exempt from git's whitespace
+# check, which the commit lint runs. Not a line-ending rule; the root
+# `* -text` still applies.
+* -whitespace

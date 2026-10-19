@@ -17,7 +17,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"runtime/debug"
 
@@ -25,7 +25,6 @@ import (
 	"github.com/forkcloser/yamlfmt/command"
 	"github.com/forkcloser/yamlfmt/formatters/basic"
 	"github.com/forkcloser/yamlfmt/formatters/kyaml"
-	"github.com/forkcloser/yamlfmt/internal/logger"
 )
 
 var (
@@ -35,8 +34,10 @@ var (
 
 func main() {
 	if err := run(); err != nil {
-		l := log.New(os.Stderr, "", 0)
-		l.Fatal(err)
+		// The command's own failure is its output, as before: the lint and
+		// format diffs are reported this way, not a log record.
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
 }
 
@@ -44,6 +45,10 @@ func run() error {
 	bindArrayFlags()
 	configureHelp()
 	flag.Parse()
+
+	// Every package logs through slog's default logger; the command decides
+	// what is written, where, and which -debug codes get through.
+	slog.SetDefault(slog.New(newDebugHandler(os.Stderr, flagDebug)))
 
 	if *flagVersion {
 		currentVersion, currentCommit := getVersion()
@@ -56,10 +61,6 @@ func run() error {
 		fmt.Println(versionMessage)
 
 		return nil
-	}
-
-	for _, code := range flagDebug {
-		logger.ActivateDebugCode(code)
 	}
 
 	c := &command.Command{

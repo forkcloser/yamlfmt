@@ -1,0 +1,11 @@
+DEBUG: the following files were modified code=diffs
+a.yaml:
+- a:  1  a: 1
++        
+b.yaml:
+- a:  1  a: 1
++        
+c.yaml:
+- a:  1  a: 1
++        
+
