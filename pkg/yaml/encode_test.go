@@ -483,8 +483,11 @@ var marshalTests = []struct {
 
 	// Strings with tabs were disallowed as literals (issue #471).
 	{
+		// Content opening with a tab carries the indentation indicator:
+		// without it the parser takes the tab for indentation and refuses
+		// the document.
 		map[string]string{"a": "\tB\n\tC\n"},
-		"a: |\n    \tB\n    \tC\n",
+		"a: |4\n    \tB\n    \tC\n",
 	},
 
 	// Ensure that strings do not wrap

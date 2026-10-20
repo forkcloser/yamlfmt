@@ -113,8 +113,12 @@ func shortTag(tag string) string {
 	return tag
 }
 
+// longTag is the full form of a "!!" shorthand tag. The bare "!!" is no
+// shorthand: it is the local tag with the suffix "!" (written "!%21", or
+// "!<!!>"), and read as the secondary handle with no suffix it was written
+// "!!", which does not parse.
 func longTag(tag string) string {
-	if strings.HasPrefix(tag, "!!") {
+	if strings.HasPrefix(tag, "!!") && len(tag) > len("!!") {
 		if ltag, ok := longTags[tag]; ok {
 			return ltag
 		}
