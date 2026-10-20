@@ -587,8 +587,13 @@ func yaml_emitter_emit_document_end(emitter *yaml_emitter_t, event *yaml_event_t
 	if event.typ != yaml_DOCUMENT_END_EVENT {
 		return yaml_emitter_set_emitter_error(emitter, "expected DOCUMENT-END")
 	}
-	// [Go] Force document foot separation.
-	emitter.foot_indent = 0
+	// [Go] Force document foot separation, unless the document ends with a
+	// keep-chomped block scalar: the separating empty line would read back
+	// as that scalar's content, one more line on every pass.
+	if !emitter.keep_chomped {
+		emitter.foot_indent = 0
+	}
+
 	if !yaml_emitter_process_foot_comment(emitter) {
 		return false
 	}
@@ -732,7 +737,11 @@ func yaml_emitter_emit_flow_mapping_key(emitter *yaml_emitter_t, event *yaml_eve
 	}
 
 	if event.typ == yaml_MAPPING_END_EVENT {
-		if (emitter.canonical || len(emitter.head_comment)+len(emitter.foot_comment)+len(emitter.tail_comment) > 0) &&
+		// A comma before a comment that belongs inside the mapping (an
+		// entry's head or tail) puts the comment on a line of its own; the
+		// mapping's own foot comment is written after the closing brace and
+		// takes no comma.
+		if (emitter.canonical || len(emitter.head_comment)+len(emitter.tail_comment) > 0) &&
 			!first &&
 			!trail {
 			if !yaml_emitter_write_indicator(emitter, []byte{','}, false, false, false) {
@@ -898,12 +907,56 @@ func yaml_emitter_emit_block_sequence_item(emitter *yaml_emitter_t, event *yaml_
 	return true
 }
 
+// yaml_emitter_join_comments is a and b as one comment, on their own lines.
+func yaml_emitter_join_comments(a, b []byte) []byte {
+	if len(a) == 0 {
+		return append([]byte(nil), b...)
+	}
+
+	if len(b) == 0 {
+		return a
+	}
+
+	return append(append(a, '\n'), b...)
+}
+
 // Expect a block key node.
 func yaml_emitter_emit_block_mapping_key(emitter *yaml_emitter_t, event *yaml_event_t, first bool) bool {
 	if first {
 		if !yaml_emitter_increase_indent(emitter, false, false) {
 			return false
 		}
+	}
+
+	// At the root mapping's end, a comment that would read back as the
+	// document's foot is written as one, so the document formats to itself:
+	// a head comment with nothing left to head (a value written on its
+	// key's line leaves its head comment pending), and the last key's foot
+	// comment when that key's value was written as nothing, since a comment
+	// after "key:" is not the key's on reading. Only at the root: a nested
+	// mapping's foot is written after the enclosing mapping's remaining
+	// keys, which would carry the comment past them.
+	if event.typ == yaml_MAPPING_END_EVENT && len(emitter.states) > 0 &&
+		emitter.states[len(emitter.states)-1] == yaml_EMIT_DOCUMENT_END_STATE {
+		var foot []byte
+
+		if len(emitter.tail_comment) > 0 && emitter.empty_value {
+			foot = append(foot, emitter.tail_comment...)
+			emitter.tail_comment = emitter.tail_comment[:0]
+		}
+
+		if len(emitter.head_comment) > 0 {
+			foot = yaml_emitter_join_comments(foot, emitter.head_comment)
+			emitter.head_comment = emitter.head_comment[:0]
+		}
+
+		if len(foot) > 0 {
+			emitter.foot_comment = yaml_emitter_join_comments(foot, emitter.foot_comment)
+		}
+	}
+
+	if event.typ == yaml_MAPPING_END_EVENT {
+		emitter.empty_value = false
 	}
 
 	if !yaml_emitter_process_head_comment(emitter) {
@@ -1052,9 +1105,13 @@ func yaml_emitter_emit_alias(emitter *yaml_emitter_t) bool {
 
 // Expect SCALAR.
 func yaml_emitter_emit_scalar(emitter *yaml_emitter_t, event *yaml_event_t) bool {
+	emitter.keep_chomped = false
+
 	if !yaml_emitter_select_scalar_style(emitter, event) {
 		return false
 	}
+
+	emitter.empty_value = len(event.value) == 0 && emitter.scalar_data.style == yaml_PLAIN_SCALAR_STYLE
 
 	if !yaml_emitter_process_anchor(emitter) {
 		return false
@@ -2224,6 +2281,8 @@ func yaml_emitter_write_block_scalar_hints(emitter *yaml_emitter_t, value []byte
 			return false
 		}
 	}
+
+	emitter.keep_chomped = chomp_hint[0] == '+'
 
 	return true
 }

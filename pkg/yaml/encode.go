@@ -38,6 +38,11 @@ type encoder struct {
 	indent_root_array bool
 	doneInit          bool
 	optDropMergeTag   bool
+	// keyNext marks the next node as a mapping key, flowDepth how many flow
+	// collections enclose the node being written: in either place the
+	// emitter quotes an empty scalar, so a null there is written as "null".
+	keyNext   bool
+	flowDepth int
 }
 
 func newEncoder() *encoder {
@@ -491,6 +496,9 @@ func (e *encoder) nodev(in reflect.Value) {
 }
 
 func (e *encoder) node(node *Node, tail string) {
+	isKey := e.keyNext
+	e.keyNext = false
+
 	// Zero nodes behave as nil.
 	if node.Kind == 0 && node.IsZero() {
 		e.nilv()
@@ -564,8 +572,16 @@ func (e *encoder) node(node *Node, tail string) {
 		e.event.head_comment = []byte(node.HeadComment)
 		e.emit()
 
+		if style == yaml_FLOW_SEQUENCE_STYLE {
+			e.flowDepth++
+		}
+
 		for _, node := range node.Content {
 			e.node(node, "")
+		}
+
+		if style == yaml_FLOW_SEQUENCE_STYLE {
+			e.flowDepth--
 		}
 
 		e.must(yaml_sequence_end_event_initialize(&e.event))
@@ -591,6 +607,10 @@ func (e *encoder) node(node *Node, tail string) {
 		// with the mapping end event.
 		tail = ""
 
+		if style == yaml_FLOW_MAPPING_STYLE {
+			e.flowDepth++
+		}
+
 		for i := 0; i+1 < len(node.Content); i += 2 {
 			k := node.Content[i]
 
@@ -601,11 +621,16 @@ func (e *encoder) node(node *Node, tail string) {
 				k = &kopy
 			}
 
+			e.keyNext = true
 			e.node(k, tail)
 			tail = foot
 
 			v := node.Content[i+1]
 			e.node(v, "")
+		}
+
+		if style == yaml_FLOW_MAPPING_STYLE {
+			e.flowDepth--
 		}
 
 		yaml_mapping_end_event_initialize(&e.event)
@@ -625,6 +650,14 @@ func (e *encoder) node(node *Node, tail string) {
 
 	case ScalarNode:
 		value := node.Value
+
+		// A null's empty value is quoted by the emitter where an empty plain
+		// scalar is not allowed, as a key or inside a flow collection, and
+		// reads back as the empty string; "null" there is the same null.
+		if stag == nullTag && value == "" && (isKey || e.flowDepth > 0) {
+			value = "null"
+		}
+
 		if !utf8.ValidString(value) {
 			if stag == binaryTag {
 				failf("explicitly tagged !!binary data must be base64-encoded")

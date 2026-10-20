@@ -3040,9 +3040,12 @@ func yaml_parser_scan_comments(parser *yaml_parser_t, scan_mark yaml_mark_t) boo
 	// The foot line is the place where a comment must start to
 	// still be considered as a foot of the prior content.
 	// If there's some content in the currently parsed line, then
-	// the foot is the line below it.
+	// the foot is the line below it. Content on the first line counts
+	// too: a quoted scalar there, which leaves the scanner on its own
+	// line, has its trailing comment as a foot like a plain scalar, whose
+	// scanner eats the break and starts the scan on the comment's line.
 	foot_line := -1
-	if scan_mark.line > 0 {
+	if scan_mark.line > 0 || scan_mark.column > 0 {
 		foot_line = parser.mark.line - parser.newlines + 1
 		if parser.newlines == 0 && parser.mark.column > 1 {
 			foot_line++
@@ -3094,13 +3097,7 @@ func yaml_parser_scan_comments(parser *yaml_parser_t, scan_mark yaml_mark_t) boo
 					}
 				} else {
 					if len(text) > 0 && parser.buffer[parser.buffer_pos+peek] != 0 {
-						// When scanning CRLF files, this can mistakenly think it's peeking ahead to
-						// another line break, when in fact it has just peeked to the LF in the CRLF.
-						// Checking if we're in a CRLF at the current buffer position determines whether
-						// we've hit this edge case or not.
-						if !is_crlf(parser.buffer, parser.buffer_pos) {
-							text = append(text, '\n')
-						}
+						text = append(text, '\n')
 					}
 				}
 			}
@@ -3168,7 +3165,15 @@ func yaml_parser_scan_comments(parser *yaml_parser_t, scan_mark yaml_mark_t) boo
 			}
 		}
 
+		// The loop's increment steps over the comment line's break. A CRLF
+		// is two bytes, so start one further, or its LF reads as a break of
+		// its own: an empty line after the comment, which made it a foot of
+		// the prior token where under LF it heads the next.
 		peek = 0
+		if parser.unread >= 2 && is_crlf(parser.buffer, parser.buffer_pos) {
+			peek = 1
+		}
+
 		column = 0
 		line = parser.mark.line
 
