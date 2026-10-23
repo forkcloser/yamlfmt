@@ -468,6 +468,18 @@ func (e *encoder) nilv() {
 	e.emitScalar("null", "", "", yaml_PLAIN_SCALAR_STYLE, nil, nil, nil, nil, 0)
 }
 
+// joinComments is a and b as one comment, on their own lines.
+func joinComments(a, b string) []byte {
+	switch {
+	case a == "":
+		return []byte(b)
+	case b == "":
+		return []byte(a)
+	default:
+		return []byte(a + "\n" + b)
+	}
+}
+
 func (e *encoder) emitScalar(
 	value, anchor, tag string,
 	style yaml_scalar_style_t,
@@ -570,6 +582,22 @@ func (e *encoder) node(node *Node, tail string) {
 			yaml_sequence_start_event_initialize(&e.event, []byte(node.Anchor), []byte(longTag(tag)), tag == "", style),
 		)
 		e.event.head_comment = []byte(node.HeadComment)
+
+		// A block collection with properties has a line of its own, the
+		// anchor's or tag's, and its line comment was read there: it goes
+		// with the start event, which writes that line. Without one, or in
+		// flow style, the comment follows the collection, with the end event.
+		propertiesLine := style == yaml_BLOCK_SEQUENCE_STYLE && (node.Anchor != "" || tag != "")
+		if propertiesLine {
+			e.event.line_comment = []byte(node.LineComment)
+			e.event.line_comment_column = node.LineCommentColumn
+		} else if style == yaml_BLOCK_SEQUENCE_STYLE && node.LineComment != "" {
+			// A block collection whose properties are not written, a
+			// non-specific tag resolved away, has no line for the comment
+			// read on its tag line; it heads the collection instead.
+			e.event.head_comment = joinComments(node.HeadComment, node.LineComment)
+		}
+
 		e.emit()
 
 		if style == yaml_FLOW_SEQUENCE_STYLE {
@@ -585,8 +613,12 @@ func (e *encoder) node(node *Node, tail string) {
 		}
 
 		e.must(yaml_sequence_end_event_initialize(&e.event))
-		e.event.line_comment = []byte(node.LineComment)
-		e.event.line_comment_column = node.LineCommentColumn
+
+		if !propertiesLine && style == yaml_FLOW_SEQUENCE_STYLE {
+			e.event.line_comment = []byte(node.LineComment)
+			e.event.line_comment_column = node.LineCommentColumn
+		}
+
 		e.event.foot_comment = []byte(node.FootComment)
 		e.emit()
 
@@ -599,6 +631,18 @@ func (e *encoder) node(node *Node, tail string) {
 		yaml_mapping_start_event_initialize(&e.event, []byte(node.Anchor), []byte(longTag(tag)), tag == "", style)
 		e.event.tail_comment = []byte(tail)
 		e.event.head_comment = []byte(node.HeadComment)
+
+		// As for a sequence: the properties line carries the line comment.
+		propertiesLine := style == yaml_BLOCK_MAPPING_STYLE && (node.Anchor != "" || tag != "")
+		if propertiesLine {
+			e.event.line_comment = []byte(node.LineComment)
+			e.event.line_comment_column = node.LineCommentColumn
+		} else if style == yaml_BLOCK_MAPPING_STYLE && node.LineComment != "" {
+			// As for a sequence: without a properties line the tag line's
+			// comment heads the mapping.
+			e.event.head_comment = joinComments(node.HeadComment, node.LineComment)
+		}
+
 		e.emit()
 
 		// The tail logic below moves the foot comment of prior keys to the following key,
@@ -635,8 +679,12 @@ func (e *encoder) node(node *Node, tail string) {
 
 		yaml_mapping_end_event_initialize(&e.event)
 		e.event.tail_comment = []byte(tail)
-		e.event.line_comment = []byte(node.LineComment)
-		e.event.line_comment_column = node.LineCommentColumn
+
+		if !propertiesLine && style == yaml_FLOW_MAPPING_STYLE {
+			e.event.line_comment = []byte(node.LineComment)
+			e.event.line_comment_column = node.LineCommentColumn
+		}
+
 		e.event.foot_comment = []byte(node.FootComment)
 		e.emit()
 

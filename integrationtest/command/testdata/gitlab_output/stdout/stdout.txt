@@ -7,7 +7,7 @@
     "location": {
       "path": "needs_format.yaml",
       "lines": {
-        "begin": 2,
+        "begin": 3,
         "end": 4
       }
     }

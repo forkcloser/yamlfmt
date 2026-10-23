@@ -494,11 +494,22 @@ func yaml_emitter_emit_document_start(emitter *yaml_emitter_t, event *yaml_event
 		// braydonk: This puts head comments above the document
 		// start token, rather than the previous behaviour which
 		// put them after the document start for some reason.
+		//
+		// A comment is the document's head, not the first node's, when an
+		// empty line separates it from the content; written without one
+		// before an implicit start it reads back as the node's, which moves
+		// it on the next pass. The marker is that separation when written.
 		if len(emitter.head_comment) > 0 {
 			if !yaml_emitter_process_head_comment(emitter) {
 				return false
 			}
+
+			if implicit && !put_break(emitter) {
+				return false
+			}
 		}
+
+		emitter.marker_written = !implicit
 
 		if !implicit {
 			if !yaml_emitter_write_indent(emitter) {
@@ -562,6 +573,12 @@ func yaml_emitter_emit_document_start(emitter *yaml_emitter_t, event *yaml_event
 // Expect the root node.
 func yaml_emitter_emit_document_content(emitter *yaml_emitter_t, event *yaml_event_t) bool {
 	emitter.states = append(emitter.states, yaml_EMIT_DOCUMENT_END_STATE)
+	emitter.root_block_mapping = event.typ == yaml_MAPPING_START_EVENT &&
+		event.mapping_style() != yaml_FLOW_MAPPING_STYLE
+
+	if !yaml_emitter_set_head_apart_from_nested(emitter) {
+		return false
+	}
 
 	if !yaml_emitter_process_head_comment(emitter) {
 		return false
@@ -587,11 +604,27 @@ func yaml_emitter_emit_document_end(emitter *yaml_emitter_t, event *yaml_event_t
 	if event.typ != yaml_DOCUMENT_END_EVENT {
 		return yaml_emitter_set_emitter_error(emitter, "expected DOCUMENT-END")
 	}
-	// [Go] Force document foot separation, unless the document ends with a
-	// keep-chomped block scalar: the separating empty line would read back
-	// as that scalar's content, one more line on every pass.
-	if !emitter.keep_chomped {
+	// [Go] Force document foot separation after a block mapping, where an
+	// adjacent comment would read back as the last key's, and after a leaf
+	// nested below a root collection's own entry, where it would read back
+	// as that leaf's collection's, at its indent; not when the document
+	// ends with a keep-chomped block scalar, whose content the separating
+	// empty line would join, one more line on every pass. After a root
+	// scalar or a root sequence of leaves a comment is the node's foot or
+	// the document's, read back as either by what follows, and written
+	// alike, adjacent, it comes back the same; separated, it came back as
+	// the document's where the node's was written adjacent.
+	if !emitter.keep_chomped && (emitter.root_block_mapping || emitter.leaf_depth > 1) {
 		emitter.foot_indent = 0
+	}
+
+	// A head comment still pending at the document's end has nothing left
+	// to head, and is the document's foot, as the parser reads a comment
+	// after the last node; the root mapping's end hands its own over the
+	// same way, and any other root left it unwritten.
+	if len(emitter.head_comment) > 0 {
+		emitter.foot_comment = yaml_emitter_join_comments(emitter.foot_comment, emitter.head_comment)
+		emitter.head_comment = emitter.head_comment[:0]
 	}
 
 	if !yaml_emitter_process_foot_comment(emitter) {
@@ -626,7 +659,11 @@ func yaml_emitter_emit_document_end(emitter *yaml_emitter_t, event *yaml_event_t
 
 // Expect a flow item node.
 func yaml_emitter_emit_flow_sequence_item(emitter *yaml_emitter_t, event *yaml_event_t, first, trail bool) bool {
+	emitter.marker_written = false
+
 	if first {
+		yaml_emitter_hold_flow_head(emitter)
+
 		if !yaml_emitter_write_indicator(emitter, []byte{'['}, true, true, false) {
 			return false
 		}
@@ -666,6 +703,8 @@ func yaml_emitter_emit_flow_sequence_item(emitter *yaml_emitter_t, event *yaml_e
 		if !yaml_emitter_process_foot_comment(emitter) {
 			return false
 		}
+
+		yaml_emitter_release_flow_head(emitter)
 
 		emitter.state = emitter.states[len(emitter.states)-1]
 		emitter.states = emitter.states[:len(emitter.states)-1]
@@ -724,7 +763,11 @@ func yaml_emitter_emit_flow_sequence_item(emitter *yaml_emitter_t, event *yaml_e
 
 // Expect a flow key node.
 func yaml_emitter_emit_flow_mapping_key(emitter *yaml_emitter_t, event *yaml_event_t, first, trail bool) bool {
+	emitter.marker_written = false
+
 	if first {
+		yaml_emitter_hold_flow_head(emitter)
+
 		if !yaml_emitter_write_indicator(emitter, []byte{'{'}, true, true, false) {
 			return false
 		}
@@ -774,6 +817,8 @@ func yaml_emitter_emit_flow_mapping_key(emitter *yaml_emitter_t, event *yaml_eve
 		if !yaml_emitter_process_foot_comment(emitter) {
 			return false
 		}
+
+		yaml_emitter_release_flow_head(emitter)
 
 		emitter.state = emitter.states[len(emitter.states)-1]
 		emitter.states = emitter.states[:len(emitter.states)-1]
@@ -879,6 +924,21 @@ func yaml_emitter_emit_block_sequence_item(emitter *yaml_emitter_t, event *yaml_
 		return true
 	}
 
+	// A null item written as nothing, no value, anchor or tag after its
+	// dash, has no text to carry a line comment: `- #` reads back as a
+	// comment line, the document's foot, not the item's. The comment heads
+	// the item instead, and reads back as its head.
+	if event.typ == yaml_SCALAR_EVENT && len(event.value) == 0 && len(event.anchor) == 0 &&
+		(len(event.tag) == 0 || event.implicit) && len(emitter.line_comment) > 0 {
+		emitter.head_comment = yaml_emitter_join_comments(emitter.head_comment, emitter.line_comment)
+		emitter.line_comment = nil
+		emitter.line_comment_column = 0
+	}
+
+	if !yaml_emitter_set_head_apart_from_nested(emitter) {
+		return false
+	}
+
 	if !yaml_emitter_process_head_comment(emitter) {
 		return false
 	}
@@ -905,6 +965,67 @@ func yaml_emitter_emit_block_sequence_item(emitter *yaml_emitter_t, event *yaml_
 	}
 
 	return true
+}
+
+// yaml_emitter_set_head_apart_from_nested has an empty line written before
+// an entry's head comment when the leaf last written lies deeper than the
+// entry, the end of a nested block, or when the comment is the first thing
+// after a written document marker. Adjacent to a nested block at the
+// entry's indent the comment reads back as the block's foot, dedented, and
+// on the line after a marker as the prior document's foot; either moved
+// there on the next pass. The empty line keeps it the entry's head; the
+// indent's write puts it, as it does after a foot.
+func yaml_emitter_set_head_apart_from_nested(emitter *yaml_emitter_t) bool {
+	if len(emitter.head_comment) == 0 {
+		return true
+	}
+
+	after_marker := emitter.marker_written
+	emitter.marker_written = false
+
+	if !after_marker && emitter.leaf_depth <= len(emitter.indents) {
+		return true
+	}
+
+	indent := emitter.indent
+	if indent < 0 {
+		indent = 0
+	}
+
+	emitter.foot_indent = indent
+
+	return true
+}
+
+// yaml_emitter_hold_flow_head sets aside the head comment pending when a
+// flow collection opens: it is the collection's own head, and written after
+// the opening bracket it stood inside the collection, where the next pass
+// read it as nothing. It comes back pending after the closing bracket.
+func yaml_emitter_hold_flow_head(emitter *yaml_emitter_t) {
+	var head []byte
+	if len(emitter.head_comment) > 0 {
+		head = append([]byte(nil), emitter.head_comment...)
+		emitter.head_comment = emitter.head_comment[:0]
+	}
+
+	emitter.flow_heads = append(emitter.flow_heads, head)
+}
+
+// yaml_emitter_release_flow_head puts the head set aside at the collection's
+// opening back among the pending heads, for the enclosing block context to
+// place as it places the head of a value written on its key's line.
+func yaml_emitter_release_flow_head(emitter *yaml_emitter_t) {
+	n := len(emitter.flow_heads)
+	if n == 0 {
+		return
+	}
+
+	head := emitter.flow_heads[n-1]
+	emitter.flow_heads = emitter.flow_heads[:n-1]
+
+	if len(head) > 0 {
+		emitter.head_comment = yaml_emitter_join_comments(head, emitter.head_comment)
+	}
 }
 
 // yaml_emitter_join_comments is a and b as one comment, on their own lines.
@@ -955,12 +1076,41 @@ func yaml_emitter_emit_block_mapping_key(emitter *yaml_emitter_t, event *yaml_ev
 		}
 	}
 
+	var held_head []byte
+
 	if event.typ == yaml_MAPPING_END_EVENT {
 		emitter.empty_value = false
+
+		// Below the root, a head comment with nothing left to head, the one
+		// a value written on its key's line left pending, is the last key's
+		// foot, with the foot already there: written apart, at the mapping's
+		// indent after an empty line, it read back as the document's. Its
+		// first block only: a block after an empty line is not a foot, and
+		// stays pending for the enclosing context, the document's foot in
+		// the end, as the next pass reads it.
+		if len(emitter.head_comment) > 0 {
+			first, rest, more := bytes.Cut(emitter.head_comment, []byte("\n\n"))
+			emitter.tail_comment = yaml_emitter_join_comments(emitter.tail_comment, first)
+			emitter.head_comment = emitter.head_comment[:0]
+
+			if more {
+				// Held aside while the tail is written below, which writes
+				// any pending head with it.
+				held_head = append([]byte(nil), rest...)
+			}
+		}
+	}
+
+	if event.typ != yaml_MAPPING_END_EVENT && !yaml_emitter_set_head_apart_from_nested(emitter) {
+		return false
 	}
 
 	if !yaml_emitter_process_head_comment(emitter) {
 		return false
+	}
+
+	if len(held_head) > 0 {
+		emitter.head_comment = held_head
 	}
 
 	if event.typ == yaml_MAPPING_END_EVENT {
@@ -1014,6 +1164,8 @@ func yaml_emitter_emit_block_mapping_value(emitter *yaml_emitter_t, event *yaml_
 		if !yaml_emitter_write_indicator(emitter, []byte{':'}, true, false, true) {
 			return false
 		}
+
+		emitter.explicit_value_open = true
 	}
 
 	if len(emitter.key_line_comment) > 0 {
@@ -1030,6 +1182,16 @@ func yaml_emitter_emit_block_mapping_value(emitter *yaml_emitter_t, event *yaml_
 				emitter.key_line_comment = nil
 				emitter.key_line_comment_column = 0
 			}
+		} else if event.sequence_style() != yaml_FLOW_SEQUENCE_STYLE && (event.typ == yaml_MAPPING_START_EVENT || event.typ == yaml_SEQUENCE_START_EVENT) &&
+			(len(event.anchor) > 0 || len(event.tag) > 0 && !event.implicit) && len(emitter.line_comment) == 0 {
+			// The block that follows opens with properties on this line, and
+			// they carry the comment: written now, the comment ended the line
+			// and the properties went to the next one at no indent, where
+			// the output did not parse.
+			emitter.line_comment = emitter.key_line_comment
+			emitter.line_comment_column = emitter.key_line_comment_column
+			emitter.key_line_comment = nil
+			emitter.key_line_comment_column = 0
 		} else if event.sequence_style() != yaml_FLOW_SEQUENCE_STYLE && (event.typ == yaml_MAPPING_START_EVENT || event.typ == yaml_SEQUENCE_START_EVENT) {
 			// An indented block follows, so write the comment right now.
 			emitter.line_comment, emitter.key_line_comment = emitter.key_line_comment, emitter.line_comment
@@ -1086,6 +1248,10 @@ func yaml_emitter_emit_node(emitter *yaml_emitter_t, event *yaml_event_t,
 
 // Expect ALIAS.
 func yaml_emitter_emit_alias(emitter *yaml_emitter_t) bool {
+	emitter.leaf_depth = len(emitter.indents)
+	emitter.marker_written = false
+	emitter.explicit_value_open = false
+
 	if !yaml_emitter_process_anchor(emitter) {
 		return false
 	}
@@ -1106,6 +1272,9 @@ func yaml_emitter_emit_alias(emitter *yaml_emitter_t) bool {
 // Expect SCALAR.
 func yaml_emitter_emit_scalar(emitter *yaml_emitter_t, event *yaml_event_t) bool {
 	emitter.keep_chomped = false
+	emitter.leaf_depth = len(emitter.indents)
+	emitter.marker_written = false
+	emitter.explicit_value_open = false
 
 	if !yaml_emitter_select_scalar_style(emitter, event) {
 		return false
@@ -1139,6 +1308,17 @@ func yaml_emitter_emit_scalar(emitter *yaml_emitter_t, event *yaml_event_t) bool
 
 // Expect SEQUENCE-START.
 func yaml_emitter_emit_sequence_start(emitter *yaml_emitter_t, event *yaml_event_t) bool {
+	block := !(emitter.flow_level > 0 || emitter.canonical || event.sequence_style() == yaml_FLOW_SEQUENCE_STYLE ||
+		yaml_emitter_check_empty_sequence(emitter))
+
+	if block {
+		emitter.state = yaml_EMIT_BLOCK_SEQUENCE_FIRST_ITEM_STATE
+
+		if !yaml_emitter_indent_properties_line(emitter, event, emitter.indentless_block_sequence) {
+			return false
+		}
+	}
+
 	if !yaml_emitter_process_anchor(emitter) {
 		return false
 	}
@@ -1147,18 +1327,57 @@ func yaml_emitter_emit_sequence_start(emitter *yaml_emitter_t, event *yaml_event
 		return false
 	}
 
-	if emitter.flow_level > 0 || emitter.canonical || event.sequence_style() == yaml_FLOW_SEQUENCE_STYLE ||
-		yaml_emitter_check_empty_sequence(emitter) {
+	if !block {
 		emitter.state = yaml_EMIT_FLOW_SEQUENCE_FIRST_ITEM_STATE
-	} else {
-		emitter.state = yaml_EMIT_BLOCK_SEQUENCE_FIRST_ITEM_STATE
 	}
+
+	return true
+}
+
+// yaml_emitter_indent_properties_line indents a block collection's anchor
+// and tag when they open a line of their own, as after a key's line comment
+// that ended the key's line: at the indent the collection's entries take,
+// which is where the parser expects a value's properties. Written at no
+// indent, the output did not parse. On the key's line they follow the key.
+func yaml_emitter_indent_properties_line(emitter *yaml_emitter_t, event *yaml_event_t, indentless bool) bool {
+	if emitter.column != 0 || (len(event.anchor) == 0 && (len(event.tag) == 0 || event.implicit)) {
+		return true
+	}
+
+	// The entries' indent, as their first one will compute it; then back.
+	if !yaml_emitter_increase_indent(emitter, false, indentless) {
+		return false
+	}
+
+	target := emitter.indent
+	emitter.indent = emitter.indents[len(emitter.indents)-1]
+	emitter.indents = emitter.indents[:len(emitter.indents)-1]
+
+	for emitter.column < target {
+		if !put(emitter, ' ') {
+			return false
+		}
+	}
+
+	emitter.whitespace = true
+	emitter.indention = true
 
 	return true
 }
 
 // Expect MAPPING-START.
 func yaml_emitter_emit_mapping_start(emitter *yaml_emitter_t, event *yaml_event_t) bool {
+	block := !(emitter.flow_level > 0 || emitter.canonical || event.mapping_style() == yaml_FLOW_MAPPING_STYLE ||
+		yaml_emitter_check_empty_mapping(emitter))
+
+	if block {
+		emitter.state = yaml_EMIT_BLOCK_MAPPING_FIRST_KEY_STATE
+
+		if !yaml_emitter_indent_properties_line(emitter, event, false) {
+			return false
+		}
+	}
+
 	if !yaml_emitter_process_anchor(emitter) {
 		return false
 	}
@@ -1167,11 +1386,8 @@ func yaml_emitter_emit_mapping_start(emitter *yaml_emitter_t, event *yaml_event_
 		return false
 	}
 
-	if emitter.flow_level > 0 || emitter.canonical || event.mapping_style() == yaml_FLOW_MAPPING_STYLE ||
-		yaml_emitter_check_empty_mapping(emitter) {
+	if !block {
 		emitter.state = yaml_EMIT_FLOW_MAPPING_FIRST_KEY_STATE
-	} else {
-		emitter.state = yaml_EMIT_BLOCK_MAPPING_FIRST_KEY_STATE
 	}
 
 	return true
@@ -1394,6 +1610,15 @@ func yaml_emitter_process_head_comment(emitter *yaml_emitter_t) bool {
 		return true
 	}
 
+	// After an explicit key's value indicator the line counts as indented,
+	// and the indent's write would put the comment on it, where it reads
+	// back as a line comment: the comment takes the next line.
+	if emitter.explicit_value_open && emitter.column > 0 && !put_break(emitter) {
+		return false
+	}
+
+	emitter.explicit_value_open = false
+
 	if !yaml_emitter_write_indent(emitter) {
 		return false
 	}
@@ -1411,6 +1636,17 @@ func yaml_emitter_process_head_comment(emitter *yaml_emitter_t) bool {
 func yaml_emitter_process_line_comment(emitter *yaml_emitter_t) bool {
 	if len(emitter.line_comment) == 0 {
 		return true
+	}
+
+	// A line comment is one line. Two unfolded together, one inside a flow
+	// collection and one after it, were written over two lines with an
+	// empty line between, which read back as a line comment and a
+	// document foot; the lines past the first follow as a foot instead,
+	// adjacent, which reads back the same.
+	if i := bytes.IndexByte(emitter.line_comment, '\n'); i >= 0 {
+		rest := append([]byte(nil), emitter.line_comment[i+1:]...)
+		emitter.line_comment = emitter.line_comment[:i]
+		emitter.foot_comment = yaml_emitter_join_comments(rest, emitter.foot_comment)
 	}
 
 	if !emitter.whitespace {
@@ -2240,8 +2476,28 @@ func yaml_emitter_write_block_scalar_hints(emitter *yaml_emitter_t, value []byte
 	// Content opening with a space, a tab or a break needs the indentation
 	// indicator: without it the parser takes the leading whitespace for
 	// indentation, and a tab there is an error, not content.
+	//
+	// The indicator is the content's indentation past the parent node's, as
+	// the parser adds it: what increase_indent gave this scalar over the
+	// indent it saved, two under a sequence entry whatever the configured
+	// indent, the configured indent elsewhere. The configured indent alone
+	// lied under a sequence entry at any other indent, and the output did
+	// not parse.
 	if is_blank(value, 0) || is_break(value, 0) {
-		indent_hint := []byte{'0' + byte(emitter.best_indent)}
+		hint := emitter.best_indent
+
+		if n := len(emitter.indents); n > 0 {
+			parent := emitter.indents[n-1]
+			if parent < 0 {
+				parent = 0
+			}
+
+			if past := emitter.indent - parent; past >= 1 && past <= 9 {
+				hint = past
+			}
+		}
+
+		indent_hint := []byte{'0' + byte(hint)}
 		if !yaml_emitter_write_indicator(emitter, indent_hint, false, false, false) {
 			return false
 		}

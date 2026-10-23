@@ -509,10 +509,21 @@ type yaml_parser_t struct {
 	head_comment []byte // The current head comments
 	line_comment []byte // The current line comments
 	foot_comment []byte // The current foot comments
-	tail_comment []byte // Foot comment that happens at the end of a block.
-	stem_comment []byte // Comment in item preceding a nested structure (list inside list item, etc)
+	// foot_comment_marks are, for each foot comment unfolded into
+	// foot_comment, where its text starts there and its token mark: the
+	// token it is the foot of, or the comment's own start when dedented. A
+	// peek past an entry unfolds the next entry's foot with the prior one's,
+	// and the marks tell them apart.
+	foot_comment_marks []yaml_foot_mark_t
+	tail_comment       []byte // Foot comment that happens at the end of a block.
+	stem_comment       []byte // Comment in item preceding a nested structure (list inside list item, etc)
 
 	line_comment_column int // Source column of the '#' of line_comment (see the field of the same name on the event).
+	// line_comment_lines are the lines the current line comments start on,
+	// one per comment unfolded into line_comment, in order: they tell a
+	// comment on a node's properties line, or an explicit key's `?` line,
+	// from a later one unfolded with it.
+	line_comment_lines []int
 
 	comments      []yaml_comment_t // The folded comments for all parsed tokens
 	comments_head int
@@ -542,6 +553,16 @@ type yaml_parser_t struct {
 	states         []yaml_parser_state_t  // The parser states stack.
 	marks          []yaml_mark_t          // The stack of marks.
 	tag_directives []yaml_tag_directive_t // The list of TAG directives.
+}
+
+// yaml_foot_mark_t is one unfolded foot comment's place in the parser's
+// foot_comment, its token mark, and the line and column its text starts on
+// (the column counted from one, as the scanner counts it).
+type yaml_foot_mark_t struct {
+	offset int
+	mark   yaml_mark_t
+	line   int
+	column int
 }
 
 type yaml_comment_t struct {
@@ -673,6 +694,34 @@ type yaml_emitter_t struct {
 	// keep chomping indicator: an empty line after it is its content, so a
 	// foot comment must not be separated from it by one.
 	keep_chomped bool
+	// root_block_mapping is whether the document's root node is a block
+	// mapping, the one root whose document foot is written apart from it:
+	// adjacent, it would read back as the last key's. After any other root
+	// the node's foot and the document's read back as one another, and are
+	// written alike, adjacent.
+	root_block_mapping bool
+	// marker_written is whether the current document opened with a written
+	// marker and nothing has been written since; the first head comment
+	// after it is set apart by an empty line, since on the line after the
+	// marker it reads back as the prior document's foot.
+	marker_written bool
+	// explicit_value_open is whether the last thing written is the value
+	// indicator of an explicit key, `? key` then `:` on its own line, which
+	// counts as indentation so a value follows on its line; a head comment
+	// there would read back as a line comment, and takes a line of its own.
+	explicit_value_open bool
+	// flow_heads holds, per open flow collection, the head comment pending
+	// when its opening bracket was written: the collection's own head, which
+	// has no line inside the brackets and comes back pending after the
+	// closing one, for the enclosing block context to place as it places
+	// the head of a value written on its key's line.
+	flow_heads [][]byte
+	// leaf_depth is the nesting of the last scalar or alias written, the
+	// number of indents open at it: none at the root, one for a root
+	// collection's own entry, more below. A document foot adjacent to a leaf
+	// deeper than a root collection's entry would read back as that leaf's
+	// collection's, at its indent.
+	leaf_depth int
 	// empty_value says the last thing written was an empty plain scalar, a
 	// key's value written as nothing: a comment after it reads back as the
 	// enclosing node's, not the key's.

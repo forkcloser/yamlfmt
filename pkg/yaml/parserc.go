@@ -100,6 +100,12 @@ func yaml_parser_unfold_comments(parser *yaml_parser_t, token *yaml_token_t) {
 				parser.foot_comment = append(parser.foot_comment, '\n')
 			}
 
+			parser.foot_comment_marks = append(parser.foot_comment_marks, yaml_foot_mark_t{
+				offset: len(parser.foot_comment),
+				mark:   comment.token_mark,
+				line:   comment.start_mark.line,
+				column: comment.start_mark.column,
+			})
 			parser.foot_comment = append(parser.foot_comment, comment.foot...)
 		}
 
@@ -112,6 +118,9 @@ func yaml_parser_unfold_comments(parser *yaml_parser_t, token *yaml_token_t) {
 				parser.line_comment_column = comment.start_mark.column
 			}
 
+			// And every comment's line, for the node whose properties line
+			// it may be on.
+			parser.line_comment_lines = append(parser.line_comment_lines, comment.start_mark.line)
 			parser.line_comment = append(parser.line_comment, comment.line...)
 		}
 
@@ -457,12 +466,89 @@ func yaml_parser_parse_document_end(parser *yaml_parser_t, event *yaml_event_t) 
 	}
 	yaml_parser_set_event_comments(parser, event)
 
-	if len(event.head_comment) > 0 && len(event.foot_comment) == 0 {
-		event.foot_comment = event.head_comment
+	// A head comment pending at the document's end has nothing to head: it
+	// is the document's foot. After a foot already there, the one on the
+	// foot line, it is the block an empty line separated from that one,
+	// and follows it with the line between; it was dropped.
+	if len(event.head_comment) > 0 {
+		// The break an empty line after the block added, read by nothing
+		// once the block is a foot, goes: written it was an empty line of
+		// its own.
+		head := bytes.TrimRight(event.head_comment, "\n")
+
+		if len(event.foot_comment) == 0 {
+			event.foot_comment = head
+		} else {
+			event.foot_comment = append(append(event.foot_comment, '\n', '\n'), head...)
+		}
+
 		event.head_comment = nil
 	}
 
 	return true
+}
+
+// yaml_parser_take_prior_head_comment gives event the head comments that
+// were pending before the parser looked past it, the first prior_head_len
+// bytes; what a later peek unfolded behind them stays pending for the token
+// it precedes.
+func yaml_parser_take_prior_head_comment(parser *yaml_parser_t, event *yaml_event_t, prior_head_len int) {
+	if prior_head_len == 0 {
+		return
+	}
+
+	event.head_comment = parser.head_comment[:prior_head_len]
+	if prior_head_len < len(parser.head_comment) {
+		parser.head_comment = append([]byte(nil), parser.head_comment[prior_head_len+1:]...)
+	} else {
+		parser.head_comment = nil
+	}
+}
+
+// yaml_parser_take_properties_line_comment gives event the pending line
+// comment on line, the node's properties line, when the node has
+// properties, an anchor or a tag, written on a line of their own before a
+// block collection or alone for an empty node: the comment on that line is
+// the node's. A later line comment unfolded behind it, the first key's
+// own, stays pending for that key. Without properties the line is another
+// token's and the comment stays pending for it.
+func yaml_parser_take_properties_line_comment(parser *yaml_parser_t, event *yaml_event_t, properties bool, line int) {
+	if !properties {
+		return
+	}
+
+	own := yaml_parser_take_first_line_comment(parser, line)
+	if len(own) == 0 {
+		return
+	}
+
+	event.line_comment = own
+	event.line_comment_column = parser.line_comment_column
+	parser.line_comment_column = 0
+}
+
+// yaml_parser_take_first_line_comment removes and returns the first pending
+// line comment when it starts on line, and nothing otherwise. The rest keeps
+// its lines; its column is not kept apart by the unfolding, and the emitter
+// pads such a comment as usual.
+func yaml_parser_take_first_line_comment(parser *yaml_parser_t, line int) []byte {
+	if len(parser.line_comment) == 0 || len(parser.line_comment_lines) == 0 || parser.line_comment_lines[0] != line {
+		return nil
+	}
+
+	own, rest, more := bytes.Cut(parser.line_comment, []byte{'\n'})
+	own = append([]byte(nil), own...)
+
+	parser.line_comment = nil
+	parser.line_comment_lines = parser.line_comment_lines[1:]
+
+	if more {
+		parser.line_comment = append([]byte(nil), rest...)
+	} else {
+		parser.line_comment_lines = nil
+	}
+
+	return own
 }
 
 func yaml_parser_set_event_comments(parser *yaml_parser_t, event *yaml_event_t) {
@@ -473,9 +559,191 @@ func yaml_parser_set_event_comments(parser *yaml_parser_t, event *yaml_event_t) 
 	parser.head_comment = nil
 	parser.line_comment = nil
 	parser.line_comment_column = 0
+	parser.line_comment_lines = nil
 	parser.foot_comment = nil
+	parser.foot_comment_marks = nil
 	parser.tail_comment = nil
 	parser.stem_comment = nil
+}
+
+// yaml_parser_take_dash_line_head gives a null entry the comment on its own
+// dash's line. A bare dash takes no line comment, so the scanner queues the
+// comment as a head for whatever follows, or, when the content after it is
+// dedented, as a foot stamped with the dash's own mark. Still queued when
+// the entry ends its sequence, the head waited for the token after it, the
+// enclosing key's foot or the document's; the foot, unfolded at the dash,
+// went to the enclosing key. Either heads the entry, as the emitter writes a
+// null entry's line comment, and reads back as its head.
+func yaml_parser_take_dash_line_head(parser *yaml_parser_t, event *yaml_event_t, line, dash int) {
+	if own := yaml_parser_take_foot_stamped_at(parser, dash, line); len(own) > 0 {
+		if len(event.head_comment) > 0 {
+			event.head_comment = append(append([]byte(nil), event.head_comment...), '\n')
+		}
+
+		event.head_comment = append(event.head_comment, own...)
+	}
+
+	for parser.comments_head < len(parser.comments) {
+		comment := &parser.comments[parser.comments_head]
+		if len(comment.head) == 0 || comment.start_mark.line != line {
+			break
+		}
+
+		if len(event.head_comment) > 0 {
+			event.head_comment = append(append([]byte(nil), event.head_comment...), '\n')
+		}
+
+		event.head_comment = append(event.head_comment, bytes.TrimRight(comment.head, "\n")...)
+
+		*comment = yaml_comment_t{}
+		parser.comments_head++
+	}
+}
+
+// yaml_parser_take_foot_stamped_at removes from the pending foot comments
+// the ones stamped with the token at index and starting on line, the
+// token's own line, and returns them as one. A foot on the line after the
+// token, stamped the same, is the token's and stays.
+func yaml_parser_take_foot_stamped_at(parser *yaml_parser_t, index, line int) []byte {
+	return yaml_parser_take_foot_where(parser, func(m yaml_foot_mark_t) bool {
+		return m.mark.index == index && m.line == line
+	})
+}
+
+// yaml_parser_take_foot_where removes from the pending foot comments the
+// ones whose mark satisfies take, and returns them as one; the rest stay
+// pending, in order.
+func yaml_parser_take_foot_where(parser *yaml_parser_t, take func(yaml_foot_mark_t) bool) []byte {
+	if len(parser.foot_comment_marks) == 0 {
+		return nil
+	}
+
+	var (
+		taken, kept []byte
+		marks       []yaml_foot_mark_t
+	)
+
+	for i, mark := range parser.foot_comment_marks {
+		end := len(parser.foot_comment)
+		if i+1 < len(parser.foot_comment_marks) {
+			end = parser.foot_comment_marks[i+1].offset - 1
+		}
+
+		segment := parser.foot_comment[mark.offset:end]
+
+		if take(mark) {
+			if len(taken) > 0 {
+				taken = append(taken, '\n')
+			}
+
+			taken = append(taken, segment...)
+
+			continue
+		}
+
+		if len(kept) > 0 {
+			kept = append(kept, '\n')
+		}
+
+		mark.offset = len(kept)
+		marks = append(marks, mark)
+		kept = append(kept, segment...)
+	}
+
+	if len(taken) == 0 {
+		return nil
+	}
+
+	parser.foot_comment = kept
+	parser.foot_comment_marks = marks
+
+	return taken
+}
+
+// yaml_parser_first_entry_foot_is_head makes a foot comment pending at a
+// block collection's first entry and stamped before the entry's token the
+// entry's head: the collection has no prior entry to own a foot, and the
+// comment is the one on the line after the collection's tag or anchor line,
+// which the scanner stamps as that line's foot. As a foot it ended on the
+// first key, written after it, and moved there on the next pass. A foot
+// stamped with the entry's own token, the comment after a bare `?` or `-`,
+// stays the entry's, as does one unfolded with it by the peek past. The
+// head after an empty line, when there is one, follows with the line.
+func yaml_parser_first_entry_foot_is_head(parser *yaml_parser_t, first bool, token *yaml_token_t) {
+	if !first {
+		return
+	}
+
+	prior := yaml_parser_take_prior_foot_comment(parser, token.start_mark.index)
+	if len(prior) == 0 {
+		return
+	}
+
+	if len(parser.head_comment) > 0 {
+		prior = append(append(prior, '\n', '\n'), parser.head_comment...)
+	}
+
+	parser.head_comment = prior
+}
+
+// yaml_parser_key_line_comment_is_head moves the pending line comment on
+// line, an explicit key's `?` line, to the pending heads, for a key whose
+// node starts on a later line; a later line comment unfolded behind it
+// stays pending for that node.
+func yaml_parser_key_line_comment_is_head(parser *yaml_parser_t, line int) {
+	own := yaml_parser_take_first_line_comment(parser, line)
+	if len(own) == 0 {
+		return
+	}
+
+	if len(parser.head_comment) > 0 {
+		parser.head_comment = append(append(parser.head_comment, '\n'), own...)
+	} else {
+		parser.head_comment = own
+	}
+
+	parser.line_comment_column = 0
+}
+
+// yaml_parser_take_prior_foot_comment returns the pending foot comments
+// stamped before index, the start of the token the parser is at, and leaves
+// the rest pending: a peek past an entry unfolds the next entry's own foot
+// behind the prior entry's, and only the prior entry's is a tail.
+func yaml_parser_take_prior_foot_comment(parser *yaml_parser_t, index int) []byte {
+	if len(parser.foot_comment) == 0 || len(parser.foot_comment_marks) == 0 ||
+		parser.foot_comment_marks[0].mark.index >= index {
+		return nil
+	}
+
+	split := len(parser.foot_comment_marks)
+	for i, m := range parser.foot_comment_marks {
+		if m.mark.index >= index {
+			split = i
+
+			break
+		}
+	}
+
+	if split == len(parser.foot_comment_marks) {
+		prior := parser.foot_comment
+		parser.foot_comment = nil
+		parser.foot_comment_marks = nil
+
+		return prior
+	}
+
+	offset := parser.foot_comment_marks[split].offset
+	prior := append([]byte(nil), parser.foot_comment[:offset-1]...)
+	parser.foot_comment = append([]byte(nil), parser.foot_comment[offset:]...)
+
+	rest := parser.foot_comment_marks[split:]
+	for i := range rest {
+		rest[i].offset -= offset
+	}
+
+	parser.foot_comment_marks = append([]yaml_foot_mark_t(nil), rest...)
+
+	return prior
 }
 
 // Parse the productions:
@@ -540,6 +808,11 @@ func yaml_parser_parse_node(parser *yaml_parser_t, event *yaml_event_t, block, i
 	start_mark := token.start_mark
 	end_mark := token.start_mark
 
+	// The head comments pending here precede the node; the peeks past its
+	// properties below may unfold the next token's behind them, which are
+	// not this node's when it has no content token to take them with.
+	prior_head_len := len(parser.head_comment)
+
 	var (
 		tag_token                      bool
 		tag_handle, tag_suffix, anchor []byte
@@ -600,6 +873,10 @@ func yaml_parser_parse_node(parser *yaml_parser_t, event *yaml_event_t, block, i
 			}
 		}
 	}
+
+	// The line the properties end on, where their line comment is; the
+	// content branches below move end_mark to the content token.
+	properties_line := end_mark.line
 
 	var tag []byte
 
@@ -668,6 +945,15 @@ func yaml_parser_parse_node(parser *yaml_parser_t, event *yaml_event_t, block, i
 			quoted_implicit: quoted_implicit,
 			style:           yaml_style_t(token.style),
 		}
+
+		// A comment on the properties line, when the scalar is on a later
+		// line, cannot be written on the scalar's line with the scalar's
+		// own: joined to it, the two came back as a line comment and a
+		// foot. It heads the scalar instead.
+		if (tag_token || len(anchor) > 0) && properties_line < token.start_mark.line {
+			yaml_parser_key_line_comment_is_head(parser, properties_line)
+		}
+
 		yaml_parser_set_event_comments(parser, event)
 		skip_token(parser)
 
@@ -727,6 +1013,8 @@ func yaml_parser_parse_node(parser *yaml_parser_t, event *yaml_event_t, block, i
 			parser.stem_comment = nil
 		}
 
+		yaml_parser_take_properties_line_comment(parser, event, tag_token || len(anchor) > 0, properties_line)
+
 		return true
 	}
 
@@ -748,6 +1036,8 @@ func yaml_parser_parse_node(parser *yaml_parser_t, event *yaml_event_t, block, i
 			parser.stem_comment = nil
 		}
 
+		yaml_parser_take_properties_line_comment(parser, event, tag_token || len(anchor) > 0, properties_line)
+
 		return true
 	}
 
@@ -765,6 +1055,14 @@ func yaml_parser_parse_node(parser *yaml_parser_t, event *yaml_event_t, block, i
 			quoted_implicit: false,
 			style:           yaml_style_t(yaml_PLAIN_SCALAR_STYLE),
 		}
+
+		// An empty node with properties has no content token to take its
+		// comments with: the heads before it and the line comment after
+		// its properties are its, as a scalar's would be. Left pending, the
+		// head became the document's foot and the line comment the
+		// enclosing mapping's, which is not written.
+		yaml_parser_take_prior_head_comment(parser, event, prior_head_len)
+		yaml_parser_take_properties_line_comment(parser, event, true, properties_line)
 
 		return true
 	}
@@ -800,8 +1098,27 @@ func yaml_parser_parse_block_sequence_entry(parser *yaml_parser_t, event *yaml_e
 		return false
 	}
 
+	yaml_parser_first_entry_foot_is_head(parser, first, token)
+
+	// As at a mapping key: a foot pending at a later entry and stamped
+	// before it is the prior entry's, and goes to it as a tail; left
+	// pending it drifted to the document's end.
+	if !first && token.typ == yaml_BLOCK_ENTRY_TOKEN {
+		if prior := yaml_parser_take_prior_foot_comment(parser, token.start_mark.index); len(prior) > 0 {
+			*event = yaml_event_t{
+				typ:          yaml_TAIL_COMMENT_EVENT,
+				start_mark:   token.start_mark,
+				end_mark:     token.end_mark,
+				foot_comment: prior,
+			}
+
+			return true
+		}
+	}
+
 	if token.typ == yaml_BLOCK_ENTRY_TOKEN {
 		mark := token.end_mark
+		dash := token.start_mark.index
 		prior_head_len := len(parser.head_comment)
 		skip_token(parser)
 		yaml_parser_split_stem_comment(parser, prior_head_len)
@@ -824,20 +1141,16 @@ func yaml_parser_parse_block_sequence_entry(parser *yaml_parser_t, event *yaml_e
 			// with a node; left pending they would be the document's foot.
 			// The peek above may have unfolded the next token's comments
 			// behind them, which stay pending.
-			if prior_head_len > 0 {
-				event.head_comment = parser.head_comment[:prior_head_len]
-				if prior_head_len < len(parser.head_comment) {
-					parser.head_comment = append([]byte(nil), parser.head_comment[prior_head_len+1:]...)
-				} else {
-					parser.head_comment = nil
-				}
-			}
+			yaml_parser_take_prior_head_comment(parser, event, prior_head_len)
+			yaml_parser_take_dash_line_head(parser, event, mark.line, dash)
 
 			return true
 		}
 	}
 
 	if token.typ == yaml_BLOCK_END_TOKEN {
+		dashes := parser.marks[len(parser.marks)-1].column
+
 		parser.state = parser.states[len(parser.states)-1]
 		parser.states = parser.states[:len(parser.states)-1]
 		parser.marks = parser.marks[:len(parser.marks)-1]
@@ -847,6 +1160,15 @@ func yaml_parser_parse_block_sequence_entry(parser *yaml_parser_t, event *yaml_e
 			start_mark: token.start_mark,
 			end_mark:   token.end_mark,
 		}
+
+		// A foot pending at the end that starts at or past the dashes'
+		// column is the last entry's, as a mapping's end takes the last
+		// key's; the decoder hands it down. One dedented below the dashes
+		// is the enclosing collection's, at its column, and stays pending
+		// for it: taken here it moved to the entry on the next pass.
+		event.foot_comment = yaml_parser_take_foot_where(parser, func(m yaml_foot_mark_t) bool {
+			return m.column-1 >= dashes
+		})
 
 		skip_token(parser)
 
@@ -873,6 +1195,7 @@ func yaml_parser_parse_indentless_sequence_entry(parser *yaml_parser_t, event *y
 
 	if token.typ == yaml_BLOCK_ENTRY_TOKEN {
 		mark := token.end_mark
+		dash := token.start_mark.index
 		prior_head_len := len(parser.head_comment)
 		skip_token(parser)
 		yaml_parser_split_stem_comment(parser, prior_head_len)
@@ -892,7 +1215,17 @@ func yaml_parser_parse_indentless_sequence_entry(parser *yaml_parser_t, event *y
 
 		parser.state = yaml_PARSE_INDENTLESS_SEQUENCE_ENTRY_STATE
 
-		return yaml_parser_process_empty_scalar(parser, event, mark)
+		if !yaml_parser_process_empty_scalar(parser, event, mark) {
+			return false
+		}
+
+		// As in a block sequence: the comments before the entry head it,
+		// where left pending they were lost with the enclosing mapping's
+		// end.
+		yaml_parser_take_prior_head_comment(parser, event, prior_head_len)
+		yaml_parser_take_dash_line_head(parser, event, mark.line, dash)
+
+		return true
 	}
 
 	parser.state = parser.states[len(parser.states)-1]
@@ -959,6 +1292,21 @@ func yaml_parser_parse_block_mapping_key(parser *yaml_parser_t, event *yaml_even
 		return false
 	}
 
+	yaml_parser_first_entry_foot_is_head(parser, first, token)
+
+	// A foot comment pending at a key and stamped before it is the prior
+	// entry's: the comment after the prior value, dedented or on its foot
+	// line, unfolded with this key's token. It goes to that entry as a tail,
+	// where attached to this key the decoder had to move it back, and moved
+	// the key's own foot with it, the one after an explicit key with no
+	// value. A foot stamped with this key's own token, the comment on the
+	// line after a bare `?`, stays the key's.
+	if !first && token.typ == yaml_KEY_TOKEN {
+		if prior := yaml_parser_take_prior_foot_comment(parser, token.start_mark.index); len(prior) > 0 {
+			parser.tail_comment = prior
+		}
+	}
+
 	// [Go] A tail comment was left from the prior mapping value processed. Emit an event
 	//      as it needs to be processed with that value and not the following key.
 	if len(parser.tail_comment) > 0 {
@@ -976,6 +1324,8 @@ func yaml_parser_parse_block_mapping_key(parser *yaml_parser_t, event *yaml_even
 	switch token.typ {
 	case yaml_KEY_TOKEN:
 		mark := token.end_mark
+		key_line := token.start_mark.line
+		prior_head_len := len(parser.head_comment)
 
 		skip_token(parser)
 
@@ -987,12 +1337,33 @@ func yaml_parser_parse_block_mapping_key(parser *yaml_parser_t, event *yaml_even
 		if token.typ != yaml_KEY_TOKEN &&
 			token.typ != yaml_VALUE_TOKEN &&
 			token.typ != yaml_BLOCK_END_TOKEN {
+			// The comment on the `?` line, when the key's node starts on a
+			// later line, cannot be written on the node's line with the
+			// node's own line comment: joined to it, the two came back as a
+			// line comment and a foot. It heads the key instead.
+			if token.start_mark.line > key_line {
+				yaml_parser_key_line_comment_is_head(parser, key_line)
+			}
+
 			parser.states = append(parser.states, yaml_PARSE_BLOCK_MAPPING_VALUE_STATE)
+
 			return yaml_parser_parse_node(parser, event, true, true)
-		} else {
-			parser.state = yaml_PARSE_BLOCK_MAPPING_VALUE_STATE
-			return yaml_parser_process_empty_scalar(parser, event, mark)
 		}
+
+		parser.state = yaml_PARSE_BLOCK_MAPPING_VALUE_STATE
+
+		if !yaml_parser_process_empty_scalar(parser, event, mark) {
+			return false
+		}
+
+		// The comments before an explicit null key head it, as they head
+		// a key with a node, and the line comment on its own line is its;
+		// left pending they were lost with the mapping's end, or written
+		// into the next document.
+		yaml_parser_take_prior_head_comment(parser, event, prior_head_len)
+		yaml_parser_take_properties_line_comment(parser, event, true, key_line)
+
+		return true
 	case yaml_BLOCK_END_TOKEN:
 		parser.state = parser.states[len(parser.states)-1]
 		parser.states = parser.states[:len(parser.states)-1]

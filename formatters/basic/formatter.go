@@ -119,7 +119,6 @@ func (f *BasicFormatter) encodeDocuments(documents []yaml.Node) ([]byte, error) 
 	var b bytes.Buffer
 
 	e := f.getNewEncoder(&b)
-	marker := "---" + f.lineBreak()
 	encoded, markers := 0, 0
 
 	for i, doc := range documents {
@@ -132,9 +131,12 @@ func (f *BasicFormatter) encodeDocuments(documents []yaml.Node) ([]byte, error) 
 		}
 
 		// The encoder's first document starts implicitly unless explicit
-		// starts were asked for, and would merge with a marker before it.
+		// starts were asked for, and would merge with a marker before it:
+		// after an empty document the encoder is asked for the marker, so
+		// that it knows a marker precedes its first content and sets a
+		// head comment apart from it, as it does for its later documents.
 		if encoded == 0 && markers > 0 && !f.Config.IncludeDocumentStart {
-			b.WriteString(marker)
+			e.SetExplicitDocumentStart(true)
 		}
 
 		if err := e.Encode(&doc); err != nil {
@@ -164,6 +166,11 @@ func (f *BasicFormatter) writeEmptyDocument(b *bytes.Buffer, doc *yaml.Node, fir
 	onMarker := !first
 
 	for _, comment := range []string{scalar.HeadComment, scalar.LineComment, scalar.FootComment, doc.LineComment, doc.FootComment} {
+		// A head keeps the break an empty line after it added to its text,
+		// for the parser's own reading of it; here it would be an empty
+		// line of its own, which the next pass does not read as comment.
+		comment = strings.TrimRight(comment, "\n")
+
 		for line := range strings.SplitSeq(comment, "\n") {
 			if comment == "" {
 				break
@@ -196,7 +203,8 @@ func (f *BasicFormatter) writeComment(b *bytes.Buffer, comment string) {
 }
 
 // isEmptyDocument reports a document with no text at all: a null scalar
-// the decoder made for it, as against an explicit `null` or `~`.
+// the decoder made for it, as against an explicit `null` or `~`, or an
+// anchored one, whose anchor is text the marker alone would lose.
 func isEmptyDocument(doc *yaml.Node) bool {
 	if doc.Kind != yaml.DocumentNode || len(doc.Content) != 1 {
 		return false
@@ -204,7 +212,7 @@ func isEmptyDocument(doc *yaml.Node) bool {
 
 	c := doc.Content[0]
 
-	return c.Kind == yaml.ScalarNode && c.Tag == "!!null" && c.Value == ""
+	return c.Kind == yaml.ScalarNode && c.Tag == "!!null" && c.Value == "" && c.Anchor == ""
 }
 
 // lineBreak is the configured line terminator.
