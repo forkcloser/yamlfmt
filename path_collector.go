@@ -232,6 +232,16 @@ func (c *DoublestarCollector) CollectPaths() ([]string, error) {
 
 	pathsToFormatSet := collections.Set[string]{}
 
+	// An include pattern yields paths in its own form, relative or absolute,
+	// and an exclude pattern is matched in its: a relative exclude against
+	// the path relative to the working directory, an absolute one against
+	// the absolute path. Matched as given, a relative exclude never met an
+	// absolute include and the other way round.
+	cwd, err := os.Getwd()
+	if err != nil {
+		return nil, fmt.Errorf("working directory: %w", err)
+	}
+
 	for _, path := range includedPaths {
 		if len(c.Exclude) == 0 {
 			pathsToFormatSet.Add(path)
@@ -243,7 +253,7 @@ func (c *DoublestarCollector) CollectPaths() ([]string, error) {
 		slog.Debug("calculating excludes", DebugCodeAttr, DebugCodePaths, "path", path)
 
 		for _, pattern := range c.Exclude {
-			match, err := doublestar.PathMatch(filepath.Clean(pattern), path)
+			match, err := doublestar.PathMatch(filepath.Clean(pattern), pathInPatternForm(cwd, pattern, path))
 			if err != nil {
 				return nil, err
 			}
@@ -269,6 +279,30 @@ func (c *DoublestarCollector) CollectPaths() ([]string, error) {
 	slog.Debug("paths to format", DebugCodeAttr, DebugCodePaths, "paths", pathsToFormat)
 
 	return pathsToFormat, nil
+}
+
+// pathInPatternForm is path in the form pattern has: absolute for an
+// absolute pattern, relative to cwd for a relative one. A path that cannot
+// take the form, outside cwd or unresolvable, stays as given.
+func pathInPatternForm(cwd, pattern, path string) string {
+	if filepath.IsAbs(pattern) {
+		if filepath.IsAbs(path) {
+			return path
+		}
+
+		return filepath.Join(cwd, path)
+	}
+
+	if !filepath.IsAbs(path) {
+		return path
+	}
+
+	rel, err := filepath.Rel(cwd, path)
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return path
+	}
+
+	return rel
 }
 
 // pathFromRoot is path as git sees it from the gitignore's directory:
