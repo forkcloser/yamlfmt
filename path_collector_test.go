@@ -355,7 +355,6 @@ func TestDoublestarCollectorExcludeDirectory(t *testing.T) {
 		},
 		{
 			name:            "exclude_directory/absolute include relative exclude",
-			skip:            true,
 			changeToTempDir: true,
 			files:           testFiles,
 			includePatterns: testPatterns{
@@ -371,7 +370,6 @@ func TestDoublestarCollectorExcludeDirectory(t *testing.T) {
 		},
 		{
 			name:            "exclude_directory/relative include absolute exclude",
-			skip:            true,
 			changeToTempDir: true,
 			files:           testFiles,
 			includePatterns: testPatterns{
@@ -419,7 +417,6 @@ func (tps testPatterns) allPatternsForceAbsolute(path string) []string {
 
 type testCase struct {
 	name            string
-	skip            bool
 	changeToTempDir bool
 	files           []tempfile.Path
 	includePatterns testPatterns
@@ -432,10 +429,6 @@ func (tc testCase) run(t *testing.T, makeCollector makeCollectorFunc) {
 	t.Helper()
 
 	t.Run(tc.name, func(t *testing.T) {
-		if tc.skip {
-			t.Skip()
-		}
-
 		tempPath := t.TempDir()
 
 		if tc.changeToTempDir {
