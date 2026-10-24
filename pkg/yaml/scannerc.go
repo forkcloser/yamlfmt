@@ -3028,6 +3028,10 @@ func yaml_parser_scan_comments(parser *yaml_parser_t, scan_mark yaml_mark_t) boo
 	var (
 		recent_empty = false
 		first_empty  = parser.newlines <= 1
+		// adjacent is whether the first comment line follows the prior
+		// token with no empty line between: only then can a block be the
+		// token's foot.
+		adjacent = parser.newlines <= 1
 	)
 
 	var (
@@ -3069,10 +3073,18 @@ func yaml_parser_scan_comments(parser *yaml_parser_t, scan_mark yaml_mark_t) boo
 		close_flow := parser.flow_level > 0 && (c == ']' || c == '}')
 		if close_flow || is_breakz(parser.buffer, parser.buffer_pos+peek) {
 			// Got line break or terminator.
+			//
+			// A comment on the foot line after a value indicator heads the
+			// value that may follow, except at the stream's end, where
+			// nothing follows: it is the foot of the key whose value was
+			// empty, at its indent, where as a head with nothing to head it
+			// drifted to the document's end.
+			stream_end := !is_break(parser.buffer, parser.buffer_pos+peek)
+
 			if close_flow || !recent_empty {
 				if close_flow ||
 					first_empty &&
-						(start_mark.line == foot_line && token.typ != yaml_VALUE_TOKEN || start_mark.column-1 < next_indent) {
+						(start_mark.line == foot_line && (token.typ != yaml_VALUE_TOKEN || stream_end) || start_mark.column-1 < next_indent) {
 					// This is the first empty line and there were no empty lines before,
 					// so this initial part of the comment is a foot of the prior token
 					// instead of being a head for the following one. Split it up.
@@ -3084,16 +3096,36 @@ func yaml_parser_scan_comments(parser *yaml_parser_t, scan_mark yaml_mark_t) boo
 							token_mark = start_mark
 						}
 
+						// Inside a flow collection the comment before the
+						// closing bracket is a foot of the prior entry for its
+						// first block only; a block after an empty line is
+						// the collection's own foot, read back after the
+						// bracket, as the next pass reads it once written.
+						foot, rest, more := text, []byte(nil), false
+						if close_flow {
+							foot, rest, more = bytes.Cut(text, []byte("\n\n"))
+						}
+
 						parser.comments = append(parser.comments, yaml_comment_t{
 							scan_mark:  scan_mark,
 							token_mark: token_mark,
 							start_mark: start_mark,
 							end_mark:   yaml_mark_t{parser.mark.index + peek, line, column},
-							foot:       text,
+							foot:       bytes.TrimRight(foot, "\n"),
 						})
 						scan_mark = yaml_mark_t{parser.mark.index + peek, line, column}
 						token_mark = scan_mark
 						text = nil
+
+						if more && len(bytes.TrimRight(rest, "\n")) > 0 {
+							parser.comments = append(parser.comments, yaml_comment_t{
+								scan_mark:  scan_mark,
+								token_mark: scan_mark,
+								start_mark: scan_mark,
+								end_mark:   scan_mark,
+								foot:       bytes.TrimRight(rest, "\n"),
+							})
+						}
 					}
 				} else {
 					if len(text) > 0 && parser.buffer[parser.buffer_pos+peek] != 0 {
@@ -3114,19 +3146,40 @@ func yaml_parser_scan_comments(parser *yaml_parser_t, scan_mark yaml_mark_t) boo
 			continue
 		}
 
-		if len(text) > 0 && (close_flow || column-1 < next_indent && column != start_mark.column) {
+		// A comment on the foot line after a value indicator heads the
+		// value that may follow it; when an empty line follows the comment
+		// instead and the content after that is not indented past the key,
+		// no value follows, and the comment is the key's foot: as a head it
+		// drifted to the next key with the empty line in its text.
+		value_foot := token.typ == yaml_VALUE_TOKEN && start_mark.line == foot_line &&
+			recent_empty && column-1 <= next_indent
+
+		if len(text) > 0 && (close_flow || column-1 < next_indent && column != start_mark.column || value_foot) {
 			// The comment at the different indentation is a foot of the
 			// preceding data rather than a head of the upcoming one.
-			parser.comments = append(parser.comments, yaml_comment_t{
-				scan_mark:  scan_mark,
-				token_mark: token_mark,
-				start_mark: start_mark,
-				end_mark:   yaml_mark_t{parser.mark.index + peek, line, column},
-				foot:       text,
-			})
-			scan_mark = yaml_mark_t{parser.mark.index + peek, line, column}
-			token_mark = scan_mark
-			text = nil
+			//
+			// A foot is one block, the lines adjacent to the data; a block
+			// after an empty line heads what follows, or ends as the
+			// document's foot when nothing does, which is how the next
+			// pass reads it back. Glued to the foot, it moved there then.
+			foot, rest, more := bytes.Cut(text, []byte("\n\n"))
+
+			if adjacent {
+				parser.comments = append(parser.comments, yaml_comment_t{
+					scan_mark:  scan_mark,
+					token_mark: token_mark,
+					start_mark: start_mark,
+					end_mark:   yaml_mark_t{parser.mark.index + peek, line, column},
+					foot:       bytes.TrimRight(foot, "\n"),
+				})
+				scan_mark = yaml_mark_t{parser.mark.index + peek, line, column}
+				token_mark = scan_mark
+				text = nil
+
+				if more {
+					text = append([]byte(nil), rest...)
+				}
+			}
 		}
 
 		if parser.buffer[parser.buffer_pos+peek] != '#' {
@@ -3183,6 +3236,13 @@ func yaml_parser_scan_comments(parser *yaml_parser_t, scan_mark yaml_mark_t) boo
 		}
 	}
 
+	// A head keeps the break an empty line after it added to its text: the
+	// implicit document start reads it as the empty line that makes the
+	// block the document's head rather than the first node's. A foot has
+	// no such reader, and the break it carried was written back as an
+	// empty line of its own after an empty document's comment, which the
+	// next pass did not read as part of the comment; the foots above are
+	// trimmed, and so is a head that ends as a document's foot.
 	if len(text) > 0 {
 		parser.comments = append(parser.comments, yaml_comment_t{
 			scan_mark:  scan_mark,

@@ -299,23 +299,81 @@ func (p *parser) sequence() *Node {
 	p.expect(yaml_SEQUENCE_START_EVENT)
 
 	for p.peek() != yaml_SEQUENCE_END_EVENT {
-		p.parseChild(n)
+		item := p.parseChild(n)
+
+		// A tail is the prior entry's foot, the comment after it that the
+		// parser met at the next entry.
+		if p.peek() == yaml_TAIL_COMMENT_EVENT {
+			footOfItem(item, string(p.event.foot_comment))
+			p.expect(yaml_TAIL_COMMENT_EVENT)
+		}
 	}
 
-	n.LineComment = string(p.event.line_comment)
-	n.LineCommentColumn = p.event.line_comment_column
+	// The start event's line comment is the one on the sequence's own
+	// properties line; the end event's, when there is one, is the one
+	// after the last entry.
+	if len(p.event.line_comment) > 0 {
+		n.LineComment = string(p.event.line_comment)
+		n.LineCommentColumn = p.event.line_comment_column
+	}
+
+	// A block sequence's foot at its end is the last entry's, as a block
+	// mapping's is its last key's: written there it reads back as such.
 	n.FootComment = string(p.event.foot_comment)
+	if n.Style&FlowStyle == 0 && n.FootComment != "" && len(n.Content) > 0 {
+		footOfItem(n.Content[len(n.Content)-1], n.FootComment)
+		n.FootComment = ""
+	}
+
 	p.expect(yaml_SEQUENCE_END_EVENT)
 
 	return n
 }
 
+// footOfItem gives a sequence item the foot comment after it. A block
+// collection has no line of its own to write a foot after, so the comment
+// goes down to its last leaf: through a mapping's last key into a block
+// value, or to the key itself when the value is a leaf, and through a
+// sequence to its last item. Written at that leaf's indent, right after it,
+// the comment reads back as that leaf's; written at the key's indent after
+// a nested block it read back as the block's last leaf's, at another
+// indent. An item that has a foot already keeps it, the new one after it.
+func footOfItem(item *Node, foot string) {
+	for {
+		switch {
+		case item.Kind == MappingNode && item.Style&FlowStyle == 0 && len(item.Content) >= 2:
+			if value := item.Content[len(item.Content)-1]; isBlockCollection(value) {
+				item = value
+
+				continue
+			}
+
+			item = item.Content[len(item.Content)-2]
+		case item.Kind == SequenceNode && item.Style&FlowStyle == 0 && len(item.Content) >= 1:
+			item = item.Content[len(item.Content)-1]
+
+			continue
+		}
+
+		break
+	}
+
+	if item.FootComment != "" {
+		foot = item.FootComment + "\n" + foot
+	}
+
+	item.FootComment = foot
+}
+
+// isBlockCollection reports a block mapping or sequence with content.
+func isBlockCollection(n *Node) bool {
+	return (n.Kind == MappingNode || n.Kind == SequenceNode) && n.Style&FlowStyle == 0 && len(n.Content) > 0
+}
+
 func (p *parser) mapping() *Node {
 	n := p.node(MappingNode, mapTag, string(p.event.tag), "")
 
-	block := true
 	if p.event.mapping_style()&yaml_FLOW_MAPPING_STYLE != 0 {
-		block = false
 		n.Style |= FlowStyle
 	}
 
@@ -323,14 +381,11 @@ func (p *parser) mapping() *Node {
 	p.expect(yaml_MAPPING_START_EVENT)
 
 	for p.peek() != yaml_MAPPING_END_EVENT {
+		// A key's foot comment is its own: the prior entry's, dedented or on
+		// its foot line, arrives as a tail event after this key's value. It
+		// used to arrive on the key and be moved to the prior entry here,
+		// which moved the key's own foot too.
 		k := p.parseChild(n)
-		if block && k.FootComment != "" {
-			// Must be a foot comment for the prior value when being dedented.
-			if len(n.Content) > 2 {
-				n.Content[len(n.Content)-3].FootComment = k.FootComment
-				k.FootComment = ""
-			}
-		}
 
 		v := p.parseChild(n)
 		if k.FootComment == "" && v.FootComment != "" {
@@ -347,8 +402,12 @@ func (p *parser) mapping() *Node {
 		}
 	}
 
-	n.LineComment = string(p.event.line_comment)
-	n.LineCommentColumn = p.event.line_comment_column
+	// As for a sequence: the start event's line comment is kept unless the
+	// end event carries one.
+	if len(p.event.line_comment) > 0 {
+		n.LineComment = string(p.event.line_comment)
+		n.LineCommentColumn = p.event.line_comment_column
+	}
 
 	n.FootComment = string(p.event.foot_comment)
 	if n.Style&FlowStyle == 0 && n.FootComment != "" && len(n.Content) > 1 {

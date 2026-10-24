@@ -285,11 +285,7 @@ func FuzzFormat(f *testing.F) {
 			t.Fatalf("the documents changed\ninput: %q\noutput: %q", input, out)
 		}
 
-		// A comment's attachment is still being settled on main (a head
-		// comment before a document marker, a nested explicit null key, a
-		// tag's line comment), so idempotence is held to comment-free input
-		// until then; the decode check above covers every input.
-		if os.Getenv("YAMLFMT_FUZZ_SKIP_IDEMPOTENCE") != "" || bytes.Contains(input, []byte("#")) {
+		if os.Getenv("YAMLFMT_FUZZ_SKIP_IDEMPOTENCE") != "" {
 			return
 		}
 

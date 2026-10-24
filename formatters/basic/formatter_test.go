@@ -1044,6 +1044,55 @@ func TestEmptyDocuments(t *testing.T) {
 		"0: \n--- #\n":          "0:\n--- #\n",
 		"a\n--- # m\n--- # n\n": "a\n--- # m\n--- # n\n",
 		"a\n--- # m\n# after\n": "a\n--- # m\n# after\n",
+		// an anchored null is a node with text, not an empty document: the
+		// marker alone lost the anchor, and an alias to it in the next
+		// document then failed to parse
+		"&0\n":         "&0\n",
+		"&0\n--- *0\n": "&0\n---\n*0\n",
+	}
+
+	// Empty lines after an empty document's comment at the stream's end
+	// are not an empty comment line, which came back once; with single
+	// line breaks retained, the one empty line is kept as itself.
+	trailing := map[string]string{
+		"!\n#\n\n":   "---\n#\n",
+		"!\r\r#\r\r": "---\n#\n",
+		// two comment blocks after an empty document both stay, the second
+		// coming back as a head with nothing to head, which was dropped
+		"---\n#\n\n#\n":            "---\n#\n\n#\n",
+		"!\r\r#\r\r#":              "---\n#\n\n#\n",
+		"---\n# a\n\n# b\n\n# c\n": "---\n# a\n\n# b\n\n# c\n",
+		// a comment after a root scalar is the scalar's foot or, before
+		// another document, the document's; written alike, it stays
+		"00\n#\n---\n":   "00\n#\n---\n",
+		"00\r#\n\n---":   "00\n#\n---\n",
+		"00\n\n#\n---\n": "00\n#\n---\n",
+		"x\n\n# c\n":     "x\n# c\n",
+		// the same after a root sequence; a root mapping's document foot
+		// stays apart, where adjacent it would be the last key's
+		"-\r#\n\n---":    "-\n#\n---\n",
+		"-\n\n#\n---\n":  "-\n#\n---\n",
+		"a: 1\n#\n---\n": "a: 1\n\n#\n---\n",
+		// a node's head comment after a written marker is set apart by an
+		// empty line, where on the marker's next line it read back as the
+		// prior document's foot
+		"0\n--- #\n\r#\n0":       "0\n---\n\n#\n\n#\n0\n",
+		"a: 1\n---\n# c\nb: 2\n": "a: 1\n---\n\n# c\nb: 2\n",
+		// an explicit null key's line comment stays its own; on the mapping's
+		// end it was written into the next document
+		"? #\r---\r?": "null: #\n---\nnull:\n",
+		// the marker before the first encoded document is the encoder's, so
+		// a head comment after it is set apart as after any written marker
+		"!\n--- #\n\r#\n0": "---\n---\n\n#\n\n#\n0\n",
+		// an empty document's head comment keeps the break of an empty line
+		// after it in its text; written, that break is not a comment line
+		"--- #\n\r!": "---\n#\n",
+	}
+	trailingRetained := map[string]string{
+		"!\n#\n\n":      "---\n#\n\n",
+		"!\r\r#\r\r":    "---\n#\n",
+		"---\n#\n\n#\n": "---\n#\n\n#\n",
+		"!\r\r#\r\r#":   "---\n#\n#\n",
 	}
 
 	// With explicit document starts asked for, every document the encoder
@@ -1063,7 +1112,9 @@ func TestEmptyDocuments(t *testing.T) {
 		cases  map[string]string
 	}{
 		{map[string]any{}, cases},
+		{map[string]any{}, trailing},
 		{map[string]any{"retain_line_breaks_single": true}, cases},
+		{map[string]any{"retain_line_breaks_single": true}, trailingRetained},
 		{map[string]any{"include_document_start": true}, explicit},
 	}
 
