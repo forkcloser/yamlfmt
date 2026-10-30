@@ -1,4 +1,4 @@
-// Copyright 2026 Forkcloser.
+// Copyright 2026 Forkcloser
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
