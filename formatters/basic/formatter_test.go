@@ -224,6 +224,17 @@ b: 2
 `,
 		},
 		{
+			name: "features apply to a file with no document",
+			config: map[string]any{
+				"trim_trailing_whitespace": true,
+				"eof_newline":              true,
+			},
+			input:  "# c   ",
+			expect: "# c\n",
+
+			skipLineEndNormalization: true,
+		},
+		{
 			name: "strip directives",
 			config: map[string]any{
 				"strip_directives": true,
