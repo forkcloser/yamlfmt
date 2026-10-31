@@ -15,7 +15,6 @@
 package command
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
 	"io"
@@ -259,20 +258,9 @@ func (c *Command) makeAnalyzer() (yamlfmt.ContentAnalyzer, error) {
 }
 
 func readFromStdin() ([]byte, error) {
-	stdin := bufio.NewReader(os.Stdin)
-	data := []byte{}
-
-	for {
-		b, err := stdin.ReadByte()
-		if err != nil {
-			if err == io.EOF {
-				break
-			} else {
-				return nil, err
-			}
-		}
-
-		data = append(data, b)
+	data, err := io.ReadAll(os.Stdin)
+	if err != nil {
+		return nil, fmt.Errorf("read stdin: %w", err)
 	}
 
 	return data, nil
