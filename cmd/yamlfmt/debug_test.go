@@ -65,3 +65,35 @@ func TestDebugHandler(t *testing.T) {
 		})
 	}
 }
+
+// TestDebugHandlerWithAttrs: attrs given to WithAttrs lead every record of
+// the derived logger, and admit a debug record by their code.
+func TestDebugHandlerWithAttrs(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+
+	logger := slog.New(newDebugHandler(&buf, []string{"paths"})).With("file", "a.yaml")
+	logger.Info("formatted", "n", 3)
+	logger.With(yamlfmt.DebugCodeAttr, yamlfmt.DebugCodePaths).Debug("found")
+	logger.With(yamlfmt.DebugCodeAttr, yamlfmt.DebugCodeDiffs).Debug("dropped")
+
+	want := "INFO: formatted file=a.yaml n=3\nDEBUG: found file=a.yaml code=paths\n"
+	if got := buf.String(); got != want {
+		t.Errorf("got\n%s\nwant\n%s", got, want)
+	}
+}
+
+// TestDebugHandlerWithGroup: the program uses no groups, so WithGroup is
+// refused rather than silently flattened.
+func TestDebugHandlerWithGroup(t *testing.T) {
+	t.Parallel()
+
+	defer func() {
+		if recover() == nil {
+			t.Error("WithGroup returned; want a panic")
+		}
+	}()
+
+	newDebugHandler(&bytes.Buffer{}, nil).WithGroup("g")
+}
