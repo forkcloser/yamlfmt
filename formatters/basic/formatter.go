@@ -69,8 +69,15 @@ func (f *BasicFormatter) Format(input []byte) ([]byte, error) {
 		documents = append(documents, docNode)
 	}
 
+	// No document (empty, whitespace, or comments alone): nothing to encode,
+	// but the features that act on the text still apply.
 	if len(documents) == 0 {
-		return input, nil
+		_, text, afterErr := f.Features.ApplyFeatures(ctx, yamlContent, yamlfmt.FeatureApplyAfter)
+		if afterErr != nil {
+			return nil, afterErr
+		}
+
+		return text, nil
 	}
 
 	// Run all YAML features.
