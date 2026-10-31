@@ -72,7 +72,7 @@ func (c *FilepathCollector) CollectPaths() ([]string, error) {
 
 		paths, err := c.walkDirectoryForYaml(inclPath)
 		if err != nil {
-			fmt.Printf("received errors walking %s:\n%v\n", inclPath, err)
+			return nil, fmt.Errorf("walking %s: %w", inclPath, err)
 		}
 
 		pathsFound = append(pathsFound, paths...)
@@ -221,7 +221,9 @@ func (c *DoublestarCollector) CollectPaths() ([]string, error) {
 	for _, pattern := range c.Include {
 		slog.Debug("trying pattern", DebugCodeAttr, DebugCodePaths, "pattern", pattern)
 
-		globMatches, err := doublestar.FilepathGlob(pattern)
+		// A directory the glob cannot read is a file neither checked nor
+		// formatted: an error, not a quiet miss.
+		globMatches, err := doublestar.FilepathGlob(pattern, doublestar.WithFailOnIOErrors())
 		if err != nil {
 			return nil, err
 		}
