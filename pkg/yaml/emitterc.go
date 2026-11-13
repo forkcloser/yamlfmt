@@ -1751,11 +1751,12 @@ func yaml_emitter_analyze_anchor(emitter *yaml_emitter_t, anchor []byte, alias b
 		return yaml_emitter_set_emitter_error(emitter, problem)
 	}
 
+	// The scanner's rule: a colon ends a name it is last in.
 	for i := 0; i < len(anchor); i += width(anchor[i]) {
-		if !is_alpha(anchor, i) {
-			problem := "anchor value must contain alphanumerical characters only"
+		if !is_anchor_char(anchor, i) || (anchor[i] == ':' && i+1 == len(anchor)) {
+			problem := "anchor value must contain valid characters only"
 			if alias {
-				problem = "alias value must contain alphanumerical characters only"
+				problem = "alias value must contain valid characters only"
 			}
 
 			return yaml_emitter_set_emitter_error(emitter, problem)

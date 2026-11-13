@@ -233,3 +233,62 @@ func TestFlowIndicatorsAreContentWhereTheyIndicateNothing(t *testing.T) {
 		{"an explicit key", "[? a: b]", []any{[]any{map[string]any{"a": "b"}}}, "[{a: b}]\n"},
 	})
 }
+
+// TestAnchorNamesTakeEveryCharacterButBlanksAndFlowIndicators: an anchor's
+// name ends at a blank or a flow indicator, not at the first character
+// that is no letter, digit, `-` or `_` (YAML 1.2.2, 6.9.2). Ended early,
+// `&an:chor value` was the anchor "an" on the scalar ":chor value". A
+// colon stays out of a name it would end, where it is the value indicator.
+func TestAnchorNamesTakeEveryCharacterButBlanksAndFlowIndicators(t *testing.T) {
+	t.Parallel()
+
+	// A run of colons longer than the scanner's buffer, which grows to
+	// look past it.
+	colons := "&a" + string(bytes.Repeat([]byte(":"), 1536)) + "b x"
+
+	held(t, []reading{
+		{"a run of colons past the buffer", colons, []any{"x"}, colons + "\n"},
+		{"a colon inside", "k: &an:chor value\n", []any{map[string]any{"k": "value"}}, "k: &an:chor value\n"},
+		{"a question mark inside", "&a?b x", []any{"x"}, "&a?b x\n"},
+		{"an alias with the same name", "- &a:b x\n- *a:b\n", []any{[]any{"x", "x"}}, "- &a:b x\n- *a:b\n"},
+		{"an alias as a key", "- &a x\n- *a: y\n", []any{[]any{"x", map[string]any{"x": "y"}}}, "- &a x\n- *a: y\n"},
+		{"an alias in a flow sequence", "[&a x, *a]", []any{[]any{"x", "x"}}, "[&a x, *a]\n"},
+		{
+			"an alias before the brace",
+			"{a: &b x, c: *b}",
+			[]any{map[string]any{"a": "x", "c": "x"}},
+			"{a: &b x, c: *b}\n",
+		},
+	})
+
+	// A flow collection's start is no part of a name either, and nothing
+	// else may follow a name directly.
+	for _, in := range []string{"&a{b: c}", "&a[b]"} {
+		var v any
+		if err := yaml.Unmarshal([]byte(in), &v); err == nil {
+			t.Errorf("%q is read: %#v", in, v)
+		}
+	}
+}
+
+// TestAnchorNameEndingInAColonIsNotWritten: written, the colon would be
+// read back as the value indicator and the name as another.
+func TestAnchorNameEndingInAColonIsNotWritten(t *testing.T) {
+	t.Parallel()
+
+	for _, anchor := range []string{"a:", ":", "a b", "a,b"} {
+		node := yaml.Node{Kind: yaml.ScalarNode, Value: "x", Anchor: anchor}
+
+		out, err := yaml.Marshal(&node)
+		if err == nil {
+			t.Errorf("the anchor %q is written: %q", anchor, out)
+		}
+	}
+
+	node := yaml.Node{Kind: yaml.ScalarNode, Value: "x", Anchor: "a:b"}
+
+	out, err := yaml.Marshal(&node)
+	if err != nil || string(out) != "&a:b x\n" {
+		t.Errorf("the anchor \"a:b\" is written %q, %v", out, err)
+	}
+}

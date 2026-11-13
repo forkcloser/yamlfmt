@@ -1981,7 +1981,43 @@ func yaml_parser_scan_anchor(parser *yaml_parser_t, token *yaml_token_t, typ yam
 		return false
 	}
 
-	for is_alpha(parser.buffer, parser.buffer_pos) {
+	for is_anchor_char(parser.buffer, parser.buffer_pos) {
+		if parser.buffer[parser.buffer_pos] == ':' {
+			// Colons are the name's only before more of the name: left
+			// where they end it, the colon of `*a: 1` stays the value
+			// indicator.
+			run := 1
+
+			for {
+				if parser.unread <= run {
+					// Room for the run and the reader's next chunk after it.
+					if cap(parser.buffer) < run+input_buffer_size {
+						buffer := make([]byte, len(parser.buffer), 2*(run+input_buffer_size))
+						copy(buffer, parser.buffer)
+						parser.buffer = buffer
+					}
+
+					if !yaml_parser_update_buffer(parser, run+1) {
+						return false
+					}
+				}
+
+				if parser.buffer[parser.buffer_pos+run] != ':' {
+					break
+				}
+
+				run++
+			}
+
+			if !is_anchor_char(parser.buffer, parser.buffer_pos+run) {
+				break
+			}
+
+			for ; run > 0; run-- {
+				s = read(parser, s)
+			}
+		}
+
 		s = read(parser, s)
 		if parser.unread < 1 && !yaml_parser_update_buffer(parser, 1) {
 			return false
