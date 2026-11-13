@@ -188,12 +188,18 @@ func (p *parser) parse() *Node {
 func (p *parser) node(kind Kind, defaultTag, tag, value string) *Node {
 	var style Style
 
-	if tag != "" && tag != "!" {
+	switch {
+	case tag == "!":
+		// The non-specific tag is content, not decoration: it makes a
+		// scalar a string whatever its text resolves to. Dropped here,
+		// `! 0` was written back as the integer.
+		style = TaggedStyle
+	case tag != "":
 		tag = shortTag(tag)
 		style = TaggedStyle
-	} else if defaultTag != "" {
+	case defaultTag != "":
 		tag = defaultTag
-	} else if kind == ScalarNode {
+	case kind == ScalarNode:
 		tag, _ = resolve("", value)
 	}
 
@@ -1210,5 +1216,5 @@ func (d *decoder) merge(parent, merge *Node, out reflect.Value) {
 }
 
 func isMerge(n *Node) bool {
-	return n.Kind == ScalarNode && n.Value == "<<" && (n.Tag == "" || n.Tag == "!" || shortTag(n.Tag) == mergeTag)
+	return n.Kind == ScalarNode && n.Value == "<<" && (n.Tag == "" || shortTag(n.Tag) == mergeTag)
 }

@@ -133,3 +133,41 @@ func TestFlowEntriesWithAnEmptyKey(t *testing.T) {
 		},
 	})
 }
+
+// TestNonSpecificTagIsKept: `!` resolves a node by its kind alone, so a
+// scalar under it is a string whatever its text looks like (YAML 1.2.2,
+// 3.3.2). Read as no tag at all, `! 0` was the integer and was written
+// back as one.
+func TestNonSpecificTagIsKept(t *testing.T) {
+	t.Parallel()
+
+	held(t, []reading{
+		{"a scalar", "! 0", []any{"0"}, "! 0\n"},
+		{"a value", "v: ! 0", []any{map[string]any{"v": "0"}}, "v: ! 0\n"},
+		{"an empty value", "v: !", []any{map[string]any{"v": ""}}, "v: !\n"},
+		{"items", "- ! true\n- ! ~", []any{[]any{"true", "~"}}, "- ! true\n- ! ~\n"},
+		{
+			"a key that is not the merge key",
+			"! <<: {a: 1}",
+			[]any{map[string]any{"<<": map[string]any{"a": 1}}},
+			"! <<: {a: 1}\n",
+		},
+		{"empty in a flow sequence", "[! , ! a]", []any{[]any{"", "a"}}, "[! '', ! a]\n"},
+		{"a sequence", "! [1, 2]", []any{[]any{1, 2}}, "! [1, 2]\n"},
+		{"a mapping", "!\nk: v\n", []any{map[string]any{"k": "v"}}, "!\nk: v\n"},
+	})
+}
+
+// TestNonSpecificTagShortTag: the node says what the tag makes it.
+func TestNonSpecificTagShortTag(t *testing.T) {
+	t.Parallel()
+
+	var doc yaml.Node
+	if err := yaml.Unmarshal([]byte("! 0"), &doc); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := doc.Content[0].ShortTag(); got != "!!str" {
+		t.Errorf("the short tag of `! 0` is %q, want !!str", got)
+	}
+}
