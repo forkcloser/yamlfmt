@@ -198,3 +198,38 @@ func TestDocumentBlockScalarContentAtColumnZero(t *testing.T) {
 		{"an item's is deeper than its dash", "- |\n#x\n", []any{[]any{""}}, "- \"\"\n#x\n"},
 	})
 }
+
+// TestFlowIndicatorsAreContentWhereTheyIndicateNothing: in a flow
+// collection as in a block one, `?` is the key indicator only before a
+// blank, a `:` ends a plain scalar also before a flow indicator, and a `:`
+// where a node starts, before scalar content, starts a scalar (YAML 1.2.2,
+// 7.3.3). Each read otherwise changed what was written: `[0:]` came back
+// as the string "0:", `[?x]` as a pair with the key "x".
+func TestFlowIndicatorsAreContentWhereTheyIndicateNothing(t *testing.T) {
+	t.Parallel()
+
+	held(t, []reading{
+		{"a pair's key before the bracket", "[0:]", []any{[]any{map[any]any{0: nil}}}, "[{0: null}]\n"},
+		{"a key before the brace", "{a:}", []any{map[string]any{"a": nil}}, "{a: null}\n"},
+		{"a pair's key before the comma", "[a:, b]", []any{[]any{map[string]any{"a": nil}, "b"}}, "[{a: null}, b]\n"},
+		{"a question mark starting a scalar", "[?x]", []any{[]any{"?x"}}, "['?x']\n"},
+		{"a question mark starting a key", "{?foo: bar}", []any{map[string]any{"?foo": "bar"}}, "{'?foo': bar}\n"},
+		{"a question mark inside a scalar", "[a?b]", []any{[]any{"a?b"}}, "['a?b']\n"},
+		{"a colon starting a scalar", "[:x]", []any{[]any{":x"}}, "[':x']\n"},
+		{"a colon starting a value", "{a: :x}", []any{map[string]any{"a": ":x"}}, "{a: ':x'}\n"},
+		{"a colon starting a scalar after an item", "[a, :x]", []any{[]any{"a", ":x"}}, "[a, ':x']\n"},
+		{"a colon starting an explicit key", "[? :x]", []any{[]any{map[string]any{":x": nil}}}, "[{':x': null}]\n"},
+		{"a colon starting a mapping's key", "{:x}", []any{map[string]any{":x": nil}}, "{':x': null}\n"},
+		{"a colon inside a scalar", "[a:b]", []any{[]any{"a:b"}}, "['a:b']\n"},
+		{
+			"a colon before an entry's end after an item",
+			"[a, :]",
+			[]any{[]any{"a", map[any]any{nil: nil}}},
+			"[a, {null: null}]\n",
+		},
+		{"a key that ends before its colon on the next line", "{a\n:}", []any{map[string]any{"a": nil}}, "{a: null}\n"},
+		{"an adjacent value", "{\"a\":b}", []any{map[string]any{"a": "b"}}, "{\"a\": b}\n"},
+		{"an adjacent pair", "[\"a\":b]", []any{[]any{map[string]any{"a": "b"}}}, "[{\"a\": b}]\n"},
+		{"an explicit key", "[? a: b]", []any{[]any{map[string]any{"a": "b"}}}, "[{a: b}]\n"},
+	})
+}

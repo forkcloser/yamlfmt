@@ -783,16 +783,21 @@ func yaml_parser_fetch_next_token(parser *yaml_parser_t) (ok bool) {
 		return yaml_parser_fetch_block_entry(parser)
 	}
 
-	// Is it the key indicator?
-	if parser.buffer[parser.buffer_pos] == '?' &&
-		(parser.flow_level > 0 || is_blankz(parser.buffer, parser.buffer_pos+1)) {
+	// Is it the key indicator? In a flow collection as in a block one, only
+	// before a blank: `[?x]` holds the scalar "?x".
+	if parser.buffer[parser.buffer_pos] == '?' && is_blankz(parser.buffer, parser.buffer_pos+1) {
 		return yaml_parser_fetch_key(parser)
 	}
 
-	// Is it the value indicator?
-	if parser.buffer[parser.buffer_pos] == ':' &&
-		(parser.flow_level > 0 || is_blankz(parser.buffer, parser.buffer_pos+1)) {
-		return yaml_parser_fetch_value(parser)
+	// Is it the value indicator? Before a blank, always. In a flow
+	// collection also right after the node it gives a value to, `{"a":b}`,
+	// and before a flow indicator, the value of an empty key, `[:]`; where
+	// a node starts and scalar content follows, it starts a scalar, `[:x]`.
+	if parser.buffer[parser.buffer_pos] == ':' {
+		if is_blankz(parser.buffer, parser.buffer_pos+1) ||
+			(parser.flow_level > 0 && !yaml_parser_colon_starts_a_flow_scalar(parser)) {
+			return yaml_parser_fetch_value(parser)
+		}
 	}
 
 	// Is it an alias?
@@ -862,8 +867,7 @@ func yaml_parser_fetch_next_token(parser *yaml_parser_t) (ok bool) {
 		parser.buffer[parser.buffer_pos] == '"' || parser.buffer[parser.buffer_pos] == '%' ||
 		parser.buffer[parser.buffer_pos] == '@' || parser.buffer[parser.buffer_pos] == '`') ||
 		(parser.buffer[parser.buffer_pos] == '-' && !is_blank(parser.buffer, parser.buffer_pos+1)) ||
-		(parser.flow_level == 0 &&
-			(parser.buffer[parser.buffer_pos] == '?' || parser.buffer[parser.buffer_pos] == ':') &&
+		((parser.buffer[parser.buffer_pos] == '?' || parser.buffer[parser.buffer_pos] == ':') &&
 			!is_blankz(parser.buffer, parser.buffer_pos+1)) {
 		return yaml_parser_fetch_plain_scalar(parser)
 	}
@@ -872,6 +876,27 @@ func yaml_parser_fetch_next_token(parser *yaml_parser_t) (ok bool) {
 	return yaml_parser_set_scanner_error(parser,
 		"while scanning for the next token", parser.mark,
 		"found character that cannot start any token")
+}
+
+// Check if the colon at the current position, in a flow collection and not
+// before a blank, starts a plain scalar rather than standing for a value:
+// it does where a node starts, after a collection's start, an entry's
+// separator or a key or value indicator, unless a flow indicator follows
+// it. A scalar started before one would hold no character.
+func yaml_parser_colon_starts_a_flow_scalar(parser *yaml_parser_t) bool {
+	if len(parser.tokens) == 0 || is_flow_indicator(parser.buffer, parser.buffer_pos+1) {
+		return false
+	}
+
+	last := parser.tokens[len(parser.tokens)-1].typ
+
+	return last == yaml_FLOW_SEQUENCE_START_TOKEN || last == yaml_FLOW_MAPPING_START_TOKEN ||
+		last == yaml_FLOW_ENTRY_TOKEN || last == yaml_KEY_TOKEN || last == yaml_VALUE_TOKEN
+}
+
+// Check if the character at the specified position is a flow indicator.
+func is_flow_indicator(b []byte, i int) bool {
+	return b[i] == ',' || b[i] == '[' || b[i] == ']' || b[i] == '{' || b[i] == '}'
 }
 
 func yaml_simple_key_is_valid(parser *yaml_parser_t, simple_key *yaml_simple_key_t) (valid, ok bool) {
@@ -2875,13 +2900,17 @@ func yaml_parser_scan_plain_scalar(parser *yaml_parser_t, token *yaml_token_t) b
 
 		// Consume non-blank characters.
 		for !is_blankz(parser.buffer, parser.buffer_pos) {
-			// Check for indicators that may end a plain scalar.
+			// Check for indicators that may end a plain scalar: a colon
+			// before a blank and, in a flow collection, a flow indicator
+			// or a colon before one. `[a:]` is a pair with the key "a",
+			// and a `?` inside a scalar is content.
 			if (parser.buffer[parser.buffer_pos] == ':' && is_blankz(parser.buffer, parser.buffer_pos+1)) ||
 				(parser.flow_level > 0 &&
-					(parser.buffer[parser.buffer_pos] == ',' ||
-						parser.buffer[parser.buffer_pos] == '?' || parser.buffer[parser.buffer_pos] == '[' ||
-						parser.buffer[parser.buffer_pos] == ']' || parser.buffer[parser.buffer_pos] == '{' ||
-						parser.buffer[parser.buffer_pos] == '}')) {
+					(is_flow_indicator(parser.buffer, parser.buffer_pos) ||
+						(parser.buffer[parser.buffer_pos] == ':' &&
+							(parser.buffer[parser.buffer_pos+1] == ',' ||
+								parser.buffer[parser.buffer_pos+1] == ']' ||
+								parser.buffer[parser.buffer_pos+1] == '}')))) {
 				break
 			}
 

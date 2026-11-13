@@ -194,7 +194,7 @@ func TestEncodeIdempotentWithComments(t *testing.T) {
 		{"line comment after a tagged flow mapping", "!!map {a: 1} # c\n", false, "!!map {a: 1} # c\n"},
 		// Two line comments unfolded together, inside a flow mapping and
 		// after it, are one line comment and a foot.
-		{"comment inside a flow mapping and one after", "{?#\n}#\n", false, "{null: null} #\n#\n"},
+		{"comment inside a flow mapping and one after", "{? #\n}#\n", false, "{null: null} #\n#\n"},
 		// A flow collection's own head comment has no line inside its
 		// brackets, where it was written and then read back as nothing; it
 		// is placed as the head of a value written on its key's line is.
