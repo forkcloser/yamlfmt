@@ -55,15 +55,14 @@ func TestEncodeIdempotentWithComments(t *testing.T) {
 		want string
 	}{
 		{"comment after a trailing comment", "0: #\n#\n 0", false, "0: 0 #\n\n#\n"},
-		{"keep-chomped scalar then a comment", "|+\n\n#", false, "|4+\n\n#\n"},
+		{"keep-chomped item then a comment", "- |+\n\n#", false, "- |2+\n\n#\n"},
 		{"keep-chomped value then a comment", "a: |+\n    x\n\n#", false, "a: |+\n    x\n\n#\n"},
 		// An empty block scalar is written as "", and the comment after a
 		// quoted scalar on the first line was the document's foot (separated)
 		// where after a plain one it is the scalar's (not): the scanner now
 		// takes content on the first line as content.
-		{"empty literal then a comment", "|\n#", false, "\"\"\n#\n"},
-		{"empty folded then a comment", ">\n#", false, "\"\"\n#\n"},
 		{"empty literal item then a comment", "- |\n#", false, "- \"\"\n#\n"},
+		{"empty folded item then a comment", "- >\n#", false, "- \"\"\n#\n"},
 		{"empty literal value then a comment", "a: |\n#", false, "a: \"\"\n#\n"},
 		{"quoted scalar on the first line then a comment", "\"x\"\n#", false, "\"x\"\n#\n"},
 		{"plain scalar on the first line then a comment", "x\n#", false, "x\n#\n"},
@@ -164,12 +163,12 @@ func TestEncodeIdempotentWithComments(t *testing.T) {
 		// line; joined to the node's own line comment it came back as a foot.
 		{"explicit key line comment then the key with its own", "? #a\n 0 #b\n", false, "#a\n0: #b\n"},
 		{"explicit key line comment then the key", "? #a\n 0\n", false, "#a\n0:\n"},
-		// A non-specific tag is not written back, so its line's comment has
-		// no line: it heads the collection, mapping or sequence.
-		{"tag line, explicit key line and key line comments", "! #a\n? #b\n 0 #c\n", false, "#a\n#b\n0: #c\n"},
-		{"line comment on a sequence with a non-specific tag", "! #c\n- a\n", false, "#c\n- a\n"},
-		{"line comment on a nested sequence with a non-specific tag", "- ! #c\n  - a\n", false, "#c\n- - a\n"},
-		{"line comment on a sequence value with a non-specific tag", "k: ! #c\n  - a\n", false, "k:\n    #c\n    - a\n"},
+		// A non-specific tag is written back as any tag is, and its line
+		// keeps the comment.
+		{"tag line, explicit key line and key line comments", "! #a\n? #b\n 0 #c\n", false, "! #a\n#b\n0: #c\n"},
+		{"line comment on a sequence with a non-specific tag", "! #c\n- a\n", false, "! #c\n- a\n"},
+		{"line comment on a nested sequence with a non-specific tag", "- ! #c\n  - a\n", false, "- ! #c\n  - a\n"},
+		{"line comment on a sequence value with a non-specific tag", "k: ! #c\n  - a\n", false, "k: ! #c\n    - a\n"},
 		// A document's head comment is the one an empty line separates from
 		// the content; written without the line it read back as the first
 		// node's, which moved the comment and lost the line on every pass.
@@ -182,9 +181,8 @@ func TestEncodeIdempotentWithComments(t *testing.T) {
 		{"head comment before a tagged null", "#\n!0000\n", false, "#\n!0000\n"},
 		{"line comment after a tagged empty value", "0: !0 #c\n", false, "0: !0 #c\n"},
 		{"line comment after an anchored empty value", "0: &a #c\n", false, "0: &a #c\n"},
-		// A null item written as nothing has no line for a line comment:
-		// `- #` read back as a comment line; the comment heads the item.
-		{"line comment on a null item with a non-specific tag", "- ! #c\n", false, "#c\n-\n"},
+		// An empty item's properties are its line, and the comment's.
+		{"line comment on an empty item with a non-specific tag", "- ! #c\n", false, "- ! #c\n"},
 		{"line comment on a tagged null item", "- !t #c\n", false, "- !t #c\n"},
 		{"line comment on an anchored null item", "- &a #c\n", false, "- &a #c\n"},
 		// A block collection's properties, written on a line of their own,
@@ -196,7 +194,7 @@ func TestEncodeIdempotentWithComments(t *testing.T) {
 		{"line comment after a tagged flow mapping", "!!map {a: 1} # c\n", false, "!!map {a: 1} # c\n"},
 		// Two line comments unfolded together, inside a flow mapping and
 		// after it, are one line comment and a foot.
-		{"comment inside a flow mapping and one after", "{?#\n}#\n", false, "{null: null} #\n#\n"},
+		{"comment inside a flow mapping and one after", "{? #\n}#\n", false, "{null: null} #\n#\n"},
 		// A flow collection's own head comment has no line inside its
 		// brackets, where it was written and then read back as nothing; it
 		// is placed as the head of a value written on its key's line is.
@@ -222,7 +220,7 @@ func TestEncodeIdempotentWithComments(t *testing.T) {
 		{"tag alone on its line, value line comment", "!0\n0: #\n", false, "!0\n0: #\n"},
 		// A comment on a scalar's properties line heads the scalar; joined
 		// to the scalar's own line comment it came back as a foot.
-		{"tag line comment then a scalar with its own", "! #a\n0 #b\n", false, "#a\n0 #b\n"},
+		{"tag line comment then a scalar with its own", "! #a\n0 #b\n", false, "#a\n! 0 #b\n"},
 		{"tag line comment then a scalar", "!t #a\n0\n", false, "#a\n!t 0\n"},
 		// A comment on the line after a block collection's tag line heads
 		// the first entry: the collection has no prior entry for a foot.

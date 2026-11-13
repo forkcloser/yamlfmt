@@ -602,8 +602,8 @@ func (n *Node) SetString(s string) {
 
 func (n *Node) indicatedString() bool {
 	return n.Kind == ScalarNode &&
-		(shortTag(n.Tag) == strTag ||
-			(n.Tag == "" || n.Tag == "!") && n.Style&(SingleQuotedStyle|DoubleQuotedStyle|LiteralStyle|FoldedStyle) != 0)
+		(shortTag(n.Tag) == strTag || n.Tag == "!" ||
+			n.Tag == "" && n.Style&(SingleQuotedStyle|DoubleQuotedStyle|LiteralStyle|FoldedStyle) != 0)
 }
 
 // --------------------------------------------------------------------------

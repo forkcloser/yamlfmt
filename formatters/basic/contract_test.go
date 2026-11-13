@@ -8,11 +8,12 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
 
-	"go.yaml.in/yaml/v3"
+	"go.yaml.in/yaml/v4"
 
 	"github.com/forkcloser/yamlfmt"
 	"github.com/forkcloser/yamlfmt/formatters/basic"
@@ -166,10 +167,33 @@ func TestContractFormatPreservesTheDocument(t *testing.T) {
 	}
 }
 
+// seedsTheOracleRefuses are the seeds the formatter's parser takes and the
+// oracle does not: with nothing to compare, each is held to idempotence.
+func seedsTheOracleRefuses() map[string]string {
+	return map[string]string{
+		// `{? #\r}#`: a comment is set off by white space (YAML 1.2.2, 6.6).
+		"fuzz-comment-inside-a-flow-mapping-and-after": "found a comment without preceding whitespace",
+		// `&0\n--- *0`: an alias reaches no anchor of another document (7.1).
+		"fuzz-anchored-empty-node-referenced-from-the-next-document": "unknown anchor",
+	}
+}
+
+// seedsTheOracleMisreads are the seeds whose input the oracle reads as the
+// specification does not, so its two readings differ where the documents do
+// not: each is held to an output the oracle parses, and to idempotence.
+func seedsTheOracleMisreads() map[string]struct{} {
+	return map[string]struct{}{
+		// "|\na\n---\nb\n": the oracle takes the marker for content of the
+		// scalar; a marker ends the document (YAML 1.2.2, 9.1.2).
+		"fuzz-marker-after-a-document-literal-at-column-zero": {},
+	}
+}
+
 // TestContractSeedsStayFixed: every seed under testdata/fuzz/FuzzFormat is a
 // shape the formatter once wrote wrong and now writes right; each is judged
 // whole here, decode equality and idempotence, with none of the holds the
-// fuzz target keeps for generated input.
+// fuzz target keeps for generated input. The seeds the oracle cannot judge
+// are named, with the reason, and a name the oracle no longer needs fails.
 func TestContractSeedsStayFixed(t *testing.T) {
 	t.Parallel()
 
@@ -195,17 +219,26 @@ func TestContractSeedsStayFixed(t *testing.T) {
 			}
 
 			before, err := decode(input)
-			if err != nil {
+
+			refusal, refused := seedsTheOracleRefuses()[filepath.Base(seed)]
+
+			switch {
+			case refused && (err == nil || !strings.Contains(err.Error(), refusal)):
+				t.Fatalf("the oracle is expected to refuse the seed with %q, got: %v", refusal, err)
+			case !refused && err != nil:
 				t.Fatalf("the oracle does not parse the seed: %v", err)
 			}
 
-			after, err := decode(out)
-			if err != nil {
-				t.Fatalf("the output does not parse: %v\noutput: %q", err, out)
-			}
+			if !refused {
+				after, aerr := decode(out)
+				if aerr != nil {
+					t.Fatalf("the output does not parse: %v\noutput: %q", aerr, out)
+				}
 
-			if !reflect.DeepEqual(before, after) {
-				t.Fatalf("the documents changed\noutput: %q", out)
+				_, misread := seedsTheOracleMisreads()[filepath.Base(seed)]
+				if same := reflect.DeepEqual(before, after); same == misread {
+					t.Fatalf("the oracle's readings are the same: %t, expected otherwise\noutput: %q", same, out)
+				}
 			}
 
 			again, err := formatter.Format(out)
@@ -239,6 +272,28 @@ func seedInput(t *testing.T, path string) []byte {
 	return []byte(input)
 }
 
+// A block scalar's header at the start of a line: the scalar is a document's
+// own node, whose content may start at column 0.
+var documentBlockScalar = regexp.MustCompile(
+	`(?m)^[ \t]*(---[ \t]+)?([!&][^ \t\r\n]*[ \t]+)*[|>][-+0-9]*[ \t]*(#[^\r\n]*)?$`,
+)
+
+// A document marker at the start of a line.
+var documentMarker = regexp.MustCompile(`(?m)^(---|\.{3})([ \t]|$)`)
+
+// oracleMisreads reports an input the oracle reads as the specification does
+// not, which a comparison of its two readings would blame on the formatter.
+func oracleMisreads(input []byte) bool {
+	// A marker after a document's own block scalar whose content is at
+	// column 0: the oracle takes the marker as content, where it ends the
+	// document (YAML 1.2.2, 9.1.2).
+	normal := bytes.ReplaceAll(bytes.ReplaceAll(input, []byte("\r\n"), []byte("\n")), []byte("\r"), []byte("\n"))
+
+	header := documentBlockScalar.FindIndex(normal)
+
+	return len(header) == 2 && documentMarker.Match(normal[header[1]:])
+}
+
 // FuzzFormat: whatever the bytes, Format returns or errs and never
 // panics; when the oracle parses the input and Format succeeds, the
 // output parses and means the same; Format is idempotent on its output.
@@ -262,11 +317,7 @@ func FuzzFormat(f *testing.F) {
 			return
 		}
 
-		// An alias does not reach into another document (YAML 1.2, 3.2.2.2);
-		// the oracle lets it, so a multi-document input with an alias is not
-		// judged.
-		if bytes.Contains(input, []byte("*")) &&
-			(bytes.HasPrefix(input, []byte("---")) || bytes.Contains(input, []byte("\n---"))) {
+		if oracleMisreads(input) {
 			return
 		}
 

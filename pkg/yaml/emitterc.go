@@ -477,7 +477,7 @@ func yaml_emitter_emit_document_start(emitter *yaml_emitter_t, event *yaml_event
 					return false
 				}
 
-				if !yaml_emitter_write_tag_content(emitter, tag_directive.prefix, true) {
+				if !yaml_emitter_write_tag_content(emitter, tag_directive.prefix, true, true) {
 					return false
 				}
 
@@ -1543,7 +1543,7 @@ func yaml_emitter_process_tag(emitter *yaml_emitter_t) bool {
 		}
 
 		if len(emitter.tag_data.suffix) > 0 {
-			if !yaml_emitter_write_tag_content(emitter, emitter.tag_data.suffix, false) {
+			if !yaml_emitter_write_tag_content(emitter, emitter.tag_data.suffix, false, false) {
 				return false
 			}
 		}
@@ -1553,7 +1553,7 @@ func yaml_emitter_process_tag(emitter *yaml_emitter_t) bool {
 			return false
 		}
 
-		if !yaml_emitter_write_tag_content(emitter, emitter.tag_data.suffix, false) {
+		if !yaml_emitter_write_tag_content(emitter, emitter.tag_data.suffix, false, true) {
 			return false
 		}
 
@@ -1751,11 +1751,12 @@ func yaml_emitter_analyze_anchor(emitter *yaml_emitter_t, anchor []byte, alias b
 		return yaml_emitter_set_emitter_error(emitter, problem)
 	}
 
+	// The scanner's rule: a colon ends a name it is last in.
 	for i := 0; i < len(anchor); i += width(anchor[i]) {
-		if !is_alpha(anchor, i) {
-			problem := "anchor value must contain alphanumerical characters only"
+		if !is_anchor_char(anchor, i) || (anchor[i] == ':' && i+1 == len(anchor)) {
+			problem := "anchor value must contain valid characters only"
 			if alias {
-				problem = "alias value must contain alphanumerical characters only"
+				problem = "alias value must contain valid characters only"
 			}
 
 			return yaml_emitter_set_emitter_error(emitter, problem)
@@ -2138,7 +2139,10 @@ func yaml_emitter_write_tag_handle(emitter *yaml_emitter_t, value []byte) bool {
 	return true
 }
 
-func yaml_emitter_write_tag_content(emitter *yaml_emitter_t, value []byte, need_whitespace bool) bool {
+// A shorthand's suffix is written with its flow indicators escaped, since
+// the scanner ends the suffix at one; verbatim, in a tag or a directive's
+// prefix, they are written as they are.
+func yaml_emitter_write_tag_content(emitter *yaml_emitter_t, value []byte, need_whitespace, verbatim bool) bool {
 	if need_whitespace && !emitter.whitespace {
 		if !put(emitter, ' ') {
 			return false
@@ -2149,8 +2153,10 @@ func yaml_emitter_write_tag_content(emitter *yaml_emitter_t, value []byte, need_
 		var must_write bool
 
 		switch value[i] {
-		case ';', '/', '?', ':', '@', '&', '=', '+', '$', ',', '_', '.', '~', '*', '\'', '(', ')', '[', ']':
+		case ';', '/', '?', ':', '@', '&', '=', '+', '$', '_', '.', '~', '*', '\'', '(', ')':
 			must_write = true
+		case ',', '[', ']':
+			must_write = verbatim
 		default:
 			must_write = is_alpha(value, i)
 		}

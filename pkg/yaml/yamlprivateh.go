@@ -50,6 +50,13 @@ func is_alpha(b []byte, i int) bool {
 		b[i] == '-'
 }
 
+// Check if the character at the specified position may be in an anchor's
+// name: any printable ASCII character but a blank and the flow indicators.
+func is_anchor_char(b []byte, i int) bool {
+	return b[i] > ' ' && b[i] < 0x7F &&
+		b[i] != ',' && b[i] != '[' && b[i] != ']' && b[i] != '{' && b[i] != '}'
+}
+
 // Check if the character at the specified position is a digit.
 func is_digit(b []byte, i int) bool {
 	return b[i] >= '0' && b[i] <= '9'

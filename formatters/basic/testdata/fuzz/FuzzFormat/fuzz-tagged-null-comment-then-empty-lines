@@ -1,2 +1,2 @@
 go test fuzz v1
-[]byte("!\r\r#\r\r")
+[]byte("!t\r\r#\r\r")

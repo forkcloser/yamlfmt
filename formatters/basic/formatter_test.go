@@ -861,7 +861,7 @@ b: 1
 		{
 			name:  "a line of spaces ends a literal scalar at the end",
 			input: "a: |\n  x\n   ",
-			expect: `a: "x\n "
+			expect: `a: "x\n \n"
 `,
 		},
 		{
@@ -1066,12 +1066,12 @@ func TestEmptyDocuments(t *testing.T) {
 	// are not an empty comment line, which came back once; with single
 	// line breaks retained, the one empty line is kept as itself.
 	trailing := map[string]string{
-		"!\n#\n\n":   "---\n#\n",
-		"!\r\r#\r\r": "---\n#\n",
+		"---\n#\n\n":   "---\n#\n",
+		"---\r\r#\r\r": "---\n#\n",
 		// two comment blocks after an empty document both stay, the second
 		// coming back as a head with nothing to head, which was dropped
 		"---\n#\n\n#\n":            "---\n#\n\n#\n",
-		"!\r\r#\r\r#":              "---\n#\n\n#\n",
+		"---\r\r#\r\r#":            "---\n#\n\n#\n",
 		"---\n# a\n\n# b\n\n# c\n": "---\n# a\n\n# b\n\n# c\n",
 		// a comment after a root scalar is the scalar's foot or, before
 		// another document, the document's; written alike, it stays
@@ -1094,16 +1094,16 @@ func TestEmptyDocuments(t *testing.T) {
 		"? #\r---\r?": "null: #\n---\nnull:\n",
 		// the marker before the first encoded document is the encoder's, so
 		// a head comment after it is set apart as after any written marker
-		"!\n--- #\n\r#\n0": "---\n---\n\n#\n\n#\n0\n",
+		"---\n--- #\n\r#\n0": "---\n---\n\n#\n\n#\n0\n",
 		// an empty document's head comment keeps the break of an empty line
 		// after it in its text; written, that break is not a comment line
-		"--- #\n\r!": "---\n#\n",
+		"--- #\n\r": "---\n#\n",
 	}
 	trailingRetained := map[string]string{
-		"!\n#\n\n":      "---\n#\n\n",
-		"!\r\r#\r\r":    "---\n#\n",
+		"---\n#\n\n":    "---\n#\n\n",
+		"---\r\r#\r\r":  "---\n#\n",
 		"---\n#\n\n#\n": "---\n#\n\n#\n",
-		"!\r\r#\r\r#":   "---\n#\n#\n",
+		"---\r\r#\r\r#": "---\n#\n#\n",
 	}
 
 	// With explicit document starts asked for, every document the encoder

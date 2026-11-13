@@ -592,9 +592,8 @@ func (e *encoder) node(node *Node, tail string) {
 			e.event.line_comment = []byte(node.LineComment)
 			e.event.line_comment_column = node.LineCommentColumn
 		} else if style == yaml_BLOCK_SEQUENCE_STYLE && node.LineComment != "" {
-			// A block collection whose properties are not written, a
-			// non-specific tag resolved away, has no line for the comment
-			// read on its tag line; it heads the collection instead.
+			// A block collection with no properties to write has no line
+			// for a line comment; it heads the collection instead.
 			e.event.head_comment = joinComments(node.HeadComment, node.LineComment)
 		}
 
@@ -638,8 +637,8 @@ func (e *encoder) node(node *Node, tail string) {
 			e.event.line_comment = []byte(node.LineComment)
 			e.event.line_comment_column = node.LineCommentColumn
 		} else if style == yaml_BLOCK_MAPPING_STYLE && node.LineComment != "" {
-			// As for a sequence: without a properties line the tag line's
-			// comment heads the mapping.
+			// As for a sequence: without a properties line the comment
+			// heads the mapping.
 			e.event.head_comment = joinComments(node.HeadComment, node.LineComment)
 		}
 

@@ -10,8 +10,8 @@ import (
 // TestLocalTagWithBangSuffixIsWrittenEscaped: the local tag whose suffix is
 // "!" ("!%21" as written, "!<!!>" verbatim) is the tag "!!", which is not
 // the "!!" shorthand; written as the secondary handle with no suffix it was
-// "!!", which does not parse. It is written "!%21", the same tag, and the
-// shorthands stay themselves.
+// "!!", which does not parse. It is written "!%21", the same tag, the
+// shorthands stay themselves, and an escaped flow indicator stays escaped.
 func TestLocalTagWithBangSuffixIsWrittenEscaped(t *testing.T) {
 	t.Parallel()
 
@@ -20,7 +20,7 @@ func TestLocalTagWithBangSuffixIsWrittenEscaped(t *testing.T) {
 		{"k: !%21 v", "k: !%21 v\n"},
 		{"!<!!> x", "!%21 x\n"},
 		{"!!str x", "!!str x\n"},
-		{"!e%2Cf x", "!e,f x\n"},
+		{"!e%2Cf x", "!e%2Cf x\n"},
 	} {
 		var n yaml.Node
 		if err := yaml.NewDecoder(bytes.NewReader([]byte(tc.in))).Decode(&n); err != nil {
@@ -60,7 +60,7 @@ func TestBlockScalarLedByATabKeepsItsIndentationIndicator(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct{ in, want string }{
-		{"|1\n \t", "|4-\n    \t\n"},
+		{"|1\n \t", "|4\n    \t\n"},
 		{"|1\n \ta", "|4-\n    \ta\n"},
 		{"k: |1\n \tx\n", "k: |4\n    \tx\n"},
 		{">1\n \tx\n", ">4\n    \tx\n"},

@@ -651,9 +651,18 @@ func yaml_parser_fetch_more_tokens(parser *yaml_parser_t) bool {
 				break
 			}
 		}
-		// Fetch the next token.
+		// Fetch the next token. Every token but the stream's start and its
+		// end takes input; one that took none would be fetched again at the
+		// same place, and the queue would grow until memory ran out.
+		started, index := parser.stream_start_produced, parser.mark.index
+
 		if !yaml_parser_fetch_next_token(parser) {
 			return false
+		}
+
+		if started && parser.mark.index == index && !is_z(parser.buffer, parser.buffer_pos) {
+			return yaml_parser_set_scanner_error(parser, "while scanning for the next token", parser.mark,
+				"found character that cannot start any token")
 		}
 	}
 
@@ -774,16 +783,21 @@ func yaml_parser_fetch_next_token(parser *yaml_parser_t) (ok bool) {
 		return yaml_parser_fetch_block_entry(parser)
 	}
 
-	// Is it the key indicator?
-	if parser.buffer[parser.buffer_pos] == '?' &&
-		(parser.flow_level > 0 || is_blankz(parser.buffer, parser.buffer_pos+1)) {
+	// Is it the key indicator? In a flow collection as in a block one, only
+	// before a blank: `[?x]` holds the scalar "?x".
+	if parser.buffer[parser.buffer_pos] == '?' && is_blankz(parser.buffer, parser.buffer_pos+1) {
 		return yaml_parser_fetch_key(parser)
 	}
 
-	// Is it the value indicator?
-	if parser.buffer[parser.buffer_pos] == ':' &&
-		(parser.flow_level > 0 || is_blankz(parser.buffer, parser.buffer_pos+1)) {
-		return yaml_parser_fetch_value(parser)
+	// Is it the value indicator? Before a blank, always. In a flow
+	// collection also right after the node it gives a value to, `{"a":b}`,
+	// and before a flow indicator, the value of an empty key, `[:]`; where
+	// a node starts and scalar content follows, it starts a scalar, `[:x]`.
+	if parser.buffer[parser.buffer_pos] == ':' {
+		if is_blankz(parser.buffer, parser.buffer_pos+1) ||
+			(parser.flow_level > 0 && !yaml_parser_colon_starts_a_flow_scalar(parser)) {
+			return yaml_parser_fetch_value(parser)
+		}
 	}
 
 	// Is it an alias?
@@ -853,8 +867,7 @@ func yaml_parser_fetch_next_token(parser *yaml_parser_t) (ok bool) {
 		parser.buffer[parser.buffer_pos] == '"' || parser.buffer[parser.buffer_pos] == '%' ||
 		parser.buffer[parser.buffer_pos] == '@' || parser.buffer[parser.buffer_pos] == '`') ||
 		(parser.buffer[parser.buffer_pos] == '-' && !is_blank(parser.buffer, parser.buffer_pos+1)) ||
-		(parser.flow_level == 0 &&
-			(parser.buffer[parser.buffer_pos] == '?' || parser.buffer[parser.buffer_pos] == ':') &&
+		((parser.buffer[parser.buffer_pos] == '?' || parser.buffer[parser.buffer_pos] == ':') &&
 			!is_blankz(parser.buffer, parser.buffer_pos+1)) {
 		return yaml_parser_fetch_plain_scalar(parser)
 	}
@@ -863,6 +876,27 @@ func yaml_parser_fetch_next_token(parser *yaml_parser_t) (ok bool) {
 	return yaml_parser_set_scanner_error(parser,
 		"while scanning for the next token", parser.mark,
 		"found character that cannot start any token")
+}
+
+// Check if the colon at the current position, in a flow collection and not
+// before a blank, starts a plain scalar rather than standing for a value:
+// it does where a node starts, after a collection's start, an entry's
+// separator or a key or value indicator, unless a flow indicator follows
+// it. A scalar started before one would hold no character.
+func yaml_parser_colon_starts_a_flow_scalar(parser *yaml_parser_t) bool {
+	if len(parser.tokens) == 0 || is_flow_indicator(parser.buffer, parser.buffer_pos+1) {
+		return false
+	}
+
+	last := parser.tokens[len(parser.tokens)-1].typ
+
+	return last == yaml_FLOW_SEQUENCE_START_TOKEN || last == yaml_FLOW_MAPPING_START_TOKEN ||
+		last == yaml_FLOW_ENTRY_TOKEN || last == yaml_KEY_TOKEN || last == yaml_VALUE_TOKEN
+}
+
+// Check if the character at the specified position is a flow indicator.
+func is_flow_indicator(b []byte, i int) bool {
+	return b[i] == ',' || b[i] == '[' || b[i] == ']' || b[i] == '{' || b[i] == '}'
 }
 
 func yaml_simple_key_is_valid(parser *yaml_parser_t, simple_key *yaml_simple_key_t) (valid, ok bool) {
@@ -1913,7 +1947,7 @@ func yaml_parser_scan_tag_directive_value(parser *yaml_parser_t, start_mark yaml
 	}
 
 	// Scan a prefix.
-	if !yaml_parser_scan_tag_uri(parser, true, nil, start_mark, &prefix_value) {
+	if !yaml_parser_scan_tag_uri(parser, true, true, nil, start_mark, &prefix_value) {
 		return false
 	}
 
@@ -1947,7 +1981,43 @@ func yaml_parser_scan_anchor(parser *yaml_parser_t, token *yaml_token_t, typ yam
 		return false
 	}
 
-	for is_alpha(parser.buffer, parser.buffer_pos) {
+	for is_anchor_char(parser.buffer, parser.buffer_pos) {
+		if parser.buffer[parser.buffer_pos] == ':' {
+			// Colons are the name's only before more of the name: left
+			// where they end it, the colon of `*a: 1` stays the value
+			// indicator.
+			run := 1
+
+			for {
+				if parser.unread <= run {
+					// Room for the run and the reader's next chunk after it.
+					if cap(parser.buffer) < run+input_buffer_size {
+						buffer := make([]byte, len(parser.buffer), 2*(run+input_buffer_size))
+						copy(buffer, parser.buffer)
+						parser.buffer = buffer
+					}
+
+					if !yaml_parser_update_buffer(parser, run+1) {
+						return false
+					}
+				}
+
+				if parser.buffer[parser.buffer_pos+run] != ':' {
+					break
+				}
+
+				run++
+			}
+
+			if !is_anchor_char(parser.buffer, parser.buffer_pos+run) {
+				break
+			}
+
+			for ; run > 0; run-- {
+				s = read(parser, s)
+			}
+		}
+
 		s = read(parser, s)
 		if parser.unread < 1 && !yaml_parser_update_buffer(parser, 1) {
 			return false
@@ -2013,7 +2083,7 @@ func yaml_parser_scan_tag(parser *yaml_parser_t, token *yaml_token_t) bool {
 		skip(parser)
 
 		// Consume the tag value.
-		if !yaml_parser_scan_tag_uri(parser, false, nil, start_mark, &suffix) {
+		if !yaml_parser_scan_tag_uri(parser, false, true, nil, start_mark, &suffix) {
 			return false
 		}
 
@@ -2037,12 +2107,12 @@ func yaml_parser_scan_tag(parser *yaml_parser_t, token *yaml_token_t) bool {
 		// Check if it is, indeed, handle.
 		if handle[0] == '!' && len(handle) > 1 && handle[len(handle)-1] == '!' {
 			// Scan the suffix now.
-			if !yaml_parser_scan_tag_uri(parser, false, nil, start_mark, &suffix) {
+			if !yaml_parser_scan_tag_uri(parser, false, false, nil, start_mark, &suffix) {
 				return false
 			}
 		} else {
 			// It wasn't a handle after all.  Scan the rest of the tag.
-			if !yaml_parser_scan_tag_uri(parser, false, handle, start_mark, &suffix) {
+			if !yaml_parser_scan_tag_uri(parser, false, false, handle, start_mark, &suffix) {
 				return false
 			}
 
@@ -2062,7 +2132,11 @@ func yaml_parser_scan_tag(parser *yaml_parser_t, token *yaml_token_t) bool {
 		return false
 	}
 
-	if !is_blankz(parser.buffer, parser.buffer_pos) {
+	// In a flow collection the tagged node may be empty, and the indicator
+	// that ends it then ends the tag: `[!t, a]`.
+	if !is_blankz(parser.buffer, parser.buffer_pos) &&
+		!(parser.flow_level > 0 && (parser.buffer[parser.buffer_pos] == ',' ||
+			parser.buffer[parser.buffer_pos] == ']' || parser.buffer[parser.buffer_pos] == '}')) {
 		yaml_parser_set_scanner_error(parser, "while scanning a tag",
 			start_mark, "did not find expected whitespace or line break")
 
@@ -2137,6 +2211,7 @@ func yaml_parser_scan_tag_handle(parser *yaml_parser_t, directive bool, start_ma
 func yaml_parser_scan_tag_uri(
 	parser *yaml_parser_t,
 	directive bool,
+	verbatim bool,
 	head []byte,
 	start_mark yaml_mark_t,
 	uri *[]byte,
@@ -2163,18 +2238,23 @@ func yaml_parser_scan_tag_uri(
 	//      '0'-'9', 'A'-'Z', 'a'-'z', '_', '-', ';', '/', '?', ':', '@', '&',
 	//      '=', '+', '$', ',', '.', '!', '~', '*', '\'', '(', ')', '[', ']',
 	//      '%'.
+	//
+	// The flow indicators among them, ',', '[' and ']', only in a verbatim
+	// tag or a directive's prefix: a shorthand's suffix ends at one, which
+	// in `[!t,a]` is the entry's separator and no part of the tag.
 	// [Go] TODO Convert this into more reasonable logic.
 	for is_alpha(parser.buffer, parser.buffer_pos) || parser.buffer[parser.buffer_pos] == ';' ||
 		parser.buffer[parser.buffer_pos] == '/' || parser.buffer[parser.buffer_pos] == '?' ||
 		parser.buffer[parser.buffer_pos] == ':' || parser.buffer[parser.buffer_pos] == '@' ||
 		parser.buffer[parser.buffer_pos] == '&' || parser.buffer[parser.buffer_pos] == '=' ||
 		parser.buffer[parser.buffer_pos] == '+' || parser.buffer[parser.buffer_pos] == '$' ||
-		parser.buffer[parser.buffer_pos] == ',' || parser.buffer[parser.buffer_pos] == '.' ||
+		parser.buffer[parser.buffer_pos] == '.' ||
 		parser.buffer[parser.buffer_pos] == '!' || parser.buffer[parser.buffer_pos] == '~' ||
 		parser.buffer[parser.buffer_pos] == '*' || parser.buffer[parser.buffer_pos] == '\'' ||
 		parser.buffer[parser.buffer_pos] == '(' || parser.buffer[parser.buffer_pos] == ')' ||
-		parser.buffer[parser.buffer_pos] == '[' || parser.buffer[parser.buffer_pos] == ']' ||
-		parser.buffer[parser.buffer_pos] == '%' {
+		parser.buffer[parser.buffer_pos] == '%' ||
+		(verbatim && (parser.buffer[parser.buffer_pos] == ',' ||
+			parser.buffer[parser.buffer_pos] == '[' || parser.buffer[parser.buffer_pos] == ']')) {
 		// Check if it is a URI-escape sequence.
 		if parser.buffer[parser.buffer_pos] == '%' {
 			if !yaml_parser_scan_uri_escapes(parser, directive, start_mark, &s) {
@@ -2369,9 +2449,16 @@ func yaml_parser_scan_block_scalar(parser *yaml_parser_t, token *yaml_token_t, l
 
 	end_mark := parser.mark
 
-	// Set the indentation level if it was specified.
+	// Set the indentation level if it was specified. Zero is a level, the
+	// one a document's own scalar may have, so whether the level is still
+	// to be detected is said apart from it.
 	var indent int
+
+	detect := true
+
 	if increment > 0 {
+		detect = false
+
 		if parser.indent >= 0 {
 			indent = parser.indent + increment
 		} else {
@@ -2381,7 +2468,7 @@ func yaml_parser_scan_block_scalar(parser *yaml_parser_t, token *yaml_token_t, l
 
 	// Scan the leading line breaks and determine the indentation level if needed.
 	var s, leading_break, trailing_breaks []byte
-	if !yaml_parser_scan_block_scalar_breaks(parser, &indent, &trailing_breaks, start_mark, &end_mark) {
+	if !yaml_parser_scan_block_scalar_breaks(parser, &indent, &detect, &trailing_breaks, start_mark, &end_mark) {
 		return false
 	}
 
@@ -2391,8 +2478,21 @@ func yaml_parser_scan_block_scalar(parser *yaml_parser_t, token *yaml_token_t, l
 	}
 
 	var leading_blank, trailing_blank bool
+
 	for parser.mark.column == indent && !is_z(parser.buffer, parser.buffer_pos) {
 		// We are at the beginning of a non-empty line.
+
+		// At the document's own level a marker is not content: it ends the
+		// scalar as it ends any node.
+		if indent == 0 {
+			if parser.unread < 4 && !yaml_parser_update_buffer(parser, 4) {
+				return false
+			}
+
+			if is_document_indicator(parser.buffer, parser.buffer_pos) {
+				break
+			}
+		}
 
 		// Is it a trailing whitespace?
 		trailing_blank = is_blank(parser.buffer, parser.buffer_pos)
@@ -2417,6 +2517,8 @@ func yaml_parser_scan_block_scalar(parser *yaml_parser_t, token *yaml_token_t, l
 		leading_blank = is_blank(parser.buffer, parser.buffer_pos)
 
 		// Consume the current line.
+		line_start := len(s)
+
 		for !is_breakz(parser.buffer, parser.buffer_pos) {
 			s = read(parser, s)
 			if parser.unread < 1 && !yaml_parser_update_buffer(parser, 1) {
@@ -2429,10 +2531,16 @@ func yaml_parser_scan_block_scalar(parser *yaml_parser_t, token *yaml_token_t, l
 			return false
 		}
 
-		leading_break = read_line(parser, leading_break)
+		// A last line of blanks the input ends without breaking is a line
+		// all the same, and has its break: `|\n x\n  ` is "x\n \n".
+		if is_z(parser.buffer, parser.buffer_pos) && len(bytes.Trim(s[line_start:], " \t")) == 0 {
+			leading_break = append(leading_break, '\n')
+		} else {
+			leading_break = read_line(parser, leading_break)
+		}
 
 		// Eat the following indentation spaces and line breaks.
-		if !yaml_parser_scan_block_scalar_breaks(parser, &indent, &trailing_breaks, start_mark, &end_mark) {
+		if !yaml_parser_scan_block_scalar_breaks(parser, &indent, &detect, &trailing_breaks, start_mark, &end_mark) {
 			return false
 		}
 	}
@@ -2466,6 +2574,7 @@ func yaml_parser_scan_block_scalar(parser *yaml_parser_t, token *yaml_token_t, l
 func yaml_parser_scan_block_scalar_breaks(
 	parser *yaml_parser_t,
 	indent *int,
+	detect *bool,
 	breaks *[]byte,
 	start_mark yaml_mark_t,
 	end_mark *yaml_mark_t,
@@ -2481,7 +2590,7 @@ func yaml_parser_scan_block_scalar_breaks(
 			return false
 		}
 
-		for (*indent == 0 || parser.mark.column < *indent) && is_space(parser.buffer, parser.buffer_pos) {
+		for (*detect || parser.mark.column < *indent) && is_space(parser.buffer, parser.buffer_pos) {
 			skip(parser)
 
 			if parser.unread < 1 && !yaml_parser_update_buffer(parser, 1) {
@@ -2494,7 +2603,7 @@ func yaml_parser_scan_block_scalar_breaks(
 		}
 
 		// Check for a tab character messing the indentation.
-		if (*indent == 0 || parser.mark.column < *indent) && is_tab(parser.buffer, parser.buffer_pos) {
+		if (*detect || parser.mark.column < *indent) && is_tab(parser.buffer, parser.buffer_pos) {
 			return yaml_parser_set_scanner_error(parser, "while scanning a block scalar",
 				start_mark, "found a tab character where an indentation space is expected")
 		}
@@ -2513,19 +2622,36 @@ func yaml_parser_scan_block_scalar_breaks(
 		*end_mark = parser.mark
 	}
 
-	// Determine the indentation level if needed.
-	if *indent == 0 {
+	// The same for a last line of indentation alone: an empty line, with
+	// its break, which keep chomping keeps.
+	if is_z(parser.buffer, parser.buffer_pos) && parser.mark.line > start_mark.line && parser.mark.column > 0 &&
+		(*detect || parser.mark.column <= *indent) {
+		*breaks = append(*breaks, '\n')
+	}
+
+	// Determine the indentation level if needed: the first non-empty line's,
+	// and deeper than the enclosing collection's. A document's own scalar
+	// has none enclosing it, so its content may start at column 0, where a
+	// floor of 1 read a `#` line as a comment and lost it from the scalar.
+	if *detect {
+		*detect = false
+
 		*indent = max_indent
 		if *indent < parser.indent+1 {
 			*indent = parser.indent + 1
 		}
-
-		if *indent < 1 {
-			*indent = 1
-		}
 	}
 
 	return true
+}
+
+// Check if the buffer at pos, the start of a line, holds a document marker:
+// `---` or `...` and then a blank, a break or the end of the stream. The
+// caller has four characters buffered.
+func is_document_indicator(b []byte, pos int) bool {
+	return ((b[pos] == '-' && b[pos+1] == '-' && b[pos+2] == '-') ||
+		(b[pos] == '.' && b[pos+1] == '.' && b[pos+2] == '.')) &&
+		is_blankz(b, pos+3)
 }
 
 // Scan a quoted scalar.
@@ -2835,13 +2961,17 @@ func yaml_parser_scan_plain_scalar(parser *yaml_parser_t, token *yaml_token_t) b
 
 		// Consume non-blank characters.
 		for !is_blankz(parser.buffer, parser.buffer_pos) {
-			// Check for indicators that may end a plain scalar.
+			// Check for indicators that may end a plain scalar: a colon
+			// before a blank and, in a flow collection, a flow indicator
+			// or a colon before one. `[a:]` is a pair with the key "a",
+			// and a `?` inside a scalar is content.
 			if (parser.buffer[parser.buffer_pos] == ':' && is_blankz(parser.buffer, parser.buffer_pos+1)) ||
 				(parser.flow_level > 0 &&
-					(parser.buffer[parser.buffer_pos] == ',' ||
-						parser.buffer[parser.buffer_pos] == '?' || parser.buffer[parser.buffer_pos] == '[' ||
-						parser.buffer[parser.buffer_pos] == ']' || parser.buffer[parser.buffer_pos] == '{' ||
-						parser.buffer[parser.buffer_pos] == '}')) {
+					(is_flow_indicator(parser.buffer, parser.buffer_pos) ||
+						(parser.buffer[parser.buffer_pos] == ':' &&
+							(parser.buffer[parser.buffer_pos+1] == ',' ||
+								parser.buffer[parser.buffer_pos+1] == ']' ||
+								parser.buffer[parser.buffer_pos+1] == '}')))) {
 				break
 			}
 
