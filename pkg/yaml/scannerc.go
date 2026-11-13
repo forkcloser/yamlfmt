@@ -651,9 +651,18 @@ func yaml_parser_fetch_more_tokens(parser *yaml_parser_t) bool {
 				break
 			}
 		}
-		// Fetch the next token.
+		// Fetch the next token. Every token but the stream's start and its
+		// end takes input; one that took none would be fetched again at the
+		// same place, and the queue would grow until memory ran out.
+		started, index := parser.stream_start_produced, parser.mark.index
+
 		if !yaml_parser_fetch_next_token(parser) {
 			return false
+		}
+
+		if started && parser.mark.index == index && !is_z(parser.buffer, parser.buffer_pos) {
+			return yaml_parser_set_scanner_error(parser, "while scanning for the next token", parser.mark,
+				"found character that cannot start any token")
 		}
 	}
 
