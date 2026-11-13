@@ -1477,7 +1477,9 @@ func yaml_parser_parse_flow_sequence_entry(parser *yaml_parser_t, event *yaml_ev
 			}
 		}
 
-		if token.typ == yaml_KEY_TOKEN {
+		// A pair opens with its key indicator or, its key being empty, with
+		// its value indicator, which stays for the state that reads values.
+		if token.typ == yaml_KEY_TOKEN || token.typ == yaml_VALUE_TOKEN {
 			parser.state = yaml_PARSE_FLOW_SEQUENCE_ENTRY_MAPPING_KEY_STATE
 			*event = yaml_event_t{
 				typ:        yaml_MAPPING_START_EVENT,
@@ -1487,7 +1489,9 @@ func yaml_parser_parse_flow_sequence_entry(parser *yaml_parser_t, event *yaml_ev
 				style:      yaml_style_t(yaml_FLOW_MAPPING_STYLE),
 			}
 
-			skip_token(parser)
+			if token.typ == yaml_KEY_TOKEN {
+				skip_token(parser)
+			}
 
 			return true
 		} else if token.typ != yaml_FLOW_SEQUENCE_END_TOKEN {
@@ -1529,12 +1533,12 @@ func yaml_parser_parse_flow_sequence_entry_mapping_key(parser *yaml_parser_t, ev
 		return yaml_parser_parse_node(parser, event, false, false)
 	}
 
-	mark := token.end_mark
-
-	skip_token(parser)
+	// The key is empty. The token that says so, the value indicator or the
+	// entry's end, is not the key's to take: skipped here, `[? : x]` lost
+	// its indicator and `[? ]` its bracket.
 	parser.state = yaml_PARSE_FLOW_SEQUENCE_ENTRY_MAPPING_VALUE_STATE
 
-	return yaml_parser_process_empty_scalar(parser, event, mark)
+	return yaml_parser_process_empty_scalar(parser, event, token.start_mark)
 }
 
 // Parse the productions:
@@ -1630,6 +1634,12 @@ func yaml_parser_parse_flow_mapping_key(parser *yaml_parser_t, event *yaml_event
 			}
 		}
 
+		// A value indicator where a key would start: the key is empty.
+		if token.typ == yaml_VALUE_TOKEN {
+			parser.state = yaml_PARSE_FLOW_MAPPING_VALUE_STATE
+			return yaml_parser_process_empty_scalar(parser, event, token.start_mark)
+		}
+
 		if token.typ == yaml_KEY_TOKEN {
 			skip_token(parser)
 
@@ -1676,7 +1686,10 @@ func yaml_parser_parse_flow_mapping_value(parser *yaml_parser_t, event *yaml_eve
 		return false
 	}
 
-	if empty {
+	// A key that no KEY token announced has a value all the same when a
+	// value indicator follows it: on a later line than the key, or after a
+	// key of several lines, the indicator makes no simple key of it.
+	if empty && token.typ != yaml_VALUE_TOKEN {
 		parser.state = yaml_PARSE_FLOW_MAPPING_KEY_STATE
 		return yaml_parser_process_empty_scalar(parser, event, token.start_mark)
 	}
