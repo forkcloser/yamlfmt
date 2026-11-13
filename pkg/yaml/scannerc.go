@@ -2378,9 +2378,16 @@ func yaml_parser_scan_block_scalar(parser *yaml_parser_t, token *yaml_token_t, l
 
 	end_mark := parser.mark
 
-	// Set the indentation level if it was specified.
+	// Set the indentation level if it was specified. Zero is a level, the
+	// one a document's own scalar may have, so whether the level is still
+	// to be detected is said apart from it.
 	var indent int
+
+	detect := true
+
 	if increment > 0 {
+		detect = false
+
 		if parser.indent >= 0 {
 			indent = parser.indent + increment
 		} else {
@@ -2390,7 +2397,7 @@ func yaml_parser_scan_block_scalar(parser *yaml_parser_t, token *yaml_token_t, l
 
 	// Scan the leading line breaks and determine the indentation level if needed.
 	var s, leading_break, trailing_breaks []byte
-	if !yaml_parser_scan_block_scalar_breaks(parser, &indent, &trailing_breaks, start_mark, &end_mark) {
+	if !yaml_parser_scan_block_scalar_breaks(parser, &indent, &detect, &trailing_breaks, start_mark, &end_mark) {
 		return false
 	}
 
@@ -2400,8 +2407,21 @@ func yaml_parser_scan_block_scalar(parser *yaml_parser_t, token *yaml_token_t, l
 	}
 
 	var leading_blank, trailing_blank bool
+
 	for parser.mark.column == indent && !is_z(parser.buffer, parser.buffer_pos) {
 		// We are at the beginning of a non-empty line.
+
+		// At the document's own level a marker is not content: it ends the
+		// scalar as it ends any node.
+		if indent == 0 {
+			if parser.unread < 4 && !yaml_parser_update_buffer(parser, 4) {
+				return false
+			}
+
+			if is_document_indicator(parser.buffer, parser.buffer_pos) {
+				break
+			}
+		}
 
 		// Is it a trailing whitespace?
 		trailing_blank = is_blank(parser.buffer, parser.buffer_pos)
@@ -2441,7 +2461,7 @@ func yaml_parser_scan_block_scalar(parser *yaml_parser_t, token *yaml_token_t, l
 		leading_break = read_line(parser, leading_break)
 
 		// Eat the following indentation spaces and line breaks.
-		if !yaml_parser_scan_block_scalar_breaks(parser, &indent, &trailing_breaks, start_mark, &end_mark) {
+		if !yaml_parser_scan_block_scalar_breaks(parser, &indent, &detect, &trailing_breaks, start_mark, &end_mark) {
 			return false
 		}
 	}
@@ -2475,6 +2495,7 @@ func yaml_parser_scan_block_scalar(parser *yaml_parser_t, token *yaml_token_t, l
 func yaml_parser_scan_block_scalar_breaks(
 	parser *yaml_parser_t,
 	indent *int,
+	detect *bool,
 	breaks *[]byte,
 	start_mark yaml_mark_t,
 	end_mark *yaml_mark_t,
@@ -2490,7 +2511,7 @@ func yaml_parser_scan_block_scalar_breaks(
 			return false
 		}
 
-		for (*indent == 0 || parser.mark.column < *indent) && is_space(parser.buffer, parser.buffer_pos) {
+		for (*detect || parser.mark.column < *indent) && is_space(parser.buffer, parser.buffer_pos) {
 			skip(parser)
 
 			if parser.unread < 1 && !yaml_parser_update_buffer(parser, 1) {
@@ -2503,7 +2524,7 @@ func yaml_parser_scan_block_scalar_breaks(
 		}
 
 		// Check for a tab character messing the indentation.
-		if (*indent == 0 || parser.mark.column < *indent) && is_tab(parser.buffer, parser.buffer_pos) {
+		if (*detect || parser.mark.column < *indent) && is_tab(parser.buffer, parser.buffer_pos) {
 			return yaml_parser_set_scanner_error(parser, "while scanning a block scalar",
 				start_mark, "found a tab character where an indentation space is expected")
 		}
@@ -2522,19 +2543,29 @@ func yaml_parser_scan_block_scalar_breaks(
 		*end_mark = parser.mark
 	}
 
-	// Determine the indentation level if needed.
-	if *indent == 0 {
+	// Determine the indentation level if needed: the first non-empty line's,
+	// and deeper than the enclosing collection's. A document's own scalar
+	// has none enclosing it, so its content may start at column 0, where a
+	// floor of 1 read a `#` line as a comment and lost it from the scalar.
+	if *detect {
+		*detect = false
+
 		*indent = max_indent
 		if *indent < parser.indent+1 {
 			*indent = parser.indent + 1
 		}
-
-		if *indent < 1 {
-			*indent = 1
-		}
 	}
 
 	return true
+}
+
+// Check if the buffer at pos, the start of a line, holds a document marker:
+// `---` or `...` and then a blank, a break or the end of the stream. The
+// caller has four characters buffered.
+func is_document_indicator(b []byte, pos int) bool {
+	return ((b[pos] == '-' && b[pos+1] == '-' && b[pos+2] == '-') ||
+		(b[pos] == '.' && b[pos+1] == '.' && b[pos+2] == '.')) &&
+		is_blankz(b, pos+3)
 }
 
 // Scan a quoted scalar.

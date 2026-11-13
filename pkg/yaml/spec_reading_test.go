@@ -171,3 +171,30 @@ func TestNonSpecificTagShortTag(t *testing.T) {
 		t.Errorf("the short tag of `! 0` is %q, want !!str", got)
 	}
 }
+
+// TestDocumentBlockScalarContentAtColumnZero: a document's own block scalar
+// is inside no collection, so its content may start at column 0 (YAML
+// 1.2.2, 9.1.3, example 9.3), up to the next document marker. Held to
+// column 1, a `#` line there was a comment and the content was lost.
+func TestDocumentBlockScalarContentAtColumnZero(t *testing.T) {
+	t.Parallel()
+
+	held(t, []reading{
+		{"literal", "|\n#", []any{"#"}, "|-\n    #\n"},
+		{"folded", ">\n#", []any{"#"}, ">-\n    #\n"},
+		{"after an empty line", "|+\n\n#", []any{"\n#"}, "|4-\n\n    #\n"},
+		{
+			"the specification's bare document",
+			"|\n%!PS-Adobe-2.0 # Not the first line\n",
+			[]any{"%!PS-Adobe-2.0 # Not the first line\n"},
+			"|\n    %!PS-Adobe-2.0 # Not the first line\n",
+		},
+		{"more indented lines", "|\n\n\nx\n y\n", []any{"\n\nx\n y\n"}, "|4\n\n\n    x\n     y\n"},
+		{"a marker ends it", "--- |\nx\n--- |\ny\n", []any{"x\n", "y\n"}, "|\n    x\n---\n|\n    y\n"},
+		{"a marker and a plain document", "|\na\n---\nb\n", []any{"a\n", "b"}, "|\n    a\n---\nb\n"},
+		{"an end marker and a comment", "--- |\n# c\n...\n# after\n", []any{"# c\n"}, "|\n    # c\n# after\n"},
+		{"three dashes that are no marker", "|\n---x\n", []any{"---x\n"}, "|\n    ---x\n"},
+		{"a value's is deeper than its key", "a: |\n#x\n", []any{map[string]any{"a": ""}}, "a: \"\"\n#x\n"},
+		{"an item's is deeper than its dash", "- |\n#x\n", []any{[]any{""}}, "- \"\"\n#x\n"},
+	})
+}

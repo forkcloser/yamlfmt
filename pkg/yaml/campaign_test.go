@@ -55,15 +55,14 @@ func TestEncodeIdempotentWithComments(t *testing.T) {
 		want string
 	}{
 		{"comment after a trailing comment", "0: #\n#\n 0", false, "0: 0 #\n\n#\n"},
-		{"keep-chomped scalar then a comment", "|+\n\n#", false, "|4+\n\n#\n"},
+		{"keep-chomped item then a comment", "- |+\n\n#", false, "- |2+\n\n#\n"},
 		{"keep-chomped value then a comment", "a: |+\n    x\n\n#", false, "a: |+\n    x\n\n#\n"},
 		// An empty block scalar is written as "", and the comment after a
 		// quoted scalar on the first line was the document's foot (separated)
 		// where after a plain one it is the scalar's (not): the scanner now
 		// takes content on the first line as content.
-		{"empty literal then a comment", "|\n#", false, "\"\"\n#\n"},
-		{"empty folded then a comment", ">\n#", false, "\"\"\n#\n"},
 		{"empty literal item then a comment", "- |\n#", false, "- \"\"\n#\n"},
+		{"empty folded item then a comment", "- >\n#", false, "- \"\"\n#\n"},
 		{"empty literal value then a comment", "a: |\n#", false, "a: \"\"\n#\n"},
 		{"quoted scalar on the first line then a comment", "\"x\"\n#", false, "\"x\"\n#\n"},
 		{"plain scalar on the first line then a comment", "x\n#", false, "x\n#\n"},
