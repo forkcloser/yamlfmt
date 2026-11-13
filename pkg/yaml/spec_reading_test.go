@@ -292,3 +292,23 @@ func TestAnchorNameEndingInAColonIsNotWritten(t *testing.T) {
 		t.Errorf("the anchor \"a:b\" is written %q, %v", out, err)
 	}
 }
+
+// TestTagShorthandEndsAtAFlowIndicator: a shorthand tag holds no flow
+// indicator (YAML 1.2.2, 5.6), so in a flow collection the indicator
+// after a tag ends the tagged node, an empty one. Taken into the tag,
+// `[!t,a]` did not parse, and `[!, ]` was written as two items. A tag that
+// holds one is written with it escaped, or verbatim as it was.
+func TestTagShorthandEndsAtAFlowIndicator(t *testing.T) {
+	t.Parallel()
+
+	held(t, []reading{
+		{"before an item", "[!t,a]", []any{[]any{"", "a"}}, "[!t '', a]\n"},
+		{"the non-specific tag", "[!, a]", []any{[]any{"", "a"}}, "[! '', a]\n"},
+		{"before the bracket", "[!t]", []any{[]any{""}}, "[!t '']\n"},
+		{"before the brace", "{a: !t}", []any{map[string]any{"a": ""}}, "{a: !t ''}\n"},
+		{"empty values", "{a: !, b: ! 0}", []any{map[string]any{"a": "", "b": "0"}}, "{a: ! '', b: ! 0}\n"},
+		{"an escaped comma", "!e%2Cf x", []any{"x"}, "!e%2Cf x\n"},
+		{"an escaped comma in a flow sequence", "[!e%2Cf x]", []any{[]any{"x"}}, "[!e%2Cf x]\n"},
+		{"a verbatim comma", "[!<a,b> x]", []any{[]any{"x"}}, "[!<a,b> x]\n"},
+	})
+}

@@ -1947,7 +1947,7 @@ func yaml_parser_scan_tag_directive_value(parser *yaml_parser_t, start_mark yaml
 	}
 
 	// Scan a prefix.
-	if !yaml_parser_scan_tag_uri(parser, true, nil, start_mark, &prefix_value) {
+	if !yaml_parser_scan_tag_uri(parser, true, true, nil, start_mark, &prefix_value) {
 		return false
 	}
 
@@ -2083,7 +2083,7 @@ func yaml_parser_scan_tag(parser *yaml_parser_t, token *yaml_token_t) bool {
 		skip(parser)
 
 		// Consume the tag value.
-		if !yaml_parser_scan_tag_uri(parser, false, nil, start_mark, &suffix) {
+		if !yaml_parser_scan_tag_uri(parser, false, true, nil, start_mark, &suffix) {
 			return false
 		}
 
@@ -2107,12 +2107,12 @@ func yaml_parser_scan_tag(parser *yaml_parser_t, token *yaml_token_t) bool {
 		// Check if it is, indeed, handle.
 		if handle[0] == '!' && len(handle) > 1 && handle[len(handle)-1] == '!' {
 			// Scan the suffix now.
-			if !yaml_parser_scan_tag_uri(parser, false, nil, start_mark, &suffix) {
+			if !yaml_parser_scan_tag_uri(parser, false, false, nil, start_mark, &suffix) {
 				return false
 			}
 		} else {
 			// It wasn't a handle after all.  Scan the rest of the tag.
-			if !yaml_parser_scan_tag_uri(parser, false, handle, start_mark, &suffix) {
+			if !yaml_parser_scan_tag_uri(parser, false, false, handle, start_mark, &suffix) {
 				return false
 			}
 
@@ -2132,7 +2132,11 @@ func yaml_parser_scan_tag(parser *yaml_parser_t, token *yaml_token_t) bool {
 		return false
 	}
 
-	if !is_blankz(parser.buffer, parser.buffer_pos) {
+	// In a flow collection the tagged node may be empty, and the indicator
+	// that ends it then ends the tag: `[!t, a]`.
+	if !is_blankz(parser.buffer, parser.buffer_pos) &&
+		!(parser.flow_level > 0 && (parser.buffer[parser.buffer_pos] == ',' ||
+			parser.buffer[parser.buffer_pos] == ']' || parser.buffer[parser.buffer_pos] == '}')) {
 		yaml_parser_set_scanner_error(parser, "while scanning a tag",
 			start_mark, "did not find expected whitespace or line break")
 
@@ -2207,6 +2211,7 @@ func yaml_parser_scan_tag_handle(parser *yaml_parser_t, directive bool, start_ma
 func yaml_parser_scan_tag_uri(
 	parser *yaml_parser_t,
 	directive bool,
+	verbatim bool,
 	head []byte,
 	start_mark yaml_mark_t,
 	uri *[]byte,
@@ -2233,18 +2238,23 @@ func yaml_parser_scan_tag_uri(
 	//      '0'-'9', 'A'-'Z', 'a'-'z', '_', '-', ';', '/', '?', ':', '@', '&',
 	//      '=', '+', '$', ',', '.', '!', '~', '*', '\'', '(', ')', '[', ']',
 	//      '%'.
+	//
+	// The flow indicators among them, ',', '[' and ']', only in a verbatim
+	// tag or a directive's prefix: a shorthand's suffix ends at one, which
+	// in `[!t,a]` is the entry's separator and no part of the tag.
 	// [Go] TODO Convert this into more reasonable logic.
 	for is_alpha(parser.buffer, parser.buffer_pos) || parser.buffer[parser.buffer_pos] == ';' ||
 		parser.buffer[parser.buffer_pos] == '/' || parser.buffer[parser.buffer_pos] == '?' ||
 		parser.buffer[parser.buffer_pos] == ':' || parser.buffer[parser.buffer_pos] == '@' ||
 		parser.buffer[parser.buffer_pos] == '&' || parser.buffer[parser.buffer_pos] == '=' ||
 		parser.buffer[parser.buffer_pos] == '+' || parser.buffer[parser.buffer_pos] == '$' ||
-		parser.buffer[parser.buffer_pos] == ',' || parser.buffer[parser.buffer_pos] == '.' ||
+		parser.buffer[parser.buffer_pos] == '.' ||
 		parser.buffer[parser.buffer_pos] == '!' || parser.buffer[parser.buffer_pos] == '~' ||
 		parser.buffer[parser.buffer_pos] == '*' || parser.buffer[parser.buffer_pos] == '\'' ||
 		parser.buffer[parser.buffer_pos] == '(' || parser.buffer[parser.buffer_pos] == ')' ||
-		parser.buffer[parser.buffer_pos] == '[' || parser.buffer[parser.buffer_pos] == ']' ||
-		parser.buffer[parser.buffer_pos] == '%' {
+		parser.buffer[parser.buffer_pos] == '%' ||
+		(verbatim && (parser.buffer[parser.buffer_pos] == ',' ||
+			parser.buffer[parser.buffer_pos] == '[' || parser.buffer[parser.buffer_pos] == ']')) {
 		// Check if it is a URI-escape sequence.
 		if parser.buffer[parser.buffer_pos] == '%' {
 			if !yaml_parser_scan_uri_escapes(parser, directive, start_mark, &s) {
