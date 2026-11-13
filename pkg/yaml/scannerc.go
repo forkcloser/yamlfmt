@@ -2517,6 +2517,8 @@ func yaml_parser_scan_block_scalar(parser *yaml_parser_t, token *yaml_token_t, l
 		leading_blank = is_blank(parser.buffer, parser.buffer_pos)
 
 		// Consume the current line.
+		line_start := len(s)
+
 		for !is_breakz(parser.buffer, parser.buffer_pos) {
 			s = read(parser, s)
 			if parser.unread < 1 && !yaml_parser_update_buffer(parser, 1) {
@@ -2529,7 +2531,13 @@ func yaml_parser_scan_block_scalar(parser *yaml_parser_t, token *yaml_token_t, l
 			return false
 		}
 
-		leading_break = read_line(parser, leading_break)
+		// A last line of blanks the input ends without breaking is a line
+		// all the same, and has its break: `|\n x\n  ` is "x\n \n".
+		if is_z(parser.buffer, parser.buffer_pos) && len(bytes.Trim(s[line_start:], " \t")) == 0 {
+			leading_break = append(leading_break, '\n')
+		} else {
+			leading_break = read_line(parser, leading_break)
+		}
 
 		// Eat the following indentation spaces and line breaks.
 		if !yaml_parser_scan_block_scalar_breaks(parser, &indent, &detect, &trailing_breaks, start_mark, &end_mark) {
@@ -2612,6 +2620,13 @@ func yaml_parser_scan_block_scalar_breaks(
 		// [Go] Should really be returning breaks instead.
 		*breaks = read_line(parser, *breaks)
 		*end_mark = parser.mark
+	}
+
+	// The same for a last line of indentation alone: an empty line, with
+	// its break, which keep chomping keeps.
+	if is_z(parser.buffer, parser.buffer_pos) && parser.mark.line > start_mark.line && parser.mark.column > 0 &&
+		(*detect || parser.mark.column <= *indent) {
+		*breaks = append(*breaks, '\n')
 	}
 
 	// Determine the indentation level if needed: the first non-empty line's,

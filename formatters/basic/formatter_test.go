@@ -861,7 +861,7 @@ b: 1
 		{
 			name:  "a line of spaces ends a literal scalar at the end",
 			input: "a: |\n  x\n   ",
-			expect: `a: "x\n "
+			expect: `a: "x\n \n"
 `,
 		},
 		{

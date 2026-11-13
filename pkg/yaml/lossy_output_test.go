@@ -60,7 +60,7 @@ func TestBlockScalarLedByATabKeepsItsIndentationIndicator(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct{ in, want string }{
-		{"|1\n \t", "|4-\n    \t\n"},
+		{"|1\n \t", "|4\n    \t\n"},
 		{"|1\n \ta", "|4-\n    \ta\n"},
 		{"k: |1\n \tx\n", "k: |4\n    \tx\n"},
 		{">1\n \tx\n", ">4\n    \tx\n"},

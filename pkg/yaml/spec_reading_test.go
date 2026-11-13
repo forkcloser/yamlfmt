@@ -312,3 +312,21 @@ func TestTagShorthandEndsAtAFlowIndicator(t *testing.T) {
 		{"a verbatim comma", "[!<a,b> x]", []any{[]any{"x"}}, "[!<a,b> x]\n"},
 	})
 }
+
+// TestBlockScalarLastLineOfBlanks: a block scalar's last line, when it is
+// blanks alone and the input ends without breaking it, is a line with its
+// break all the same, content or empty line (the YAML test suite's L24T
+// and JEF9). Read without the break, clipping lost the scalar's final
+// line feed and keep chomping the empty line.
+func TestBlockScalarLastLineOfBlanks(t *testing.T) {
+	t.Parallel()
+
+	held(t, []reading{
+		{"content of one space", "foo: |\n  x\n   ", []any{map[string]any{"foo": "x\n \n"}}, "foo: \"x\\n \\n\"\n"},
+		{"the same, broken", "foo: |\n  x\n   \n", []any{map[string]any{"foo": "x\n \n"}}, "foo: \"x\\n \\n\"\n"},
+		{"content of one tab", "|1\n \t", []any{"\t\n"}, "|4\n    \t\n"},
+		{"an empty line, kept", "- |+\n   ", []any{[]any{"\n"}}, "- |2+\n\n"},
+		{"an empty line, clipped", "a: |\n  x\n  ", []any{map[string]any{"a": "x\n"}}, "a: |\n    x\n"},
+		{"no line at all, kept", "a: |+", []any{map[string]any{"a": ""}}, "a: \"\"\n"},
+	})
+}
