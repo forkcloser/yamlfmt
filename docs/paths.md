@@ -6,11 +6,15 @@
 
 In standard path mode, you can specify a file or directory path directly. If specifying a file, it will simply include the file. If specifying a directory, it will include every file with the correct extension (as specified in `extensions`, default is `yml` and `yaml`).
 
+A file found in a directory is left out when it is a FIFO, a device or a socket, or a symbolic link to one: only a path given by name is read whatever it is.
+
 This mode does *not* support wildcards, aka. globbing. That means with `*.yaml` yamlfmt will look for a file named asterisk dot yaml. If you require globbing, use the [Doublestar mode](#doublestar) instead.
 
 ## Doublestar
 
 In Doublestar mode, paths are specified using wildcard patterns explained in the [doublestar](https://github.com/bmatcuk/doublestar) package. It is almost identical to bash and git's style of glob pattern specification.
+
+A file matched by a pattern is left out when it is a FIFO, a device or a socket, or a symbolic link to one. A path with no wildcard in it is a path given by name, and is read whatever it is.
 
 To enable the doublestar mode, set `match_type: doublestar` in the config file or use the `-match_type doublestar` command line flag.
 
