@@ -942,17 +942,29 @@ func (d *decoder) mapping(n *Node, out reflect.Value) (good bool) {
 	if d.uniqueKeys {
 		nerrs := len(d.terrors)
 
+		// One error for each key after the first of its kind and text, not
+		// one for each pair of them: a key written n times is n-1 errors.
+		type key struct {
+			kind  Kind
+			value string
+		}
+
+		first := make(map[key]*Node, l/2)
+
 		for i := 0; i < l; i += 2 {
 			ni := n.Content[i]
-			for j := i + 2; j < l; j += 2 {
-				nj := n.Content[j]
-				if ni.Kind == nj.Kind && ni.Value == nj.Value {
-					d.terrors = append(
-						d.terrors,
-						fmt.Sprintf("line %d: mapping key %#v already defined at line %d", nj.Line, nj.Value, ni.Line),
-					)
-				}
+
+			defined, again := first[key{ni.Kind, ni.Value}]
+			if !again {
+				first[key{ni.Kind, ni.Value}] = ni
+
+				continue
 			}
+
+			d.terrors = append(
+				d.terrors,
+				fmt.Sprintf("line %d: mapping key %#v already defined at line %d", ni.Line, ni.Value, defined.Line),
+			)
 		}
 
 		if len(d.terrors) > nerrs {
