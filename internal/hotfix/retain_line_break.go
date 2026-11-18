@@ -496,9 +496,11 @@ func replaceLineBreakFeature(newlineStr string, chomp bool) yamlfmt.FeatureFunc 
 
 		// An input without a final line terminator keeps lacking it: a
 		// block scalar at the end takes a terminator added here into its
-		// value, where the encoder would have written it as clipped.
+		// value, where the encoder would have written it as clipped. The
+		// input's own terminator is asked for, not the configured one: an
+		// input of LF lines has its terminator under CRLF too.
 		out := breaks.buf.Bytes()
-		if len(content) > 0 && !bytes.HasSuffix(content, []byte(newlineStr)) {
+		if len(content) > 0 && content[len(content)-1] != '\n' {
 			out = bytes.TrimSuffix(out, []byte(newlineStr))
 		}
 

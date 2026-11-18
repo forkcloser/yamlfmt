@@ -4,6 +4,8 @@
 package basic_test
 
 import (
+	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -39,5 +41,57 @@ func TestContractRetainLineBreaksKeepsItsOwnMarkAsText(t *testing.T) {
 				t.Errorf("%s: %q was written as %q", option, document, out)
 			}
 		}
+	}
+}
+
+// TestContractRetainLineBreaksKeepsTheFinalLineBreak: a file that ends with
+// a line break is read as one that does, whichever line ending it has and
+// whichever is configured, and one that does not as one that does not: a
+// block scalar that ends the file keeps its final line break, or its lack
+// of one, and reads back as it read before.
+func TestContractRetainLineBreaksKeepsTheFinalLineBreak(t *testing.T) {
+	t.Parallel()
+
+	documents := []string{
+		"a: |\n  text\n",
+		"a: |-\n  text\n",
+		"a: |+\n  text\n\n",
+		"a: >\n  folded\n",
+		"- >-\n  folded\n",
+		"a: |-\n  text",
+		"a: 1\n\nb: |\n  text\n",
+	}
+
+	for _, option := range []string{"retain_line_breaks", "retain_line_breaks_single"} {
+		for _, ending := range []string{"lf", "crlf"} {
+			f := formatter(t, map[string]any{option: true, "line_ending": ending})
+
+			for _, document := range documents {
+				for _, input := range []string{document, strings.ReplaceAll(document, "\n", "\r\n")} {
+					meant, err := decode([]byte(input))
+					if err != nil {
+						t.Fatalf("%q: %v", input, err)
+					}
+
+					out, err := f.Format([]byte(input))
+					if err != nil {
+						t.Fatalf("%s, %s: %q: %v", option, ending, input, err)
+					}
+
+					if read, err := decode(out); err != nil || !reflect.DeepEqual(read, meant) {
+						t.Errorf("%s, %s: %q was written as %q, which reads back as %#v (%v), want %#v",
+							option, ending, input, out, read, err, meant)
+					}
+				}
+			}
+		}
+	}
+
+	out, err := formatter(
+		t,
+		map[string]any{"retain_line_breaks": true, "line_ending": "crlf"},
+	).Format([]byte("a: |\n  text\n"))
+	if err != nil || string(out) != "a: |\r\n  text\r\n" {
+		t.Errorf("a file with LF endings under crlf: %q (%v)", out, err)
 	}
 }
