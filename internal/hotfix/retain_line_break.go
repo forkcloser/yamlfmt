@@ -28,6 +28,36 @@ import (
 
 const lineBreakPlaceholder = "#magic___^_^___line"
 
+// placeholderKey is the context key of the placeholder a document's empty
+// lines were replaced with.
+type placeholderKey struct{}
+
+// placeholderFor is a placeholder that content does not hold: the usual
+// one, followed by one more underscore than follows it anywhere in content.
+// A line of the document that starts with the placeholder, a comment of its
+// own or a scalar's line, would be read back as an empty line.
+func placeholderFor(content []byte) string {
+	underscores := 0
+
+	for rest := content; ; {
+		at := bytes.Index(rest, []byte(lineBreakPlaceholder))
+		if at < 0 {
+			break
+		}
+
+		rest = rest[at+len(lineBreakPlaceholder):]
+
+		run := 0
+		for run < len(rest) && rest[run] == '_' {
+			run++
+		}
+
+		underscores = max(underscores, run+1)
+	}
+
+	return lineBreakPlaceholder + strings.Repeat("_", underscores)
+}
+
 type paddinger struct {
 	strings.Builder
 }
@@ -293,6 +323,8 @@ type breakScanner struct {
 	buf     bytes.Buffer
 	newline string
 	chomp   bool
+	// placeholder is the comment an empty line is replaced with.
+	placeholder string
 
 	inLineBreaks bool
 	padding      paddinger
@@ -372,7 +404,7 @@ func (s *breakScanner) placeholders(indent string) {
 		}
 
 		s.buf.WriteString(indent)
-		s.buf.WriteString(lineBreakPlaceholder)
+		s.buf.WriteString(s.placeholder)
 		s.buf.WriteString(s.newline)
 
 		s.inLineBreaks = true
@@ -436,7 +468,12 @@ func (s *breakScanner) restore(next string, atEnd bool) {
 
 func replaceLineBreakFeature(newlineStr string, chomp bool) yamlfmt.FeatureFunc {
 	return func(ctx context.Context, content []byte) (context.Context, []byte, error) {
-		breaks := &breakScanner{newline: newlineStr, chomp: chomp, owner: -1}
+		breaks := &breakScanner{
+			newline:     newlineStr,
+			chomp:       chomp,
+			placeholder: placeholderFor(content),
+			owner:       -1,
+		}
 		scanner := linescan.NewScanner(content)
 
 		for scanner.Scan() {
@@ -465,12 +502,19 @@ func replaceLineBreakFeature(newlineStr string, chomp bool) yamlfmt.FeatureFunc 
 			out = bytes.TrimSuffix(out, []byte(newlineStr))
 		}
 
-		return ctx, out, scanner.Err()
+		return context.WithValue(ctx, placeholderKey{}, breaks.placeholder), out, scanner.Err()
 	}
 }
 
 func restoreLineBreakFeature(newlineStr string) yamlfmt.FeatureFunc {
 	return func(ctx context.Context, content []byte) (context.Context, []byte, error) {
+		// The placeholder is the one the empty lines were replaced with,
+		// which is not the usual one for a document that holds that.
+		placeholder, replaced := ctx.Value(placeholderKey{}).(string)
+		if !replaced {
+			placeholder = lineBreakPlaceholder
+		}
+
 		breaks := &breakScanner{newline: newlineStr, owner: -1}
 		scanner := linescan.NewScanner(content)
 
@@ -484,7 +528,7 @@ func restoreLineBreakFeature(newlineStr string) yamlfmt.FeatureFunc {
 
 			breaks.restore(txt, false)
 
-			if strings.HasPrefix(strings.TrimLeft(txt, " "), lineBreakPlaceholder) {
+			if strings.HasPrefix(strings.TrimLeft(txt, " "), placeholder) {
 				if breaks.region != nil && !breaks.region.contains(txt) {
 					breaks.region = nil
 				}
