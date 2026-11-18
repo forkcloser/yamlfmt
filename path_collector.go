@@ -22,6 +22,7 @@ import (
 	"io"
 	"io/fs"
 	"log/slog"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -456,6 +457,9 @@ const DefaultPatternFile = "yamlfmt.patterns"
 type PatternFileCollector struct {
 	fs      fs.FS
 	matcher *ignore.GitIgnore
+	// err is what reading the patterns failed with, for CollectPaths to
+	// return: a list cut short is other patterns, not fewer.
+	err error
 }
 
 // NewPatternFileCollector initializes a new PatternFile using the provided file(s).
@@ -499,7 +503,11 @@ func cat(files ...string) (io.Reader, error) {
 func NewPatternFileCollectorFS(r io.Reader, fs fs.FS) *PatternFileCollector {
 	var lines []string
 
+	// A line may be of any length: at its default the scanner stops at one
+	// over 64 KiB, and the patterns after it would not apply.
 	s := bufio.NewScanner(r)
+	s.Buffer(nil, math.MaxInt)
+
 	for s.Scan() {
 		lines = append(lines, s.Text())
 	}
@@ -507,11 +515,16 @@ func NewPatternFileCollectorFS(r io.Reader, fs fs.FS) *PatternFileCollector {
 	return &PatternFileCollector{
 		fs:      fs,
 		matcher: ignore.CompileIgnoreLines(lines...),
+		err:     s.Err(),
 	}
 }
 
 // CollectPaths implements the PathCollector interface.
 func (c *PatternFileCollector) CollectPaths() ([]string, error) {
+	if c.err != nil {
+		return nil, fmt.Errorf("reading the patterns: %w", c.err)
+	}
+
 	var files []string
 
 	err := fs.WalkDir(c.fs, ".", func(path string, d fs.DirEntry, err error) error {
