@@ -6,6 +6,7 @@ package basic_test
 import (
 	"bytes"
 	"math"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
@@ -158,5 +159,71 @@ func TestContractNegativeIndentIsWrittenAsOne(t *testing.T) {
 				t.Errorf("indent %v: %q was written as %q, and as %q with an indent of 1", indent, document, out, want)
 			}
 		}
+	}
+}
+
+// TestContractLineCommentStaysAComment: a line comment is written after a
+// space at least. A pad_line_comments of 0, as one under 0, is written as 1
+// is: without the space the comment is part of the value before it, and
+// `b: 1 # x` would read back with the value "1# x".
+func TestContractLineCommentStaysAComment(t *testing.T) {
+	t.Parallel()
+
+	inputs := []string{
+		"b: 1 # x\n",
+		"- a # x\n- [b, c] # y\n- k: v # z\n",
+		"k: # x\n  - l # y\n",
+	}
+
+	for _, input := range inputs {
+		want, err := formatter(t, map[string]any{"pad_line_comments": 1}).Format([]byte(input))
+		if err != nil {
+			t.Fatalf("pad_line_comments 1: %q: %v", input, err)
+		}
+
+		meant, err := decode([]byte(input))
+		if err != nil {
+			t.Fatalf("%q: %v", input, err)
+		}
+
+		for _, pad := range []int{0, -1, -100000} {
+			out, err := formatter(t, map[string]any{"pad_line_comments": pad}).Format([]byte(input))
+			if err != nil {
+				t.Fatalf("pad_line_comments %d: %q: %v", pad, input, err)
+			}
+
+			if !bytes.Equal(out, want) {
+				t.Errorf(
+					"pad_line_comments %d: %q was written as %q, and as %q with a padding of 1",
+					pad,
+					input,
+					out,
+					want,
+				)
+			}
+
+			if read, err := decode(out); err != nil || !reflect.DeepEqual(read, meant) {
+				t.Errorf("pad_line_comments %d: %q reads back as %v (%v), want %v", pad, input, read, err, meant)
+			}
+		}
+	}
+
+	out, err := formatter(t, map[string]any{"pad_line_comments": 0}).Format([]byte("b: 1 # x\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	read, err := decode(out)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if want := []any{map[string]any{"b": 1}}; !reflect.DeepEqual(read, want) {
+		t.Errorf(
+			"`b: 1 # x` under a padding of 0 was written as %q, which reads back as %#v, want %#v",
+			out,
+			read,
+			want,
+		)
 	}
 }
