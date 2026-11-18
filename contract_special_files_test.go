@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"syscall"
 	"testing"
 
@@ -123,5 +124,18 @@ func TestContractCollectorsLeaveOutEndlessFiles(t *testing.T) {
 		if got := collected(t, c.collector); !slices.Equal(got, c.want) {
 			t.Errorf("%s: collected %v, want %v", name, got, c.want)
 		}
+	}
+}
+
+// TestContractPatternFileCollectsRegularFilesOnly: in the gitignore mode a
+// pattern collects the regular files it matches and nothing else it
+// matches: no FIFO, and no link, whatever it links to.
+func TestContractPatternFileCollectsRegularFilesOnly(t *testing.T) {
+	t.Parallel()
+
+	collector := yamlfmt.NewPatternFileCollectorFS(strings.NewReader("*.yaml\n"), os.DirFS(specialTree(t)))
+
+	if got, want := collected(t, collector), []string{"regular.yaml"}; !slices.Equal(got, want) {
+		t.Errorf("collected %v, want %v", got, want)
 	}
 }
