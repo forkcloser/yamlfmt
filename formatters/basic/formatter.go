@@ -233,7 +233,15 @@ func (f *BasicFormatter) lineBreak() string {
 
 func (f *BasicFormatter) getNewEncoder(buf *bytes.Buffer) *yaml.Encoder {
 	e := yaml.NewEncoder(buf)
-	e.SetIndent(f.Config.Indent)
+	// A negative indent is outside what the encoder writes, as 1 is, and
+	// is written as 1 is: it is the one indent the encoder panics on. Not
+	// as 0, which is the encoder's "not set".
+	indent := f.Config.Indent
+	if indent < 0 {
+		indent = 1
+	}
+
+	e.SetIndent(indent)
 
 	if f.Config.LineLength > 0 {
 		e.SetWidth(f.Config.LineLength)
