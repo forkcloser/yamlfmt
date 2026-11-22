@@ -19,7 +19,7 @@ import (
 	"errors"
 	"fmt"
 
-	yaml "go.yaml.in/yaml/v3"
+	yaml "go.yaml.in/yaml/v4"
 	"sigs.k8s.io/yaml/kyaml"
 )
 
