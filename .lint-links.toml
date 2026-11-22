@@ -1,0 +1,11 @@
+# This repository's own link exclusions, merged with the canonical
+# .limen/lychee.toml by `just do security links`.
+# Only what applies to this repository alone belongs here.
+
+exclude = [
+  # gopkg.in's front page, linked from the upstream README kept in pkg/yaml:
+  # it times out from Actions runners on some runs and answers on others,
+  # and from anywhere else. The package's own page there, gopkg.in/yaml.v3,
+  # is still checked.
+  '^https://gopkg\.in/?$',
+]
