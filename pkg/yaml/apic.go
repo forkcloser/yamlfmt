@@ -192,7 +192,9 @@ func yaml_emitter_set_indentless_block_sequence(emitter *yaml_emitter_t, indentl
 
 // Set pad line comments.
 func yaml_emitter_set_pad_line_comments(emitter *yaml_emitter_t, pad_line_comments int) {
-	if pad_line_comments < 0 {
+	// A comment needs a blank before it: with no padding it is written
+	// against the value before it, and is part of that value.
+	if pad_line_comments < 1 {
 		pad_line_comments = 1
 	}
 

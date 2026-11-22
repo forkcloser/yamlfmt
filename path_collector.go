@@ -22,6 +22,7 @@ import (
 	"io"
 	"io/fs"
 	"log/slog"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -177,7 +178,7 @@ func (c *FilepathCollector) walkDirectoryForYaml(dir string) ([]string, error) {
 			return nil
 		}
 
-		if c.extensionMatches(info.Name()) {
+		if c.extensionMatches(info.Name()) && !endless(path, info) {
 			paths = append(paths, path)
 		}
 
@@ -191,6 +192,25 @@ func (c *FilepathCollector) walkDirectoryForYaml(dir string) ([]string, error) {
 	}
 
 	return paths, errors.Join(walkErrs...)
+}
+
+// endless reports whether a file found in a tree is one whose reading ends
+// when its writer likes, or never: a FIFO, a device or a socket, or a link
+// to one, info being the file's own. Nobody named it, so it is left out. A
+// link that does not resolve is not, for the error its reading reports.
+func endless(path string, info fs.FileInfo) bool {
+	const kinds = fs.ModeNamedPipe | fs.ModeDevice | fs.ModeCharDevice | fs.ModeSocket
+
+	if info.Mode()&fs.ModeSymlink != 0 {
+		target, err := os.Stat(path)
+		if err != nil {
+			return false
+		}
+
+		info = target
+	}
+
+	return info.Mode()&kinds != 0
 }
 
 func (c *FilepathCollector) extensionMatches(name string) bool {
@@ -229,7 +249,20 @@ func (c *DoublestarCollector) CollectPaths() ([]string, error) {
 		}
 
 		slog.Debug("pattern matches", DebugCodeAttr, DebugCodePaths, "pattern", pattern, "paths", globMatches)
-		includedPaths = append(includedPaths, globMatches...)
+
+		// A pattern with nothing to match is a path given by name, and is
+		// taken whatever it is.
+		named := !strings.ContainsAny(pattern, `*?[{`)
+
+		for _, match := range globMatches {
+			if info, err := os.Lstat(match); !named && err == nil && endless(match, info) {
+				slog.Debug("not a file with an end, leaving out", DebugCodeAttr, DebugCodePaths, "path", match)
+
+				continue
+			}
+
+			includedPaths = append(includedPaths, match)
+		}
 	}
 
 	pathsToFormatSet := collections.Set[string]{}
@@ -424,6 +457,9 @@ const DefaultPatternFile = "yamlfmt.patterns"
 type PatternFileCollector struct {
 	fs      fs.FS
 	matcher *ignore.GitIgnore
+	// err is what reading the patterns failed with, for CollectPaths to
+	// return: a list cut short is other patterns, not fewer.
+	err error
 }
 
 // NewPatternFileCollector initializes a new PatternFile using the provided file(s).
@@ -467,7 +503,11 @@ func cat(files ...string) (io.Reader, error) {
 func NewPatternFileCollectorFS(r io.Reader, fs fs.FS) *PatternFileCollector {
 	var lines []string
 
+	// A line may be of any length: at its default the scanner stops at one
+	// over 64 KiB, and the patterns after it would not apply.
 	s := bufio.NewScanner(r)
+	s.Buffer(nil, math.MaxInt)
+
 	for s.Scan() {
 		lines = append(lines, s.Text())
 	}
@@ -475,11 +515,16 @@ func NewPatternFileCollectorFS(r io.Reader, fs fs.FS) *PatternFileCollector {
 	return &PatternFileCollector{
 		fs:      fs,
 		matcher: ignore.CompileIgnoreLines(lines...),
+		err:     s.Err(),
 	}
 }
 
 // CollectPaths implements the PathCollector interface.
 func (c *PatternFileCollector) CollectPaths() ([]string, error) {
+	if c.err != nil {
+		return nil, fmt.Errorf("reading the patterns: %w", c.err)
+	}
+
 	var files []string
 
 	err := fs.WalkDir(c.fs, ".", func(path string, d fs.DirEntry, err error) error {

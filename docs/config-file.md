@@ -87,7 +87,7 @@ The `basic` formatter is the default formatter that takes the data provided, ser
 | `scan_folded_as_literal`    | bool           | false   | Option that will preserve newlines in folded block scalars (blocks that start with `>`). |
 | `indentless_arrays`         | bool           | false   | Render `-` array items (block sequence items) without an increased indent. |
 | `drop_merge_tag`            | bool           | false   | Assume that any well formed merge using just a `<<` token will be a merge, and drop the `!!merge` tag from the formatted result. |
-| `pad_line_comments`         | int            | 1       | The number of padding spaces to insert before line comments. |
+| `pad_line_comments`         | int            | 1       | The number of padding spaces to insert before line comments. 0 and negative values are written as 1. |
 | `preserve_comment_indents`  | bool           | false   | Keep each line comment at the same column it had in the source. If the reformatted content would collide with the comment, use `pad_line_comments` spaces instead. |
 | `trim_trailing_whitespace`  | bool           | false   | Trim trailing whitespace from lines. |
 | `eof_newline`               | bool           | false   | Always add a newline at end of file. Useful in the scenario where `retain_line_breaks` is disabled but the trailing newline is still needed. |
