@@ -522,11 +522,14 @@ golangci:
             allow:
               # What the formatter is built on: doublestar matches the include
               # and exclude globs, go-gitignore applies .gitignore, kyaml is the
-              # kyaml formatter, and go-cmp computes the diffs the dry run and
+              # kyaml formatter, yaml/v3 is the parser kyaml reads with, which
+              # the kyaml formatter reads the aliases with before kyaml copies
+              # them, and go-cmp computes the diffs the dry run and
               # lint print and the golden-file helpers compare with.
               - github.com/bmatcuk/doublestar/v4
               - github.com/sabhiram/go-gitignore
               - sigs.k8s.io/yaml/kyaml
+              - go.yaml.in/yaml/v3
               - github.com/google/go-cmp/cmp
 
 nilaway:
