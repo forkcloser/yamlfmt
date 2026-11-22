@@ -1,5 +1,8 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": [
+    "packageRules, go.yaml.in/yaml/v3: no major update. The kyaml formatter looks for an alias inside its own anchor's node with the parser sigs.k8s.io/yaml/kyaml reads with, which is yaml/v3, so that the check and the encoder see the same aliases; read with v4, the two could disagree on what a document holds. Drop this rule when kyaml reads with v4 itself."
+  ],
   "extends": [
     "local>forkcloser/yamlfmt//.limen/renovate"
   ],
@@ -7,5 +10,19 @@
   "gitIgnoredAuthors": [
     "317468017+limen-ci-forkcloser[bot]@users.noreply.github.com",
     "41898282+github-actions[bot]@users.noreply.github.com"
+  ],
+  "packageRules": [
+    {
+      "enabled": false,
+      "matchDatasources": [
+        "go"
+      ],
+      "matchDepNames": [
+        "go.yaml.in/yaml/v3"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ]
+    }
   ]
 }
