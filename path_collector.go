@@ -30,6 +30,8 @@ import (
 	"github.com/bmatcuk/doublestar/v4"
 	ignore "github.com/sabhiram/go-gitignore"
 
+	"github.com/forkcloser/go-xos"
+
 	"github.com/forkcloser/yamlfmt/internal/collections"
 )
 
@@ -57,7 +59,7 @@ func (c *FilepathCollector) CollectPaths() ([]string, error) {
 	pathsFound := []string{}
 
 	for _, inclPath := range c.Include {
-		info, err := os.Stat(inclPath)
+		info, err := xos.Stat(inclPath)
 		if err != nil {
 			if !os.IsNotExist(err) {
 				return nil, err
@@ -97,7 +99,7 @@ func (c *FilepathCollector) CollectPaths() ([]string, error) {
 	}
 
 	for _, exclPath := range c.Exclude {
-		info, err := os.Stat(exclPath)
+		info, err := xos.Stat(exclPath)
 		if err != nil {
 			if !os.IsNotExist(err) {
 				return nil, err
@@ -202,7 +204,7 @@ func endless(path string, info fs.FileInfo) bool {
 	const kinds = fs.ModeNamedPipe | fs.ModeDevice | fs.ModeCharDevice | fs.ModeSocket
 
 	if info.Mode()&fs.ModeSymlink != 0 {
-		target, err := os.Stat(path)
+		target, err := xos.Stat(path)
 		if err != nil {
 			return false
 		}
@@ -367,7 +369,7 @@ var errNoGitignore = errors.New("no gitignore found")
 func findGitIgnorePath(gitignorePath string) (string, error) {
 	// if path is absolute, check if exists and return
 	if filepath.IsAbs(gitignorePath) {
-		_, err := os.Stat(gitignorePath)
+		_, err := xos.Stat(gitignorePath)
 		return gitignorePath, err
 	}
 
@@ -380,13 +382,13 @@ func findGitIgnorePath(gitignorePath string) (string, error) {
 	for {
 		// check if gitignore is there
 		gitIgnore := filepath.Join(dir, gitignorePath)
-		if _, err := os.Stat(gitIgnore); err == nil {
+		if _, err := xos.Stat(gitIgnore); err == nil {
 			return gitIgnore, nil
 		}
 
 		// check if we are at the git root directory
 		gitRoot := filepath.Join(dir, ".git")
-		if _, err := os.Stat(gitRoot); err == nil {
+		if _, err := xos.Stat(gitRoot); err == nil {
 			return gitignorePath, errNoGitignore
 		}
 
@@ -484,7 +486,7 @@ func cat(files ...string) (io.Reader, error) {
 	var b bytes.Buffer
 
 	for _, f := range files {
-		data, err := os.ReadFile(f)
+		data, err := xos.ReadFile(f)
 		if err != nil {
 			return nil, err
 		}

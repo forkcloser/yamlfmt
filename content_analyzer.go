@@ -15,8 +15,9 @@
 package yamlfmt
 
 import (
-	"os"
 	"regexp"
+
+	"github.com/forkcloser/go-xos"
 
 	"github.com/forkcloser/yamlfmt/internal/collections"
 )
@@ -52,7 +53,7 @@ func (a BasicContentAnalyzer) ExcludePathsByContent(paths []string) ([]string, [
 	pathErrs := collections.Errors{}
 
 	for _, path := range paths {
-		content, err := os.ReadFile(path)
+		content, err := xos.ReadFile(path)
 		if err != nil {
 			pathErrs = append(pathErrs, err)
 			continue

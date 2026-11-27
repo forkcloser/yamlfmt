@@ -25,6 +25,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/forkcloser/go-xos"
+
 	"github.com/forkcloser/yamlfmt"
 	"github.com/forkcloser/yamlfmt/command"
 	"github.com/forkcloser/yamlfmt/engine"
@@ -82,7 +84,7 @@ func (e *configPathError) Unwrap() error {
 }
 
 func readConfig(path string) (map[string]any, error) {
-	yamlBytes, err := os.ReadFile(path)
+	yamlBytes, err := xos.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
@@ -244,7 +246,7 @@ func getConfigPathFromDir(dir string) (string, error) {
 }
 
 func validatePath(path string) error {
-	info, err := os.Stat(path)
+	info, err := xos.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return &configPathError{

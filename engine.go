@@ -17,9 +17,10 @@ package yamlfmt
 import (
 	"bytes"
 	"fmt"
-	"os"
 	"slices"
 	"strings"
+
+	"github.com/forkcloser/go-xos"
 
 	"github.com/forkcloser/yamlfmt/internal/collections"
 	"github.com/forkcloser/yamlfmt/internal/multilinediff"
@@ -101,7 +102,7 @@ func (fd *FileDiff) Apply() error {
 		return nil
 	}
 
-	return os.WriteFile(fd.Path, fd.Diff.Formatted, 0o644)
+	return xos.WriteFile(fd.Path, fd.Diff.Formatted, 0o644)
 }
 
 type FileDiffs map[string]*FileDiff

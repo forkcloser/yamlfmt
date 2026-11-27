@@ -18,7 +18,8 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"os"
+
+	"github.com/forkcloser/go-xos"
 
 	"github.com/forkcloser/yamlfmt"
 )
@@ -110,7 +111,7 @@ func (e *ConsecutiveEngine) formatAll(paths []string) (yamlfmt.FileDiffs, Format
 }
 
 func (e *ConsecutiveEngine) formatFileContent(path string) (*yamlfmt.FileDiff, error) {
-	content, err := os.ReadFile(path)
+	content, err := xos.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
